@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { CSSProperties } from 'react';
 
 interface GlowSliderProps {
   label: string;
@@ -21,45 +21,38 @@ export default function GlowSlider({
   unit = '',
   color = 'green',
 }: GlowSliderProps) {
-  const colorMap = {
-    green: {
-      text: 'text-phosphor-green',
-      accent: 'accent-[#00ff44]',
-    },
-    amber: {
-      text: 'text-phosphor-amber',
-      accent: 'accent-[#ffb300]',
-    },
-    red: {
-      text: 'text-phosphor-red',
-      accent: 'accent-[#ff2244]',
-    },
-    cyan: {
-      text: 'text-phosphor-cyan',
-      accent: 'accent-[#00e5ff]',
-    },
+  const percentage = max - min > 0 ? ((value - min) / (max - min)) * 100 : 0;
+
+  const colorClasses = {
+    green: 'text-phosphor-green',
+    amber: 'text-phosphor-amber',
+    red: 'text-phosphor-red',
+    cyan: 'text-phosphor-cyan',
   };
 
-  const choice = colorMap[color];
+  const textStyle = colorClasses[color] || 'text-phosphor-green';
 
   return (
     <div className="flex flex-col gap-1 w-full text-xs py-1">
-      <div className="flex justify-between items-center text-[10px] tracking-wider uppercase opacity-85">
-        <span className={choice.text}>{label}</span>
-        <span className="font-mono">
+      <div className="flex justify-between items-center text-[10px] tracking-wider uppercase font-bold">
+        <span className={textStyle}>{label}</span>
+        <span className="font-mono text-white text-shadow-sm">
           {value}
           {unit}
         </span>
       </div>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className={`w-full bg-[#0d1f0d] border border-[#1a3a1a] h-1 rounded outline-none ${choice.accent} cursor-pointer`}
-      />
+      <div className="flex items-center w-full">
+        <input
+          type="range"
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value))}
+          className="sovereign-slider w-full cursor-pointer"
+          style={{ '--value-pct': `${percentage}%` } as CSSProperties}
+        />
+      </div>
     </div>
   );
 }

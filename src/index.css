@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=JetBrains+Mono:wght@400;700&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -192,3 +193,659 @@ body::after {
     opacity: 0;
   }
 }
+
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  --bg-void: #020402;
+  --bg-panel: #060a06;
+  --bg-elevated: #0a120a;
+
+  --green-100: #88ffaa;
+  --green-300: #00ff44;
+  --green-400: #00cc33;
+  --green-500: #008822;
+  --green-700: #1a3a1a;
+  --green-900: #0d1f0d;
+
+  --green-glow: 0 0 8px rgba(0, 255, 68, 0.6), 0 0 16px rgba(0, 255, 68, 0.15);
+  --green-glow-sm: 0 0 4px rgba(0, 255, 68, 0.5);
+
+  --amber-100: #ffd54f;
+  --amber-glow: 0 0 8px rgba(255, 179, 0, 0.6), 0 0 16px rgba(255, 179, 0, 0.18);
+  --amber-glow-sm: 0 0 4px rgba(255, 179, 0, 0.5);
+
+  --red-100: #ff2244;
+  --red-glow: 0 0 8px rgba(255, 34, 68, 0.6), 0 0 16px rgba(255, 34, 68, 0.2);
+}
+
+/* 2.1 Panel Frame System */
+.instrument-panel {
+  position: relative;
+  background: var(--bg-panel);
+  border: 1px solid var(--color-border);
+  clip-path: polygon(
+    0 8px, 8px 0,
+    calc(100% - 8px) 0, 100% 8px,
+    100% calc(100% - 8px), calc(100% - 8px) 100%,
+    8px 100%, 0 calc(100% - 8px)
+  );
+}
+
+.instrument-panel::before {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  border: 1px solid var(--green-900);
+  clip-path: inherit;
+  pointer-events: none;
+}
+
+.instrument-label {
+  font: 700 9px/1 var(--font-display);
+  letter-spacing: 0.18em;
+  color: var(--color-green-mid);
+  text-transform: uppercase;
+  padding: 6px 10px 5px;
+  background: linear-gradient(90deg, var(--green-900) 0%, transparent 100%);
+  border-bottom: 1px solid var(--green-700);
+  position: relative;
+}
+
+.instrument-label::after {
+  content: '';
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 4px;
+  background: var(--green-100);
+  border-radius: 50%;
+  box-shadow: var(--green-glow-sm);
+  animation: blink 2.4s ease-in-out infinite;
+}
+
+/* 2.2 Data Value Typography Hierarchy */
+.value-primary {
+  font: 700 24px/1 var(--font-mono);
+  color: var(--color-green-bright);
+  text-shadow: var(--green-glow);
+  letter-spacing: -0.02em;
+}
+
+.value-secondary {
+  font: 400 13px/1 var(--font-mono);
+  color: var(--color-green);
+}
+.value-secondary.negative { color: var(--color-red); }
+.value-secondary.positive { color: var(--color-green-bright); }
+
+.value-label {
+  font: 400 9px/1 var(--font-display);
+  letter-spacing: 0.14em;
+  color: var(--color-green-dim);
+  text-transform: uppercase;
+}
+
+/* 2.4 Custom Sovereign Slider */
+.sovereign-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(
+    to right,
+    var(--color-green) 0%,
+    var(--color-green) var(--value-pct),
+    var(--green-700) var(--value-pct),
+    var(--green-700) 100%
+  );
+  outline: none;
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.sovereign-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  background: var(--color-green-bright);
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); /* diamond shape */
+  box-shadow: 0 0 6px var(--color-green);
+  cursor: grab;
+  transition: transform 0.1s;
+}
+
+.sovereign-slider::-webkit-slider-thumb:active {
+  cursor: grabbing;
+  transform: scale(1.3);
+}
+
+/* Slider container */
+.slider-row {
+  display: grid;
+  grid-template-columns: 100px 1fr auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.slider-value {
+  font: 700 12px/1 var(--font-mono);
+  color: var(--color-green);
+  text-align: right;
+  min-width: 48px;
+  text-shadow: var(--green-glow-sm);
+}
+
+/* 2.6 Physical Switch/Breaker switch */
+.breaker-button {
+  width: 56px;
+  height: 80px;
+  background: linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-panel) 100%);
+  border: 2px solid #005511;
+  clip-path: polygon(4px 0, calc(100% - 4px) 0, 100% 4px,
+                      100% calc(100% - 4px), calc(100% - 4px) 100%,
+                      4px 100%, 0 calc(100% - 4px), 0 4px);
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+  padding: 8px 0;
+  transition: all 0.2s ease-in-out;
+}
+
+.breaker-button.breaker-active {
+  background: linear-gradient(180deg, #aa1122 0%, #4a0010 100%);
+  border-color: var(--color-red);
+  box-shadow: 0 0 10px var(--color-red-glow);
+}
+
+.breaker-button .indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #330000;
+  transition: all 0.2s;
+}
+
+.breaker-button.breaker-active .indicator {
+  background: var(--color-red);
+  box-shadow: 0 0 8px var(--color-red);
+  animation: blink 0.8s ease-in-out infinite;
+}
+
+/* 5. LED Status Bar Displays */
+.led-display {
+  position: relative;
+  font-family: 'Share Tech Mono', var(--font-mono);
+  color: var(--color-green);
+  text-shadow:
+    0 0 4px var(--color-green),
+    0 0 8px var(--color-green);
+  letter-spacing: 0.08em;
+  background: #020502;
+  padding: 4px 10px;
+  border: 1px solid var(--green-500);
+  clip-path: polygon(4px 0, calc(100% - 4px) 0, 100% 4px,
+                      100% calc(100% - 4px), calc(100% - 4px) 100%,
+                      4px 100%, 0 calc(100% - 4px), 0 4px);
+}
+
+.led-display::before {
+  content: "88888888"; 
+  position: absolute;
+  left: 10px;
+  top: 4px;
+  color: rgba(0, 255, 68, 0.05); /* dead columns */
+  pointer-events: none;
+  letter-spacing: 0.08em;
+  z-index: 0;
+}
+
+.live-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font: 700 9px/1 var(--font-display);
+  color: var(--color-green-bright);
+  letter-spacing: 0.15em;
+}
+
+.live-indicator::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-green-bright);
+  box-shadow: 0 0 6px var(--color-green);
+  animation: blink 1s ease-in-out infinite;
+}
+
+/* Section 8: Dossier folders with flipping states */
+.dossier-wrapper {
+  perspective: 1200px;
+  width: 520px;
+}
+
+.dossier-card-3d {
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dossier-card-3d.dir-flipped {
+  transform: rotateY(180deg);
+}
+
+.dossier-front {
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent 0px,
+      transparent 20px,
+      rgba(0, 255, 68, 0.03) 20px,
+      rgba(0, 255, 68, 0.03) 21px
+    ),
+    linear-gradient(135deg, #0d120a 0%, #030603 100%);
+  border: 1px solid var(--green-500);
+}
+
+.classified-stamp {
+  position: absolute;
+  top: 35%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-25deg);
+  font: 900 24px/1 var(--font-display);
+  color: rgba(255, 34, 68, 0.65);
+  border: 4px double rgba(255, 34, 68, 0.65);
+  padding: 6px 16px;
+  letter-spacing: 0.2em;
+  pointer-events: none;
+  text-transform: uppercase;
+}
+
+.redacted {
+  background: var(--green-700);
+  color: var(--green-700) !important;
+  border-radius: 1px;
+  user-select: none;
+  position: relative;
+  display: inline-block;
+  min-width: 60px;
+}
+
+.redacted::after {
+  content: '[CLASSIFIED]';
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-green-dim);
+  font-size: 8px;
+  font-weight: bold;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+
+/* Section 7.1 Title Card Events Stamp */
+.event-stamp-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  background: rgba(0,0,0,0.6);
+  pointer-events: none;
+}
+
+.event-stamp {
+  transform: scale(3) rotate(-2deg);
+  animation: stamp-in 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards,
+             stamp-hold 1.5s 0.8s linear,
+             stamp-out 0.4s 2.3s ease-in forwards;
+  pointer-events: none;
+  text-align: center;
+}
+
+@keyframes stamp-in {
+  from {
+    transform: scale(4.5) rotate(-4deg);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) rotate(-1deg);
+    opacity: 1;
+  }
+}
+
+@keyframes stamp-hold {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.2); }
+}
+
+@keyframes stamp-out {
+  to {
+    transform: translateY(-200px) scale(0.3);
+    opacity: 0;
+  }
+}
+
+.event-stamp.stamp-CRITICAL .stamp-headline {
+  font: 900 24px/1 var(--font-display);
+  color: var(--color-red);
+  text-shadow: 0 0 10px rgba(255, 34, 68, 0.8), 0 0 40px rgba(255, 34, 68, 0.4);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 4px solid var(--color-red);
+  padding: 8px 24px;
+  background: rgba(10, 0, 2, 0.95);
+  display: inline-block;
+}
+
+.event-stamp.stamp-WARNING .stamp-headline {
+  font: 900 20px/1 var(--font-display);
+  color: var(--color-amber);
+  text-shadow: 0 0 10px rgba(255, 179, 0, 0.8);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 4px solid var(--color-amber);
+  padding: 6px 18px;
+  background: rgba(10, 8, 0, 0.95);
+  display: inline-block;
+}
+
+.stamp-category {
+  font-size: 9px;
+  color: #888;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.stamp-detail {
+  font-size: 11px;
+  color: #fff;
+  margin-top: 6px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+}
+
+/* SECTION 9 — EIGHT MUST-HAVE KEYFRAMES */
+
+/* 1. Panel entry */
+@keyframes panel-entry {
+  from { opacity: 0; transform: translateY(-4px); clip-path: inset(100% 0 0 0); }
+  to   { opacity: 1; transform: translateY(0);    clip-path: inset(0% 0 0 0); }
+}
+.panel-animate-entry {
+  animation: panel-entry 150s cubic-bezier(0.1, 0.9, 0.2, 1);
+}
+
+/* 2. Scanline wipe transition */
+@keyframes scanline-wipe {
+  0%   { background-position: 0 0; opacity: 0.8; }
+  50%  { opacity: 0.3; }
+  100% { background-position: 0 100vh; opacity: 0; }
+}
+.hud-transition-overlay {
+  position: fixed; inset: 0; pointer-events: none; z-index: 8888;
+  background: repeating-linear-gradient(0deg, transparent 0, transparent 2px,
+    rgba(0,255,68,0.3) 2px, rgba(0,255,68,0.3) 4px);
+  background-size: 100% 4px;
+  animation: scanline-wipe 180ms linear forwards;
+}
+
+/* 3. Value update flash */
+@keyframes value-flash {
+  0%   { color: var(--color-green-bright); text-shadow: 0 0 12px var(--color-green); }
+  100% { color: var(--color-green); text-shadow: var(--green-glow-sm); }
+}
+.value-flash-active {
+  animation: value-flash 0.3s ease-out;
+}
+
+/* 4. Missile arc dash-march is already top-level */
+
+/* 5. Conflict pulse ring (standard mapPulse is there, adding more explicit pulse-ring) */
+.pulse-ring-war {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid var(--color-red);
+  animation: pulse-ring 2s cubic-bezier(0.1, 0.8, 0.3, 1) infinite;
+}
+
+@keyframes pulse-ring {
+  0%   { transform: scale(0.6); opacity: 1; }
+  100% { transform: scale(3.5); opacity: 0; }
+}
+
+/* 6. DEFCON level palette transitions */
+@keyframes defcon-shift {
+  0%   { filter: brightness(2.2) saturate(0.5); }
+  50%  { filter: brightness(1.3); }
+  100% { filter: brightness(1) saturate(1); }
+}
+.defcon-shifting {
+  animation: defcon-shift 0.8s ease-out;
+}
+
+/* 7. Threat badge heartbeat */
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  14%       { transform: scale(1.1); }
+  28%       { transform: scale(1); }
+  42%       { transform: scale(1.05); }
+}
+.threat-heartbeat {
+  animation: heartbeat 1.2s ease-in-out infinite;
+}
+
+/* 8. Data blink for alerts */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.15; }
+}
+.data-blink {
+  animation: blink 1.2s ease-in-out infinite;
+}
+
+/* =====================================================
+   INSTRUMENT PANEL FRAME SYSTEM & SOVEREIGN CUSTOMS
+   ===================================================== */
+
+/* Every subsection within F1-F8 panels gets this treatment */
+.instrument-block {
+  position: relative;
+  background: var(--bg-panel, #050a05);
+  border: 1px solid #1a5c1a;
+  clip-path: polygon(
+    0 6px, 6px 0, calc(100% - 6px) 0, 100% 6px,
+    100% calc(100% - 6px), calc(100% - 6px) 100%,
+    6px 100%, 0 calc(100% - 6px)
+  );
+  padding: 10px 12px 12px;
+  margin-bottom: 8px;
+}
+
+.instrument-block::before {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  border: 1px solid rgba(0,255,68,0.06);
+  clip-path: inherit;
+  pointer-events: none;
+}
+
+/* Section header label — military style */
+.section-label {
+  font: 700 9px/1 'Share Tech Mono', monospace;
+  letter-spacing: 0.18em;
+  color: #00aa2e;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #0d2e0d;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.section-label::before {
+  content: '';
+  width: 4px;
+  height: 4px;
+  background: #00ff44;
+  border-radius: 50%;
+  box-shadow: 0 0 4px #00ff44;
+  flex-shrink: 0;
+  animation: blink 2.5s ease-in-out infinite;
+}
+
+/* THREE-TIER DATA HIERARCHY */
+/* Tier 1: Primary values (GDP, treasury, key metrics) */
+.val-primary {
+  font: 700 22px/1 'JetBrains Mono', monospace;
+  color: #00ff44;
+  text-shadow: 0 0 6px rgba(0,255,68,0.8), 0 0 12px rgba(0,255,68,0.3);
+  letter-spacing: -0.01em;
+  display: block;
+}
+
+/* Tier 2: Secondary values (rates, deltas, sub-stats) */
+.val-secondary {
+  font: 400 12px/1 'JetBrains Mono', monospace;
+  color: #88ffaa;
+  display: block;
+}
+.val-secondary.neg { color: #ff2244; }
+.val-secondary.pos { color: #00ff44; }
+.val-secondary.warn { color: #ffb300; }
+
+/* Tier 3: Labels */
+.val-label {
+  font: 400 9px/1 'Share Tech Mono', monospace;
+  letter-spacing: 0.14em;
+  color: #00aa2e;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 2px;
+}
+
+/* SLIDER — custom diamond thumb, lit track */
+input[type='range'].sovereign-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 2px;
+  background: transparent;
+  outline: none;
+  cursor: pointer;
+  position: relative;
+}
+
+input[type='range'].sovereign-slider::-webkit-slider-runnable-track {
+  height: 2px;
+  background: linear-gradient(
+    to right,
+    #00ff44 0%,
+    #00ff44 var(--pct, 50%),
+    #1a5c1a var(--pct, 50%),
+    #1a5c1a 100%
+  );
+  border-radius: 0;
+}
+
+input[type='range'].sovereign-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px; height: 12px;
+  background: #00ff44;
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  box-shadow: 0 0 6px #00ff44;
+  margin-top: -5px;
+  cursor: grab;
+  transition: transform 0.1s;
+}
+
+input[type='range'].sovereign-slider::-webkit-slider-thumb:active {
+  cursor: grabbing;
+  transform: scale(1.4);
+}
+
+/* BUTTONS — primary action style */
+.btn-sovereign {
+  font: 700 9px/1 'Share Tech Mono', monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #00ff44;
+  background: transparent;
+  border: 1px solid #1a5c1a;
+  padding: 7px 12px;
+  cursor: pointer;
+  clip-path: polygon(4px 0, calc(100% - 4px) 0, 100% 4px,
+                      100% calc(100% - 4px), calc(100% - 4px) 100%,
+                      4px 100%, 0 calc(100% - 4px), 0 4px);
+  transition: all 0.12s ease;
+  white-space: nowrap;
+}
+.btn-sovereign:hover {
+  background: rgba(0,255,68,0.08);
+  border-color: #00ff44;
+  box-shadow: 0 0 8px rgba(0,255,68,0.3);
+  color: #88ffaa;
+}
+.btn-sovereign.danger {
+  color: #ff2244; border-color: #4a0010;
+}
+.btn-sovereign.danger:hover {
+  background: rgba(255,34,68,0.1); border-color: #ff2244;
+  box-shadow: 0 0 8px rgba(255,34,68,0.3);
+}
+.btn-sovereign.active {
+  background: rgba(0,255,68,0.15);
+  border-color: #00ff44;
+  box-shadow: inset 0 0 12px rgba(0,255,68,0.1);
+}
+.btn-sovereign:disabled {
+  opacity: 0.3; cursor: not-allowed;
+}
+
+/* Feed buttons (smaller, for telemetry feed controls) */
+.feed-btn {
+  font: 400 7px/1 'Share Tech Mono', monospace;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #00aa2e;
+  background: rgba(0,20,5,0.8);
+  border: 1px solid #0d2e0d;
+  padding: 5px 8px;
+  cursor: pointer;
+  transition: all 0.1s;
+  white-space: nowrap;
+}
+.feed-btn:hover { border-color: #00ff44; color: #00ff44; }
+.feed-btn.armed { color: #ff2244; border-color: #4a0010; }
+.feed-btn.active { color: #00ccff; border-color: #005566; }
+.feed-btn:disabled { opacity: 0.25; cursor: default; }
+
+.feed-select {
+  font: 400 7.5px/1 'JetBrains Mono', monospace;
+  color: #00aa2e;
+  background: rgba(0,20,5,0.9);
+  border: 1px solid #0d2e0d;
+  padding: 4px 6px;
+  outline: none;
+  cursor: pointer;
+  flex: 1;
+}
+

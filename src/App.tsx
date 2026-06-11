@@ -5,6 +5,7 @@ import { SCENARIOS } from './data/scenarios';
 import { initScenario } from './sim/scenarioEngine';
 import { restartTickTimer, stopTickTimer } from './sim/tickEngine';
 import { ScenarioId } from './types';
+import { playGlobeTransition } from './utils/transition';
 import { audio } from './utils/audio';
 
 // Components
@@ -68,7 +69,6 @@ export default function App() {
     if (!config) return;
 
     audio.resume();
-    audio.sfxKlaxon();
 
     const selectedCountryId = playableCountryId || config.playableCountryIds[0] || 'US';
 
@@ -78,9 +78,9 @@ export default function App() {
     setLobbyActive(false);
     setTickSpeed('NORMAL');
 
-    setTimeout(() => {
+    playGlobeTransition(() => {
       restartTickTimer();
-    }, 100);
+    });
   };
 
   // Initiate custom sandbox from WorldBuilder selection
@@ -116,13 +116,23 @@ export default function App() {
     setWorldBuilderActive(false);
     setTickSpeed('NORMAL');
 
-    setTimeout(() => {
+    playGlobeTransition(() => {
       restartTickTimer();
-    }, 100);
+    });
   };
 
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key >= 'F1' && e.key <= 'F8') {
+        e.preventDefault();
+        const tabNum = parseInt(e.key.substring(1), 10);
+        audio.sfxKeyClick();
+        usePlayerStore.getState().setActiveTab(tabNum);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
     return () => {
+      window.removeEventListener('keydown', handleKeyDown);
       stopTickTimer();
     };
   }, []);
@@ -274,10 +284,8 @@ export default function App() {
                     <button
                       key={tab.id}
                       onClick={() => { audio.sfxKeyClick(); playerState.setActiveTab(tab.id); }}
-                      className={`px-2.5 py-1 text-[9px] font-bold border border-[#1a3a1a] uppercase cursor-pointer rounded transition-colors whitespace-nowrap ${
-                        isActive
-                          ? 'bg-[#1a4a1a] text-[#00ff44] border-[#00ff44] text-shadow-sm'
-                          : 'text-gray-400 hover:bg-[#071707]'
+                      className={`btn-sovereign text-[8px] tracking-wider py-1.5 whitespace-nowrap ${
+                        isActive ? 'active' : ''
                       }`}
                     >
                       {tab.label}
@@ -287,8 +295,8 @@ export default function App() {
               </div>
             </div>
 
-            {/* Active panel */}
-            <div className="flex-1 border border-[#113a11] bg-black/40 p-4 rounded mb-4">
+            {/* Active panel — customized with .instrument-block design system */}
+            <div className="instrument-block mb-4" style={{ minHeight: '340px' }}>
               {playerState.activeTab === 1 && <GovernmentPanel />}
               {playerState.activeTab === 2 && <CentralBankPanel />}
               {playerState.activeTab === 3 && <ArsenalPanel />}

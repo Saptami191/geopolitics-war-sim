@@ -127,15 +127,15 @@ export default function WorldMap({ activeLayer }: WorldMapProps) {
     const isSelected = id === selectedTargetId;
     const isAtWar = country.atWarWith.length > 0;
 
-    if (isPlayer) return 'rgba(0, 255, 68, 0.15)';
-    if (isSelected) return 'rgba(255, 179, 0, 0.25)';
+    if (isPlayer) return 'url(#player-fill)';
+    if (isAtWar) return 'url(#war-fill)';
+    if (isSelected) return 'rgba(255, 179, 0, 0.35)';
 
     // Layer styles
     if (activeLayer === 'POLITICAL') {
-      if (isAtWar) return 'rgba(255, 34, 68, 0.22)';
-      if (country.opinions[playerCountryId] > 60) return 'rgba(0, 229, 255, 0.15)'; // Allied Blue
-      if (country.opinions[playerCountryId] < -50) return 'rgba(255, 34, 68, 0.12)'; // Hostile Red
-      return 'rgba(10, 35, 10, 0.35)'; // neutral
+      if (country.opinions[playerCountryId] > 60) return 'rgba(0, 229, 255, 0.18)'; // Allied Blue
+      if (country.opinions[playerCountryId] < -50) return 'rgba(255, 34, 68, 0.15)'; // Hostile Red
+      return '#071407'; // neutral
     }
 
     if (activeLayer === 'MILITARY') {
@@ -155,7 +155,7 @@ export default function WorldMap({ activeLayer }: WorldMapProps) {
       return `rgba(136, 255, 170, ${0.05 + density * 0.35})`;
     }
 
-    return 'rgba(10, 35, 10, 0.35)';
+    return '#071407';
   };
 
   const getCountryStroke = (id: string, country: Country | undefined) => {
@@ -235,13 +235,51 @@ export default function WorldMap({ activeLayer }: WorldMapProps) {
         className="w-full h-full select-none cursor-grab active:cursor-grabbing"
       >
         <defs>
-          <pattern id="crosshatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-            <line x1="0" y1="0" x2="0" y2="4" stroke="rgba(204,136,255,0.2)" strokeWidth="0.5" />
+          {/* Terrain noise texture — apply to all country paths */}
+          <filter id="terrain" x="0%" y="0%" width="100%" height="100%" colorInterpolationFilters="sRGB">
+            <feTurbulence type="fractalNoise" baseFrequency="0.55 0.65" numOctaves="3" seed="42" result="noise" />
+            <feColorMatrix type="saturate" values="0" in="noise" result="grayNoise" />
+            <feBlend in="SourceGraphic" in2="grayNoise" mode="multiply" result="textured" />
+            <feComponentTransfer in="textured">
+              <feFuncR type="linear" slope="0.9" intercept="0.05" />
+              <feFuncG type="linear" slope="1.1" intercept="0" />
+              <feFuncB type="linear" slope="0.8" intercept="0" />
+            </feComponentTransfer>
+          </filter>
+
+          {/* Player country inner glow */}
+          <filter id="player-glow">
+            <feGaussianBlur stdDeviation="2" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+
+          {/* Conflict country red pulse */}
+          <filter id="war-glow">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feColorMatrix type="matrix" values="1 0 0 0 0.3  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" in="blur" result="redBlur" />
+            <feComposite in="SourceGraphic" in2="redBlur" operator="over" />
+          </filter>
+
+          {/* Military grid pattern */}
+          <pattern id="military-grid" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(0,255,68,0.06)" strokeWidth="0.4" />
           </pattern>
+
+          {/* Player country gradient fill */}
+          <linearGradient id="player-fill" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#0a2e0a" />
+            <stop offset="100%" stopColor="#001a00" />
+          </linearGradient>
+
+          {/* War zone gradient fill */}
+          <linearGradient id="war-fill" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#3a0008" />
+            <stop offset="100%" stopColor="#1a0004" />
+          </linearGradient>
         </defs>
 
-        {/* Outer Background Void */}
-        <rect width="100%" height="100%" fill="var(--bg-void)" />
+        {/* Tactical Military Grid Background */}
+        <rect width="100%" height="100%" fill="url(#military-grid)" opacity={1} />
 
         {/* Map transform group */}
         <g transform={zoomTransform.toString()}>
@@ -278,6 +316,13 @@ export default function WorldMap({ activeLayer }: WorldMapProps) {
               // Skip if not recognized in game
               if (!countryId || !country) return null;
 
+              const isPlayer = countryId === playerCountryId;
+              const isAtWar = country.atWarWith.length > 0;
+
+              let filterValue = 'url(#terrain)';
+              if (isPlayer) filterValue = 'url(#player-glow)';
+              else if (isAtWar) filterValue = 'url(#war-glow)';
+
               return (
                 <path
                   key={`prov-path-${idx}`}
@@ -285,6 +330,7 @@ export default function WorldMap({ activeLayer }: WorldMapProps) {
                   fill={getCountryFill(countryId, country)}
                   stroke={getCountryStroke(countryId, country)}
                   strokeWidth={getCountryStrokeWidth(countryId)}
+                  filter={filterValue}
                   onClick={() => handleCountryClick(countryId)}
                   className="transition-colors duration-200 hover:fill-green-950/40 cursor-pointer"
                 />

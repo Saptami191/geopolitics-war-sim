@@ -35,8 +35,8 @@ export const DossierCard: React.FC<DossierCardProps> = ({ countryId, onClose }) 
   const renderValueOrRedacted = (requiredLevel: number, displayValue: string | React.ReactNode) => {
     if (isRedacted(requiredLevel)) {
       return (
-        <span className="bg-[#1a3d13] text-[#1a3d13] px-2 rounded cursor-help font-bold tracking-widest hover:text-[#00ff44] hover:bg-[#1a4a1a]/40 transition-all select-none" title="REDACTED - INVEST INTEL TO REVEAL">
-          ██████████
+        <span className="redacted" title="REDACTED - COGNITIVE MATRIX INTEL RECON LEVEL TOO LOW">
+          [CLASSIFIED]
         </span>
       );
     }
@@ -90,35 +90,39 @@ export const DossierCard: React.FC<DossierCardProps> = ({ countryId, onClose }) 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur select-none font-mono">
-      <div className="dossier-container w-full max-w-[650px] min-h-[480px]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs select-none font-mono">
+      <div className="dossier-wrapper w-full max-w-[520px] min-h-[480px]">
         {/* flip transition wrappers */}
         <div 
           onClick={(e) => {
-            // only flips if clicking specific outer handles
             if (e.target === e.currentTarget) {
               audio.sfxKeyClick();
               setFlipped(!flipped);
             }
           }}
-          className={`dossier-card relative w-full min-h-[480px] shadow-2xl rounded text-green-400 transform-style preserve-3d transition-transform duration-500 cursor-pointer ${flipped ? 'rotate-y-180' : ''}`}
+          className={`dossier-card-3d relative w-full min-h-[480px] rounded text-green-400 cursor-pointer ${flipped ? 'dir-flipped' : ''}`}
         >
           
           {/* DOSSIER FRONT SHEET: Manila folder classified folder look */}
-          <div className="dossier-front absolute inset-0 backface-hidden bg-[#241e12] border-2 border-[#5c4a30] p-6 rounded flex flex-col justify-between cursor-default">
+          <div className="dossier-front absolute inset-0 backface-hidden p-6 rounded flex flex-col justify-between cursor-default border border-[#5c4a30]">
             <div>
               <div className="border-b-2 border-red-700/80 pb-2 mb-4 flex justify-between items-center text-xs font-bold text-red-500">
                 <span className="tracking-widest">⚠️ TOP SECRET // COGNITIVE RECON // C1-Z9</span>
                 <span>NO FORN / ORCON</span>
               </div>
 
-              <div className="bg-[#16120b] border border-[#5c4a30] p-4 rounded text-center my-6">
-                <div className="text-[28px] font-bold text-[#ffb300] tracking-wide mb-1 select-all">
+              <div className="bg-[#120e07] border border-[#5c4a30]/60 p-4 rounded text-center my-6 relative overflow-hidden">
+                <div className="text-[28px] font-bold text-[#ffb300] tracking-wide mb-1 select-all relative z-10">
                   CLASSIFIED DOSSIER
                 </div>
-                <div className="text-[11px] text-gray-500 tracking-widest uppercase">
+                <div className="text-[11px] text-gray-500 tracking-widest uppercase relative z-10">
                   CENTRAL INTELLIGENCE AGENCY DIRECTORY
                 </div>
+              </div>
+
+              {/* Tilted custom physical stamp */}
+              <div className="classified-stamp">
+                CLASSIFIED
               </div>
 
               <div className="space-y-3 text-xs text-[#dfba88] py-4">
@@ -136,7 +140,7 @@ export const DossierCard: React.FC<DossierCardProps> = ({ countryId, onClose }) 
                 </div>
                 <div className="flex justify-between border-b border-[#5c4a30]/30 pb-1">
                   <span>INTELLIGENCE RELIABILTY:</span>
-                  <span className="font-bold text-white">LEVEL {intelLevel}/3 // {intelLevel === 3 ? 'FULL INTEGRITY' : intelLevel === 2 ? 'PARTIAL SCAN' : 'RESTRICTED REDACTED'}</span>
+                  <span className="font-bold text-white uppercase">LEVEL {intelLevel}/3 // {intelLevel === 3 ? 'FULL INTEGRITY' : intelLevel === 2 ? 'PARTIAL SCAN' : 'RESTRICTED REDACTED'}</span>
                 </div>
               </div>
             </div>
