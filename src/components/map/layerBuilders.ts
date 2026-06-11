@@ -1,0 +1,391 @@
+import { GeoJsonLayer, ArcLayer, ScatterplotLayer, LineLayer } from '@deck.gl/layers';
+import { WorldState, Country, BallisticStrike } from '../../types';
+import { MAP_THEME } from './mapStyles';
+import { hexToRGB, getAllianceColorRGB, gdpToRadius } from './mapUtils';
+import { getCentroid } from './countryCentroids';
+
+// ISO Normalization mapping arrays
+const NAME_TO_A2: Record<string, string> = {
+  "United States of America": "US",
+  "United States": "US",
+  "China": "CN",
+  "India": "IN",
+  "Pakistan": "PK",
+  "Israel": "IL",
+  "Palestine": "PS",
+  "Iran": "IR",
+  "Russia": "RU",
+  "United Kingdom": "GB",
+  "France": "FR",
+  "Germany": "DE",
+  "Japan": "JP",
+  "South Korea": "KR",
+  "Saudi Arabia": "SA",
+  "Brazil": "BR",
+  "South Africa": "ZA",
+  "Australia": "AU",
+  "Turkey": "TR",
+  "Egypt": "EG",
+  "Taiwan": "TW",
+  "Ukraine": "UA",
+  "Nigeria": "NG",
+  "Indonesia": "ID",
+  "Mexico": "MX",
+  "Vietnam": "VN",
+  "Poland": "PL",
+  "Netherlands": "NL",
+  "Spain": "ES",
+  "Italy": "IT",
+  "Canada": "CA",
+  "Argentina": "AR",
+  "Colombia": "CO",
+  "Ethiopia": "ET",
+  "Kenya": "KE",
+  "Morocco": "MA",
+  "Algeria": "DZ",
+  "Libya": "LY",
+  "Syria": "SY",
+  "Iraq": "IQ",
+  "Yemen": "YE",
+  "Kazakhstan": "KZ",
+  "Uzbekistan": "UZ",
+  "Myanmar": "MM",
+  "Thailand": "TH",
+  "Malaysia": "MY",
+  "Bangladesh": "BD",
+  "Philippines": "PH",
+  "Finland": "FI",
+  "Sweden": "SE",
+  "Belarus": "BY",
+  "Serbia": "RS",
+  "Azerbaijan": "AZ",
+  "Armenia": "AM",
+};
+
+const NUMERIC_TO_A2: Record<string, string> = {
+  "840": "US", "156": "CN", "356": "IN", "586": "PK", "376": "IL", "275": "PS",
+  "364": "IR", "643": "RU", "826": "GB", "250": "FR", "276": "DE", "392": "JP",
+  "410": "KR", "682": "SA", "076": "BR", "710": "ZA", "036": "AU", "792": "TR",
+  "818": "EG", "158": "TW", "804": "UA", "566": "NG", "360": "ID", "484": "MX",
+  "704": "VN", "616": "PL", "528": "NL", "724": "ES", "380": "IT", "124": "CA",
+  "032": "AR", "170": "CO", "231": "ET", "404": "KE", "504": "MA", "012": "DZ",
+  "434": "LY", "760": "SY", "368": "IQ", "887": "YE", "398": "KZ", "860": "UZ",
+  "104": "MM", "764": "TH", "458": "MY", "050": "BD", "608": "PH", "246": "FI",
+  "752": "SE", "112": "BY", "688": "RS", "031": "AZ", "051": "AM"
+};
+
+const ALPHA3_TO_A2: Record<string, string> = {
+  USA: "US", CHN: "CN", IND: "IN", PAK: "PK", ISR: "IL", PSE: "PS", IRN: "IR", RUS: "RU",
+  GBR: "GB", FRA: "FR", DEU: "DE", JPN: "JP", KOR: "KR", SAU: "SA", BRA: "BR", ZAF: "ZA",
+  AUS: "AU", TUR: "TR", EGY: "EG", TWN: "TW", UKR: "UA", NGA: "NG", IDN: "ID", MEX: "MX",
+  VNM: "VN", POL: "PL", NLD: "NL", ESP: "ES", ITA: "IT", CAN: "CA", ARG: "AR", COL: "CO",
+  ETH: "ET", KEN: "KE", MAR: "MA", DZA: "DZ", LBY: "LY", SYR: "SY", IRQ: "IQ", YEM: "YE",
+  KAZ: "KZ", UZB: "UZ", MMR: "MM", THA: "TH", MYS: "MY", BGD: "BD", PHL: "PH", FIN: "FI",
+  SWE: "SE", BLR: "BY", SRB: "RS", AZE: "AZ", ARM: "AM"
+};
+
+/**
+ * Returns Normalized Country Code (ISO-2) based on GeoJSON feature attributes
+ */
+export function getNormCountryId(feature: any): string | null {
+  if (!feature || !feature.properties) return null;
+  const props = feature.properties;
+
+  // Try standard iso code fields
+  const iso2 = props.ISO_A2 || props.iso_a2 || props.ISO2 || props.iso2;
+  if (iso2 && iso2.length === 2 && iso2 !== '-99') return iso2.toUpperCase();
+
+  const iso3 = props.ISO_A3 || props.iso_a3 || props.ISO3 || props.iso3 || feature.id;
+  if (iso3 && iso3.length === 3) {
+    const matched = ALPHA3_TO_A2[iso3.toUpperCase()];
+    if (matched) return matched;
+  }
+
+  const codeNum = props.ISO_N3 || props.iso_n3 || props.codenum;
+  if (codeNum) {
+    const matched = NUMERIC_TO_A2[String(Number(codeNum))];
+    if (matched) return matched;
+  }
+
+  // Try Name Matching fallback
+  const name = props.NAME || props.name || props.admin || props.ADMIN;
+  if (name) {
+    const matched = NAME_TO_A2[name];
+    if (matched) return matched;
+    // Partial check fallback
+    for (const [key, val] of Object.entries(NAME_TO_A2)) {
+      if (name.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(name.toLowerCase())) {
+        return val;
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * RENDER LAYER 1: BASE COUNTRIES LAYER (GEOJSON) WITH DYNAMIC COGNITIVE COLORS
+ */
+export function buildCountriesLayer(
+  geoJsonData: any,
+  countries: Record<string, Country>,
+  playerCountryId: string,
+  targetCountryId: string | undefined,
+  activeLayer: string,
+  onHover: (info: any) => void,
+  onClick: (info: any) => void
+) {
+  return new GeoJsonLayer({
+    id: 'geojson-countries',
+    data: geoJsonData,
+    pickable: true,
+    stroked: true,
+    filled: true,
+    extruded: false,
+    lineWidthMinPixels: 1,
+    getLineWidth: (f: any) => {
+      const id = getNormCountryId(f);
+      if (id === playerCountryId) return 3;
+      if (id === targetCountryId) return 3;
+      if (id && countries[id]?.atWarWith?.length > 0) return 2;
+      return 1;
+    },
+    getLineColor: (f: any) => {
+      const id = getNormCountryId(f);
+      if (id === playerCountryId) return hexToRGB(MAP_THEME.colors.playerNation);
+      if (id === targetCountryId) return hexToRGB(MAP_THEME.colors.targetNation);
+      if (id && countries[id]) {
+        const c = countries[id];
+        if (c.atWarWith?.length > 0) return hexToRGB(MAP_THEME.colors.conflicts);
+        return getAllianceColorRGB(c.allianceBlock);
+      }
+      return [30, 60, 75, 100];
+    },
+    getFillColor: (f: any) => {
+      const id = getNormCountryId(f);
+      if (!id || !countries[id]) {
+        return [10, 16, 20, 200]; // Unrepresented grey-dark
+      }
+
+      const c = countries[id];
+
+      // Layer-specific thematic fill colouring
+      switch (activeLayer) {
+        case 'political': {
+          // Color based on alliance blocks with custom alpha
+          const baseColor = getAllianceColorRGB(c.allianceBlock);
+          const isPlayer = id === playerCountryId;
+          const alpha = isPlayer ? 110 : 55;
+          return [...baseColor, alpha];
+        }
+        case 'conflicts': {
+          if (c.atWarWith && c.atWarWith.length > 0) {
+            return [255, 59, 78, 90]; // War active red highlight
+          }
+          const baseOp = c.opinions[playerCountryId] ?? 0;
+          if (baseOp < -40) return [180, 50, 50, 40]; // High hostile threat
+          return [10, 25, 20, 150];
+        }
+        case 'economic': {
+          // Heatmap of GDP size
+          const gdp = c.economic?.gdpB ?? 50;
+          const greenAmt = Math.min(255, Math.floor((gdp / 15000) * 180 + 30));
+          return [20, greenAmt, 40, 75];
+        }
+        case 'cyber': {
+          const fw = c.intelligence?.cyberFirewallLevel ?? 1;
+          const purpleAmt = Math.min(255, Math.floor(fw * 60 + 50));
+          return [purpleAmt, 40, 200, 65];
+        }
+        case 'population': {
+          const unrest = c.political?.popularUnrest ?? 0;
+          const redAmt = Math.min(255, Math.floor((unrest / 100) * 180 + 30));
+          const greenAmt = Math.min(255, Math.floor((1 - unrest / 100) * 120 + 30));
+          return [redAmt, greenAmt, 20, 60];
+        }
+        case 'nuclear': {
+          if (c.arsenal?.nuclearCapable) {
+            return [0, 207, 255, 80]; // Radiative cyan
+          }
+          return [10, 20, 30, 150];
+        }
+        case 'military': {
+          const strength = c.arsenal?.totalPowerRating ?? 0;
+          const amberAmt = Math.min(255, Math.floor((strength / 500) * 160 + 40));
+          return [amberAmt, 110, 20, 70];
+        }
+        default:
+          return [12, 22, 32, 180];
+      }
+    },
+    updateTriggers: {
+      getFillColor: [countries, activeLayer, playerCountryId, targetCountryId],
+      getLineColor: [countries, playerCountryId, targetCountryId],
+      getLineWidth: [countries, playerCountryId, targetCountryId],
+    },
+    onHover,
+    onClick,
+  });
+}
+
+/**
+ * RENDER LAYER 2: BALLISTIC STRIKE TRAJECTORIES
+ */
+export function buildStrikeArcsLayer(activeStrikes: BallisticStrike[]) {
+  const dataset = activeStrikes
+    .filter((s) => s.status === 'IN_FLIGHT')
+    .map((s) => {
+      const start = getCentroid(s.sourceCountryId);
+      const end = getCentroid(s.targetCountryId);
+      return {
+        id: s.id,
+        source: start,
+        target: end,
+        payload: s.weaponType,
+        yield: s.warheadYieldMT ?? 0,
+      };
+    });
+
+  return new ArcLayer({
+    id: 'arc-strike-trajectories',
+    data: dataset,
+    pickable: true,
+    getSourcePosition: (d: any) => d.source,
+    getTargetPosition: (d: any) => d.target,
+    getSourceColor: [255, 30, 70, 245], // Red ignition trail
+    getTargetColor: [255, 180, 0, 120],  // Flare burn entry
+    getWidth: (d: any) => (d.yield > 0 ? 4 : 2),
+    getHeight: 0.6,
+    greatCircle: true,
+  });
+}
+
+/**
+ * RENDER LAYER 3: CONFLICT MERIDIANS / ACTIVE ENGAGEMENT TETHER LINES
+ */
+export function buildConflictTetherLayer(countries: Record<string, Country>) {
+  const links: Array<{ id: string; source: [number, number]; target: [number, number] }> = [];
+
+  Object.entries(countries).forEach(([srcId, country]) => {
+    if (country.atWarWith) {
+      country.atWarWith.forEach((tgtId) => {
+        // Prevent drawing duplicates
+        if (srcId < tgtId) {
+          const source = getCentroid(srcId);
+          const target = getCentroid(tgtId);
+          if (source[0] !== 0 && target[0] !== 0) {
+            links.push({
+              id: `${srcId}-${tgtId}`,
+              source,
+              target,
+            });
+          }
+        }
+      });
+    }
+  });
+
+  return new LineLayer({
+    id: 'line-conflict-tethers',
+    data: links,
+    pickable: false,
+    getSourcePosition: (d: any) => d.source,
+    getTargetPosition: (d: any) => d.target,
+    getColor: [255, 35, 35, 160], // Intense red war-tie
+    getWidth: 1.5,
+  });
+}
+
+/**
+ * RENDER LAYER 4: TRADE VALUE FLOOD LINES (ECONOMIC LAYER)
+ */
+export function buildTradeTetherLayer(countries: Record<string, Country>) {
+  const links: Array<{ source: [number, number]; target: [number, number] }> = [];
+
+  Object.entries(countries).forEach(([srcId, country]) => {
+    if (country.tradePartners) {
+      country.tradePartners.forEach((tgtId) => {
+        if (srcId < tgtId) {
+          const source = getCentroid(srcId);
+          const target = getCentroid(tgtId);
+          if (source[0] !== 0 && target[0] !== 0) {
+            links.push({ source, target });
+          }
+        }
+      });
+    }
+  });
+
+  return new LineLayer({
+    id: 'line-trade-tethers',
+    data: links,
+    pickable: false,
+    getSourcePosition: (d: any) => d.source,
+    getTargetPosition: (d: any) => d.target,
+    getColor: [57, 217, 138, 45], // Dim emerald financial lines
+    getWidth: 1.0,
+  });
+}
+
+/**
+ * RENDER LAYER 5: DETONATION IMPULSE SPARK RINGS
+ */
+export function buildDetonationPulseLayer(activeStrikes: BallisticStrike[]) {
+  const dataset = activeStrikes
+    .filter((s) => s.status === 'IMPACT' || s.status === 'INTERCEPTED')
+    .map((s) => {
+      const position = getCentroid(s.targetCountryId);
+      const isInter = s.status === 'INTERCEPTED';
+      return {
+        id: s.id,
+        position,
+        color: isInter ? [0, 200, 255] : [255, 35, 35],
+        radius: isInter ? 130000 : 250000,
+      };
+    });
+
+  return new ScatterplotLayer({
+    id: 'detonations-pulse',
+    data: dataset,
+    getPosition: (d: any) => [d.position[0], d.position[1], 0],
+    getRadius: (d: any) => d.radius,
+    getFillColor: (d: any) => [...d.color, 40] as [number, number, number, number],
+    getLineColor: (d: any) => [...d.color, 240] as [number, number, number, number],
+    lineWidthMinPixels: 2.5,
+    stroked: true,
+    filled: true,
+  });
+}
+
+/**
+ * RENDER LAYER 6: MILITARY HARBOUR / BASE DEPLOYMENT HUBS
+ */
+export function buildMilitaryBasesLayer(
+  countries: Record<string, Country>,
+  playerCountryId: string,
+  onClick: (id: string) => void
+) {
+  const data = Object.entries(countries).map(([id, c]) => {
+    return {
+      id,
+      position: getCentroid(id),
+      power: c.arsenal?.totalPowerRating ?? 50,
+      isPlayer: id === playerCountryId,
+    };
+  }).filter((d) => d.position[0] !== 0);
+
+  return new ScatterplotLayer({
+    id: 'scatterplot-force-hubs',
+    data,
+    getPosition: (d: any) => [d.position[0], d.position[1], 0],
+    getRadius: (d: any) => Math.log10(d.power + 1) * 75000 + 10000,
+    getFillColor: (d: any) => (d.isPlayer ? [0, 255, 170, 180] : [245, 166, 35, 140]),
+    getLineColor: [0, 0, 0, 150],
+    stroked: true,
+    filled: true,
+    pickable: true,
+    onClick: (info: any) => {
+      if (info.object) onClick(info.object.id);
+    },
+  });
+}

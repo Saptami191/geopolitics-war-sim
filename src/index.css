@@ -1,13 +1,87 @@
-@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=JetBrains+Mono:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=JetBrains+Mono:wght@400;700&family=Chakra+Petch:wght@300;400;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-mono: "JetBrains Mono", "Fira Code", "Courier New", monospace;
-  --font-display: "Share Tech Mono", "JetBrains Mono", monospace;
+  --font-display: "Chakra Petch", "Share Tech Mono", "JetBrains Mono", monospace;
 }
 
 :root {
-  /* Core palette */
+  /* === WORLDMONITOR/GOTHAM PALETTE === */
+
+  /* Base surfaces */
+  --bg-void:       #060a0b;   /* Deepest background — map surrounds, screen edges */
+  --bg-deep:       #0a0f10;   /* Primary app background */
+  --bg-panel:      #0d1418;   /* Panel backgrounds */
+  --bg-raised:     #111c20;   /* Raised cards, modals */
+  --bg-hover:      #162028;   /* Interactive hover state */
+  --bg-active:     #1a2d35;   /* Active/selected state */
+
+  /* Primary accent — WorldMonitor teal-green intel */
+  --accent-primary:    #00e5c8;   /* Primary action, highlights */
+  --accent-primary-dim:#006b5e;   /* Dim version for backgrounds */
+  --accent-glow:    0 0 8px rgba(0,229,200,0.6), 0 0 20px rgba(0,229,200,0.2);
+
+  /* Military amber — weapon systems, alerts */
+  --accent-amber:      #f5a623;
+  --accent-amber-dim:  #5a3d0d;
+  --accent-amber-glow: 0 0 8px rgba(245,166,35,0.5);
+
+  /* Conflict red */
+  --accent-red:        #ff3b4e;
+  --accent-red-dim:    #5a0010;
+  --accent-red-glow:   0 0 8px rgba(255,59,78,0.6);
+
+  /* Economic green */
+  --accent-green:      #39d98a;
+  --accent-green-dim:  #0d4a2a;
+
+  /* Cyber/nuclear cyan */
+  --accent-cyan:       #00cfff;
+  --accent-cyan-dim:   #004560;
+
+  /* Neutral chrome */
+  --chrome-bright:     #e8f0f2;   /* Primary text, important values */
+  --chrome-mid:        #8aa4ad;   /* Secondary text, labels */
+  --chrome-dim:        #3d5a63;   /* Tertiary, disabled states */
+  --chrome-border:     #1e3540;   /* Standard borders */
+  --chrome-border-bright: #2e5060; /* Highlighted borders */
+
+  /* DEFCON palette — transitions applied to :root via JS */
+  --defcon-5-accent: #00e5c8;  /* Teal — peacetime */
+  --defcon-4-accent: #f5a623;  /* Amber — increased watch */
+  --defcon-3-accent: #ff8c00;  /* Orange — elevated */
+  --defcon-2-accent: #ff4500;  /* Deep orange — armed */
+  --defcon-1-accent: #ff0022;  /* Blood red — nuclear */
+
+  /* Current defcon accent (updated dynamically) */
+  --defcon-accent: var(--defcon-5-accent);
+
+  /* === TYPOGRAPHY === */
+  --font-display: 'Chakra Petch', 'Share Tech Mono', monospace;
+  --font-mono:    'JetBrains Mono', 'Courier New', monospace;
+
+  /* Type scale */
+  --text-xl:   22px;  /* Primary readout values */
+  --text-lg:   15px;  /* Section values */
+  --text-md:   12px;  /* Standard labels */
+  --text-sm:   10px;  /* Sub-labels, status text */
+  --text-xs:   8px;   /* Ultra-compact chrome */
+
+  /* === SPACING === */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+
+  /* === BORDERS === */
+  --border-std:    1px solid var(--chrome-border);
+  --border-bright: 1px solid var(--chrome-border-bright);
+  --border-accent: 1px solid var(--defcon-accent);
+
+  /* Compatibility bindings for existing styles */
   --color-bg: #030503;
   --color-bg-panel: #060a06;
   --color-bg-elevated: #0a120a;
@@ -847,5 +921,108 @@ input[type='range'].sovereign-slider::-webkit-slider-thumb:active {
   outline: none;
   cursor: pointer;
   flex: 1;
+}
+
+/* =====================================================
+   SECTION 1.4 & 5.1 — GOTHAM TYPOGRAPHY & PANEL STYLES
+   ===================================================== */
+
+/* Gotham-style classification banner */
+.classification-banner {
+  font: 700 8px/1 var(--font-display);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--defcon-accent);
+  background: rgba(0,0,0,0.4);
+  padding: 3px 8px;
+  border-bottom: 1px solid var(--defcon-accent);
+  opacity: 0.8;
+}
+
+/* Entity type label — used above entity name in all cards */
+.entity-type-label {
+  font: 600 8px/1 var(--font-display);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--chrome-mid);
+}
+
+/* Primary data readout */
+.readout-primary {
+  font: 700 var(--text-xl)/1 var(--font-mono);
+  color: var(--chrome-bright);
+  letter-spacing: -0.01em;
+}
+
+/* Secondary data */
+.readout-secondary {
+  font: 400 var(--text-md)/1 var(--font-mono);
+  color: var(--chrome-mid);
+}
+.readout-secondary.up   { color: var(--accent-green); }
+.readout-secondary.down { color: var(--accent-red); }
+.readout-secondary.warn { color: var(--accent-amber); }
+
+/* Data field label */
+.field-label {
+  font: 400 var(--text-xs)/1 var(--font-display);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--chrome-dim);
+}
+
+/* Section header — Gotham-style, very thin, left-bordered */
+.section-header {
+  font: 600 var(--text-sm)/1 var(--font-display);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--chrome-mid);
+  padding: var(--sp-2) 0 var(--sp-2) var(--sp-3);
+  border-left: 2px solid var(--defcon-accent);
+  margin-bottom: var(--sp-2);
+}
+
+/* GOTHAM PANEL — thin borders, subtle background, data dominant */
+.gotham-panel {
+  background: var(--bg-panel);
+  border: var(--border-std);
+  border-top: 2px solid var(--defcon-accent);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Classification banner — top of every panel, exactly like Gotham */
+.gotham-panel::before {
+  content: attr(data-classification);  /* Set via data-classification="TOP SECRET // SCI" */
+  display: block;
+  font: 400 7px/1 var(--font-display);
+  letter-spacing: 0.22em;
+  color: var(--accent-amber);
+  padding: 3px 8px;
+  background: rgba(245,166,35,0.06);
+  border-bottom: 1px solid rgba(245,166,35,0.2);
+  text-transform: uppercase;
+}
+
+/* Panel header — entity name + entity type */
+.gotham-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: var(--border-std);
+}
+
+/* Data grid inside panel — Gotham's standard layout */
+.gotham-data-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--chrome-border);  /* Creates cell dividers */
+}
+
+.gotham-data-cell {
+  background: var(--bg-panel);
+  padding: var(--sp-2) var(--sp-3);
 }
 
