@@ -313,7 +313,7 @@ export default function DroneFeed() {
         ref={canvasRef}
         width={192}
         height={148}
-        className="w-full h-auto block select-none border border-[#0d2e0d]"
+        className="w-full h-[130px] block select-none border border-[#0d2e0d]"
         style={{ background: '#020502' }}
       />
 
