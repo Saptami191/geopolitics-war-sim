@@ -11,7 +11,7 @@ export default function HexGauge({
   label,
   value,
   color = 'green',
-  size = 120,
+  size = 80,
 }: HexGaugeProps) {
   const max = 100;
   const currentVal = Math.min(max, Math.max(0, value));

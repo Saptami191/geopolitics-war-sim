@@ -145,7 +145,7 @@ export default function CentralBankPanel() {
       {cbTab === 'MONETARY' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="flex flex-col gap-4">
-            <div className="combat-panel flex justify-around items-center h-24">
+            <div className="combat-panel flex justify-around items-center h-[112px] py-2 px-4">
               <div className="text-center font-mono">
                 <div className="text-[9px] text-gray-500 uppercase tracking-widest">Treasury Cash</div>
                 <div className="text-lg font-bold text-[#00ff44]">${econ.treasuryCashB.toFixed(1)}B</div>

@@ -220,7 +220,7 @@ export default function GovernmentPanel() {
 
           <div className="flex flex-col gap-4">
             {/* Gauges */}
-            <div className="combat-panel flex justify-around items-center h-24">
+            <div className="combat-panel flex justify-around items-center h-[112px] py-2 px-4">
               <HexGauge label="Popular Unrest" value={pol.popularUnrest} color={pol.popularUnrest > 65 ? 'red' : 'amber'} />
               <HexGauge label="Sovereign Stability" value={pol.stabilityIndex} color={pol.stabilityIndex < 35 ? 'red' : 'green'} />
               <HexGauge label="Leader Approval" value={pol.leaderApprovalRating} color={pol.leaderApprovalRating < 40 ? 'amber' : 'green'} />
