@@ -10,6 +10,8 @@ import { useUIStore } from '../../store/uiStore';
 import { LayerKey, LayerToggleState } from './MapLayerPanel';
 import { MapCoordinateReadout } from './MapCoordinateReadout';
 import { DARK_BASEMAP_STYLE, LIGHT_BASEMAP_STYLE } from './mapStyles';
+import { useCanonicalMapState } from './mapSelectors';
+import { mapEventPipeline } from './mapEventPipeline';
 
 import {
   getNormCountryId,
@@ -35,16 +37,31 @@ export function GeoMap({ mode, layers, theme = 'dark' }: GeoMapProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [geoJsonData, setGeoJsonData] = useState<any>(null);
   const [hoveredCountryName, setHoveredCountryName] = useState<string | null>(null);
+  const [lastFeedEvent, setLastFeedEvent] = useState<string | null>(null);
 
+  // Read Canonical Map State Selector (100% mirrors the 3D globe)
+  const mapState = useCanonicalMapState(layers, theme);
+
+  // Directly unpack needed synchronized variables to keep complete backward compatibility with layerBuilders
   const countries = useWorldStore((s) => s.countries);
   const activeStrikes = useWorldStore((s) => s.activeStrikes);
-  const playerCountryId = usePlayerStore((s) => s.countryId);
-  const hudMode = usePlayerStore((s) => s.hudMode);
-  const targetCountryId = usePlayerStore((s) => s.selectedTargetCountryId);
+  const playerCountryId = mapState.playerCountryId;
+  const hudMode = mapState.activeHudMode;
+  const targetCountryId = mapState.targetCountryId;
+  const activeLayerName = mapState.activeLayer;
+
   const setTargetCountry = usePlayerStore((s) => s.setTargetCountry);
   const setCountryInspector = useUIStore((s) => s.setCountryInspector);
 
-  const activeLayerName = Object.keys(layers).find((k) => layers[k as LayerKey]) || 'political';
+  // Listen for transient alerts in lockstep with the 3D satellite feed
+  useEffect(() => {
+    return mapEventPipeline.subscribe((event) => {
+      setLastFeedEvent(event.label);
+      setTimeout(() => {
+        setLastFeedEvent((prev) => (prev === event.label ? null : prev));
+      }, event.durationMs);
+    });
+  }, []);
 
   // 1. ASYNC GEOJSON BASING
   useEffect(() => {
@@ -220,6 +237,21 @@ export function GeoMap({ mode, layers, theme = 'dark' }: GeoMapProps) {
       {/* Radar Sweep Scanning Matrix Overlay (only visible on dark operational screen) */}
       {isDark && (
         <div className="absolute inset-0 pointer-events-none z-[10] border border-cyan-800/10 bg-[radial-gradient(ellipse_at_top,rgba(0,229,200,0.015)_0%,rgba(0,0,0,0)_100%)] select-none mix-blend-screen animate-pulse" />
+      )}
+
+      {/* Synchronized Transient Alert Banner */}
+      {lastFeedEvent && (
+        <div
+          id="transient-tactical-alert"
+          className={`absolute top-16 right-4 z-[115] px-4 py-2 border backdrop-blur-md rounded-[1px] font-mono text-[9px] font-bold tracking-wider animate-pulse transition-all shadow-lg
+            ${isDark
+              ? 'bg-red-950/95 border-red-500/80 text-red-450 shadow-[0_0_12px_rgba(239,68,68,0.2)]'
+              : 'bg-red-50/95 border-red-300 text-red-900'
+            }
+          `}
+        >
+          ⚠️ SCAN ALERT: {lastFeedEvent}
+        </div>
       )}
 
       {/* Cyber scanning loading overlay */}

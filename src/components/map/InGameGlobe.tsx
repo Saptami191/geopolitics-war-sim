@@ -6,6 +6,7 @@ import { useUIStore } from '../../store/uiStore';
 import { getCentroid } from './countryCentroids';
 import { MAP_THEME } from './mapStyles';
 import { LayerToggleState } from './MapLayerPanel';
+import { useMapSync } from './mapSync';
 
 /**
  * Maps Longitude & Latitude to 3D spherical positions on the Earth sphere of a given radius.
@@ -41,14 +42,17 @@ interface SatelliteSim {
 export function InGameGlobe({ theme = 'dark', layers }: InGameGlobeProps) {
   const mountRef = useRef<HTMLDivElement>(null);
 
-  // Tactical State subscriptions
-  const activeStrikes = useWorldStore((s) => s.activeStrikes);
-  const countries = useWorldStore((s) => s.countries);
-  const playerCountryId = usePlayerStore((s) => s.countryId);
-  const hudMode = usePlayerStore((s) => s.hudMode);
-  const targetCountryId = usePlayerStore((s) => s.selectedTargetCountryId);
+  // Connect cleanly to our Unified Map Integration Synchronizer (100% Shared Truth)
+  const { mapState, focusCountry } = useMapSync(layers, theme);
 
-  // Store action triggers
+  // Unpack synchronized states
+  const countries = useWorldStore((s) => s.countries);
+  const activeStrikes = useWorldStore((s) => s.activeStrikes);
+  const playerCountryId = mapState.playerCountryId;
+  const hudMode = mapState.activeHudMode;
+  const targetCountryId = mapState.targetCountryId;
+
+  // Track actions
   const setTargetCountry = usePlayerStore((s) => s.setTargetCountry);
   const setCountryInspector = useUIStore((s) => s.setCountryInspector);
 
