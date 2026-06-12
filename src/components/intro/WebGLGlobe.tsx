@@ -77,244 +77,16 @@ export const WebGLGlobe = forwardRef<WebGLGlobeRef, WebGLGlobeProps>(({
 
     const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
 
-    // --- HIGH-FIDELITY SEAMLESS SEEDABLE 3D VALUE NOISE GENERATION ENGINE ---
-    // Deterministic 3D value noise to generate highly realistic, organic geographic contours that wrap seamlessly.
-    const noiseTableSize = 256;
-    const perm: number[] = [];
-    for (let i = 0; i < noiseTableSize; i++) {
-      perm.push(Math.floor(Math.sin(i * 12.9898) * 43758.5453) & 255);
-    }
-    const noisePerm = [...perm, ...perm];
-    
-    const fade = (t: number) => t * t * t * (t * (t * 6 - 15) + 10);
-    const lerp = (t: number, a: number, b: number) => a + t * (b - a);
-    
-    const valueNoise3D = (x: number, y: number, z: number): number => {
-      const X = Math.floor(x) & 255;
-      const Y = Math.floor(y) & 255;
-      const Z = Math.floor(z) & 255;
-      
-      const xf = x - Math.floor(x);
-      const yf = y - Math.floor(y);
-      const zf = z - Math.floor(z);
-      
-      const u = fade(xf);
-      const v = fade(yf);
-      const w = fade(zf);
-      
-      const aaa = noisePerm[noisePerm[noisePerm[X] + Y] + Z] / 255;
-      const aba = noisePerm[noisePerm[noisePerm[X] + Y + 1] + Z] / 255;
-      const aab = noisePerm[noisePerm[noisePerm[X] + Y] + Z + 1] / 255;
-      const abb = noisePerm[noisePerm[noisePerm[X] + Y + 1] + Z + 1] / 255;
-      const baa = noisePerm[noisePerm[noisePerm[X + 1] + Y] + Z] / 255;
-      const bba = noisePerm[noisePerm[noisePerm[X + 1] + Y + 1] + Z] / 255;
-      const bab = noisePerm[noisePerm[noisePerm[X + 1] + Y] + Z + 1] / 255;
-      const bbb = noisePerm[noisePerm[noisePerm[X + 1] + Y + 1] + Z + 1] / 255;
-      
-      const x1 = lerp(u, aaa, baa);
-      const x2 = lerp(u, aba, bba);
-      const x3 = lerp(u, aab, bab);
-      const x4 = lerp(u, abb, bbb);
-      
-      const y1 = lerp(v, x1, x2);
-      const y2 = lerp(v, x3, x4);
-      
-      return lerp(w, y1, y2);
-    };
-
-    // Synthesizes multi-octave FBM mapped onto a cylinder for horizontal seamless wrapping
-    const getSeamlessElevation = (u: number, v: number): number => {
-      const r = 1.6;
-      const angle = u * Math.PI * 2;
-      const nx = r * Math.cos(angle);
-      const ny = r * Math.sin(angle);
-      const nz = (v - 0.5) * 3.2;
-
-      let val = 0;
-      let amp = 1.0;
-      let freq = 0.85;
-      let totalAmp = 0;
-      
-      for (let i = 0; i < 5; i++) {
-        val += valueNoise3D(nx * freq + 8.2, ny * freq + 4.9, nz * freq + 3.1) * amp;
-        totalAmp += amp;
-        amp *= 0.5;
-        freq *= 2.05;
-      }
-      val /= totalAmp;
-
-      // Realistic Geographical Bias Map (simulates accurate Earth continent clustering)
-      let bias = -0.16;
-
-      // Americas Continent cluster
-      if (u > 0.15 && u < 0.40) {
-        const amerDist = Math.sin((u - 0.15) / 0.25 * Math.PI) * Math.sin((v - 0.12) / 0.74 * Math.PI);
-        bias += amerDist * 0.48;
-      }
-
-      // Afro-Eurasian Continent cluster
-      if (u > 0.46 && u < 0.88) {
-        const eurasiaDist = Math.sin((u - 0.46) / 0.42 * Math.PI) * Math.sin((v - 0.10) / 0.72 * Math.PI);
-        bias += eurasiaDist * 0.52;
-      }
-
-      // Australian sub-continent
-      if (u > 0.74 && u < 0.90 && v > 0.56 && v < 0.78) {
-        bias += 0.28;
-      }
-
-      // Polar Ice caps
-      if (v < 0.14) bias += (0.14 - v) * 2.5;
-      if (v > 0.82) bias += (v - 0.82) * 2.5;
-
-      return Math.max(0, Math.min(1, val * 0.44 + bias));
-    };
-
-    const smoothstep = (edge0: number, edge1: number, x: number) => {
-      const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
-      return t * t * (3 - 2 * t);
-    };
-
-    // --- HIGH-FIDELITY PROCEDURAL TEXTURE GENERATOR ---
-    // Instantly renders a stunning 2048x1024 high-res satellite-style Earth map to guarantee zero latency and extreme crispness
-    const createFallbackTexture = (type: 'day' | 'night' | 'specular' | 'clouds') => {
-      const canvas = document.createElement('canvas');
-      canvas.width = 2048;
-      canvas.height = 1024;
-      const ctx = canvas.getContext('2d')!;
-      const imgData = ctx.createImageData(2048, 1024);
-      const data = imgData.data;
-
-      for (let y = 0; y < 1024; y++) {
-        const v = y / 1023;
-        for (let x = 0; x < 2048; x++) {
-          const u = x / 2047;
-          const idx = (y * 2048 + x) * 4;
-
-          const elev = getSeamlessElevation(u, v);
-          const isLand = elev > 0.44;
-
-          if (type === 'day') {
-            if (isLand) {
-              if (v < 0.16 || v > 0.83 || elev > 0.76) {
-                // Majestic ice fields & snow-capped peaks
-                data[idx] = 245;
-                data[idx+1] = 248;
-                data[idx+2] = 250;
-                data[idx+3] = 255;
-              } else {
-                // Detailed geographical satellite terrain (deserts, forests, highlands)
-                const isDesert = v > 0.32 && v < 0.54 && getSeamlessElevation(u * 1.5, v * 1.5) > 0.48;
-                if (isDesert) {
-                  const dFactor = Math.floor(elev * 18);
-                  data[idx] = 210 + dFactor;
-                  data[idx+1] = 175 + dFactor;
-                  data[idx+2] = 125;
-                  data[idx+3] = 255;
-                } else {
-                  data[idx] = Math.floor(34 + elev * 12);
-                  data[idx+1] = Math.floor(74 + (1.0 - elev) * 22);
-                  data[idx+2] = Math.floor(36 + elev * 8);
-                  data[idx+3] = 255;
-                }
-              }
-            } else {
-              // Deep navy oceans with luminous teal continental shelves on shelves
-              const shelf = smoothstep(0.36, 0.44, elev);
-              data[idx] = Math.floor(4 * (1 - shelf) + 12 * shelf);
-              data[idx+1] = Math.floor(18 * (1 - shelf) + 52 * shelf);
-              data[idx+2] = Math.floor(38 * (1 - shelf) + 98 * shelf);
-              data[idx+3] = 255;
-            }
-          } else if (type === 'night') {
-            if (isLand) {
-              // Deep dark twilight landmass
-              data[idx] = 8;
-              data[idx+1] = 10;
-              data[idx+2] = 14;
-              data[idx+3] = 255;
-
-              // Glowing golden energy lines and city clusters concentrated near coastlines
-              const isCoastal = elev > 0.44 && elev < 0.51;
-              const popDensity = getSeamlessElevation(u * 3.5, v * 3.5);
-              if ((isCoastal && popDensity > 0.62) || popDensity > 0.72) {
-                data[idx] = 255;
-                data[idx+1] = 188 + Math.floor(popDensity * 50);
-                data[idx+2] = 80;
-                data[idx+3] = 255;
-              }
-            } else {
-              // Space-dark navy ocean
-              data[idx] = 2;
-              data[idx+1] = 3;
-              data[idx+2] = 6;
-              data[idx+3] = 255;
-            }
-          } else if (type === 'specular') {
-            // High-shine ocean reflecting solar specular; land is completely matte
-            const spec = isLand ? 10 : 255;
-            data[idx] = spec;
-            data[idx+1] = spec;
-            data[idx+2] = spec;
-            data[idx+3] = 255;
-          } else if (type === 'clouds') {
-            // Elegant sweeping circular storm patterns
-            const cloudFactor = getSeamlessElevation(u * 1.8 + 0.5, v * 1.6 - 0.2);
-            const clOpacity = smoothstep(0.48, 0.78, cloudFactor) * 235;
-            data[idx] = 255;
-            data[idx+1] = 255;
-            data[idx+2] = 255;
-            data[idx+3] = Math.floor(clOpacity);
-          }
-        }
-      }
-      ctx.putImageData(imgData, 0, 0);
-      
-      const texture = new THREE.CanvasTexture(canvas);
-      texture.wrapS = THREE.RepeatWrapping;
-      texture.wrapT = THREE.ClampToEdgeWrapping;
-      texture.anisotropy = maxAnisotropy;
-      texture.minFilter = THREE.LinearMipmapLinearFilter;
-      texture.magFilter = THREE.LinearFilter;
-      texture.generateMipmaps = true;
-      return texture;
-    };
-
-    // Create high-fidelity fallback assets immediately (for absolute zero latency)
-    const fallbackDay = createFallbackTexture('day');
-    const fallbackNight = createFallbackTexture('night');
-    const fallbackSpec = createFallbackTexture('specular');
-    const fallbackClouds = createFallbackTexture('clouds');
-
-    fallbackDay.colorSpace = THREE.SRGBColorSpace;
-    fallbackNight.colorSpace = THREE.SRGBColorSpace;
-
-    // --- SCENIC LIGHTS FOR SUPERB GLOBE RENDERING ---
-    const sunLight = new THREE.DirectionalLight(0xfffae5, 2.0);
-    sunLight.position.set(5, 3.5, 5);
-    scene.add(sunLight);
-
-    const polarFilament = new THREE.DirectionalLight(0x00c4ff, 0.65);
-    polarFilament.position.set(-5, -3, -5);
-    scene.add(polarFilament);
-
-    const ambientLight = new THREE.AmbientLight(0x0b131c, 1.05);
-    scene.add(ambientLight);
-
-    // --- SEAMLESS, EMBEDDED SENSORY RECOVERY TEXTURE PIPELINE ---
-    // Implements native background loading from local origin with automatic fallbacks.
-    const loadTextureWithFallback = (localPath: string, fallbacks: string[], placeholderTex: THREE.Texture) => {
-      // Use the procedural texture canvas as the starting texture so it is never blank/empty!
-      const tex = placeholderTex.clone();
+    // --- RESILIENT, NON-BLOCKING ASYNCHRONOUS TEXTURE PIPELINE ---
+    const loadTextureWithFallback = (localPath: string, fallbacks: string[]) => {
+      const tex = new THREE.Texture();
       tex.colorSpace = THREE.SRGBColorSpace;
-      
-      // Apply advanced linear filtering and anisotropic parameters to eliminate grazing-angle pixelation
       tex.wrapS = THREE.RepeatWrapping;
       tex.wrapT = THREE.ClampToEdgeWrapping;
       tex.minFilter = THREE.LinearMipmapLinearFilter;
       tex.magFilter = THREE.LinearFilter;
-      tex.anisotropy = maxAnisotropy;
       tex.generateMipmaps = true;
+      tex.anisotropy = maxAnisotropy;
 
       const img = new Image();
       const urls = [localPath, ...fallbacks];
@@ -322,7 +94,7 @@ export const WebGLGlobe = forwardRef<WebGLGlobeRef, WebGLGlobeProps>(({
 
       const tryLoadNext = () => {
         if (attemptIndex >= urls.length) {
-          console.warn(`[GLOBE-INTRO] ❌ All asset streams failed for: ${localPath}. Retaining high-fidelity procedural canvas fallback.`);
+          console.warn(`[GLOBE-INTRO] ❌ All attempts failed for texture: ${localPath}`);
           return;
         }
         const currentUrl = urls[attemptIndex];
@@ -336,11 +108,11 @@ export const WebGLGlobe = forwardRef<WebGLGlobeRef, WebGLGlobeProps>(({
       img.onload = () => {
         tex.image = img;
         tex.needsUpdate = true;
-        console.log(`[GLOBE-INTRO] ✅ Successfully loaded asset: ${img.src}`);
+        console.log(`[GLOBE-INTRO] ✅ Loaded texture: ${img.src}`);
       };
 
       img.onerror = () => {
-        console.warn(`[GLOBE-INTRO] ⚠ Load failed for: ${img.src}. Trying next fallback...`);
+        console.warn(`[GLOBE-INTRO] ⚠ Load failed for: ${img.src}. Trying fallback...`);
         tryLoadNext();
       };
 
@@ -348,44 +120,44 @@ export const WebGLGlobe = forwardRef<WebGLGlobeRef, WebGLGlobeProps>(({
       return tex;
     };
 
+    // --- SCENIC LIGHTS FOR SUPERB GLOBE RENDERING ---
+    const sunLight = new THREE.DirectionalLight(0xfffae5, 2.0);
+    sunLight.position.set(5, 3.5, 5);
+    scene.add(sunLight);
+
+    const polarFilament = new THREE.DirectionalLight(0x00c4ff, 0.65);
+    polarFilament.position.set(-5, -3, -5);
+    scene.add(polarFilament);
+
+    const ambientLight = new THREE.AmbientLight(0x0b131c, 1.05);
+    scene.add(ambientLight);
+
     const dayTex = loadTextureWithFallback(
       '/textures/earth-blue-marble.jpg',
       [
         'https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-blue-marble.jpg',
         'https://raw.githubusercontent.com/vasturiano/three-globe/master/example/img/earth-blue-marble.jpg'
-      ],
-      fallbackDay
+      ]
     );
     const nightTex = loadTextureWithFallback(
       '/textures/earth-night.jpg',
       [
         'https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-night.jpg',
         'https://raw.githubusercontent.com/vasturiano/three-globe/master/example/img/earth-night.jpg'
-      ],
-      fallbackNight
+      ]
     );
     const specTex = loadTextureWithFallback(
       '/textures/earth-water.png',
       [
         'https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-water.png',
         'https://raw.githubusercontent.com/vasturiano/three-globe/master/example/img/earth-water.png'
-      ],
-      fallbackSpec
-    );
-    const cloudsTex = loadTextureWithFallback(
-      '/textures/earth-clouds.png',
-      [
-        'https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-clouds.png',
-        'https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/textures/planets/earth_clouds_1024.png',
-        'https://raw.githubusercontent.com/vasturiano/three-globe/master/example/img/earth-clouds.png',
-        'https://unpkg.com/three-globe/example/img/earth-clouds.png'
-      ],
-      fallbackClouds
+      ]
     );
 
     // --- 1. Earth Core Mesh with Phong Shader ---
     const earthGeometry = new THREE.SphereGeometry(1, 64, 64);
     const earthMaterial = new THREE.MeshPhongMaterial({
+      color: new THREE.Color(0x061120), // Elegant solid navy while texture loads
       map: dayTex,
       emissiveMap: nightTex,
       emissive: new THREE.Color(0x112135),
@@ -420,18 +192,6 @@ export const WebGLGlobe = forwardRef<WebGLGlobeRef, WebGLGlobeProps>(({
     });
     const atmosMesh = new THREE.Mesh(atmosGeometry, atmosMaterial);
     scene.add(atmosMesh);
-
-    // --- 4. Volumetric Drifting Clouds Layer ---
-    const cloudGeometry = new THREE.SphereGeometry(1.008, 64, 64);
-    const cloudMaterial = new THREE.MeshPhongMaterial({
-      alphaMap: cloudsTex,
-      transparent: true,
-      opacity: 0.35,
-      color: 0xffffff,
-      blending: THREE.NormalBlending,
-    });
-    const cloudMesh = new THREE.Mesh(cloudGeometry, cloudMaterial);
-    scene.add(cloudMesh);
 
     // Helper: Dynamic Deep Space Starfield with custom high-fidelity alpha radial glow texture
     const createStarTexture = () => {
@@ -602,7 +362,6 @@ export const WebGLGlobe = forwardRef<WebGLGlobeRef, WebGLGlobeProps>(({
 
       // Spherical orbital rotations
       earthMesh.rotation.y += rotSpeed;
-      cloudMesh.rotation.y += rotSpeed * 1.22;
 
       // Update satellites coordinates
       satellites.forEach((sat) => {
@@ -728,8 +487,6 @@ export const WebGLGlobe = forwardRef<WebGLGlobeRef, WebGLGlobeProps>(({
       gridMaterial.dispose();
       atmosGeometry.dispose();
       atmosMaterial.dispose();
-      cloudGeometry.dispose();
-      cloudMaterial.dispose();
       starGeometry.dispose();
       starMaterial.dispose();
       
