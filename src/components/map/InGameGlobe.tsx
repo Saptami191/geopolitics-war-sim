@@ -209,7 +209,7 @@ export function InGameGlobe({ theme = 'dark', layers }: InGameGlobeProps) {
     // 1. Solid Earth Core (Day / Night Shaded)
     const earthGeo = new THREE.SphereGeometry(1, 64, 64);
     const earthMat = new THREE.MeshPhongMaterial({
-      color: isDark ? new THREE.Color(0x060f1c) : new THREE.Color(0xf4f4f7), // Elegant solid base while loading
+      color: new THREE.Color(0xffffff), // Fully white so texture details display perfectly
       map: dayTex,
       emissiveMap: nightTex,
       emissive: new THREE.Color(isDark ? 0x112135 : 0x1e1e1e),
@@ -599,6 +599,7 @@ export function InGameGlobe({ theme = 'dark', layers }: InGameGlobeProps) {
       ambientLight.intensity = 0.75;
 
       if (earthMesh.material instanceof THREE.MeshPhongMaterial) {
+        earthMesh.material.color.setHex(0xffffff);
         earthMesh.material.emissive.setHex(0x112135);
         earthMesh.material.emissiveIntensity = 1.6;
         earthMesh.material.shininess = 28;
@@ -622,6 +623,7 @@ export function InGameGlobe({ theme = 'dark', layers }: InGameGlobeProps) {
       ambientLight.intensity = 1.45;
 
       if (earthMesh.material instanceof THREE.MeshPhongMaterial) {
+        earthMesh.material.color.setHex(0xffffff);
         earthMesh.material.emissive.setHex(0x0d0d0d);
         earthMesh.material.emissiveIntensity = 0.22;
         earthMesh.material.shininess = 6;
