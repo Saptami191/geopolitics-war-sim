@@ -51,6 +51,8 @@ export default function App() {
   const countries = useWorldStore((s) => s.countries);
 
   const analysisMode = useLinkedAnalysisStore((s) => s.analysisMode);
+  const isMaximized = useLinkedAnalysisStore((s) => s.isMaximized);
+  const inspectorCollapsed = useLinkedAnalysisStore((s) => s.inspectorCollapsed);
 
   const playerCountryId = usePlayerStore((s) => s.countryId);
   const playerState = usePlayerStore();
@@ -241,9 +243,9 @@ export default function App() {
       <DataTicker />
 
       {/* Major split sections */}
-      <div className="flex-1 flex overflow-hidden w-full">
+      <div className="flex-1 flex overflow-hidden w-full relative">
         {/* Left Side: Coordinated Workstation containing Switcher, Canvas, bottom Timeline, and Side Inspector */}
-        <div className="w-[58%] flex flex-col border-r border-[#1a3a1a] h-full overflow-hidden shrink-0 bg-black">
+        <div className={`${isMaximized ? 'w-full' : 'w-[58%]'} flex flex-col border-r border-[#1a3a1a] h-full overflow-hidden shrink-0 bg-black transition-all duration-300`}>
           {/* Analysis Workspace switcher command bar */}
           <AnalysisModeSwitcher />
 
@@ -256,8 +258,6 @@ export default function App() {
                 <MapControls
                   activeLayer={activeLayer}
                   setActiveLayer={setActiveLayer}
-                  viewMode={analysisMode === 'SPLIT' ? 'MAP' : (analysisMode as any)}
-                  setViewMode={() => {}}
                 />
               )}
 
@@ -291,9 +291,11 @@ export default function App() {
             </div>
 
             {/* Live Workstation Inspector Sidebar */}
-            <div className="w-[230px] border-l border-[#1d3c1d] h-full overflow-hidden shrink-0 bg-[#020502] flex flex-col p-1">
-              <AnalysisInspector />
-            </div>
+            {!inspectorCollapsed && (
+              <div className="w-[230px] border-l border-[#1d3c1d] h-full overflow-hidden shrink-0 bg-[#020502] flex flex-col p-1 animate-fade-in transition-all">
+                <AnalysisInspector />
+              </div>
+            )}
           </div>
 
           {/* Scrolling ticker tape */}
@@ -309,7 +311,8 @@ export default function App() {
         </div>
 
         {/* Right Side: Tab action decks and world intelligence boxes */}
-        <div className="flex-1 flex flex-col h-full overflow-y-auto p-4 bg-[#040704] justify-between">
+        {!isMaximized && (
+          <div className="flex-1 flex flex-col h-full overflow-y-auto p-4 bg-[#040704] justify-between animate-fade-in">
           <div>
             {/* Action command tabs button matrices (F1 - F8) */}
             <div className="flex justify-between items-center mb-3">
@@ -359,6 +362,7 @@ export default function App() {
             <UnSecurityCouncil />
           </div>
         </div>
+        )}
       </div>
 
       {/* Bottom telemetry text logs shell console */}

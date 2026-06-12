@@ -19,6 +19,8 @@ interface LinkedAnalysisState {
   selectedEventId: string | null;
   timeRange: [number, number] | null; // [minTick, maxTick]
   filterTypes: string[]; // e.g. ['STRIKE', 'SANCTION', 'DIPLOMACY', 'COVERT_OP']
+  isMaximized: boolean;
+  inspectorCollapsed: boolean;
   
   // Actions
   setAnalysisMode: (mode: AnalysisMode) => void;
@@ -29,6 +31,8 @@ interface LinkedAnalysisState {
   setTimeRange: (range: [number, number] | null) => void;
   setFilterTypes: (types: string[]) => void;
   toggleFilterType: (type: string) => void;
+  setIsMaximized: (val: boolean) => void;
+  setInspectorCollapsed: (val: boolean) => void;
   resetAnalysisState: () => void;
 }
 
@@ -40,6 +44,8 @@ export const useLinkedAnalysisStore = create<LinkedAnalysisState>((set, get) => 
   selectedEventId: null,
   timeRange: null,
   filterTypes: ['STRIKE', 'SANCTION', 'DIPLOMACY', 'COVERT_OP', 'RESEARCH', 'FISCAL', 'MARKET', 'SYSTEM', 'OTHER'],
+  isMaximized: false,
+  inspectorCollapsed: false,
 
   setAnalysisMode: (mode) => set({ analysisMode: mode }),
   
@@ -113,6 +119,9 @@ export const useLinkedAnalysisStore = create<LinkedAnalysisState>((set, get) => 
     }
   },
 
+  setIsMaximized: (val) => set({ isMaximized: val }),
+  setInspectorCollapsed: (val) => set({ inspectorCollapsed: val }),
+
   resetAnalysisState: () => set({
     analysisMode: 'MAP',
     presetFocusMode: 'STRATEGIC',
@@ -121,5 +130,7 @@ export const useLinkedAnalysisStore = create<LinkedAnalysisState>((set, get) => 
     selectedEventId: null,
     timeRange: null,
     filterTypes: ['STRIKE', 'SANCTION', 'DIPLOMACY', 'COVERT_OP', 'RESEARCH', 'FISCAL', 'MARKET', 'SYSTEM', 'OTHER'],
+    isMaximized: false,
+    inspectorCollapsed: false,
   }),
 }));

@@ -5,38 +5,19 @@ export type MapLayer = 'POLITICAL' | 'MILITARY' | 'ECONOMIC' | 'CYBER' | 'WEATHE
 interface MapControlsProps {
   activeLayer: MapLayer;
   setActiveLayer: (layer: MapLayer) => void;
-  viewMode: 'MAP' | 'GRAPH';
-  setViewMode: (mode: 'MAP' | 'GRAPH') => void;
 }
 
 export default function MapControls({
   activeLayer,
   setActiveLayer,
-  viewMode,
-  setViewMode,
 }: MapControlsProps) {
   const layers: MapLayer[] = ['POLITICAL', 'MILITARY', 'ECONOMIC', 'CYBER', 'WEATHER', 'PROPAGANDA'];
 
   return (
     <div className="w-full bg-[#040804] border-b border-[#1a3a1a] h-9 p-1 flex justify-between items-center text-[10px] font-mono shrink-0 select-none">
-      {/* Visual Modes Switcher */}
-      <div className="flex gap-1 items-center">
-        <button
-          onClick={() => setViewMode('MAP')}
-          className={`px-3 py-1 border border-[#1a3a1a] uppercase cursor-pointer ${
-            viewMode === 'MAP' ? 'bg-[#1a4a1a] text-[#00ff44] font-bold text-shadow-sm' : 'text-gray-400 hover:text-[#00ff44]'
-          }`}
-        >
-          THEATER MAP
-        </button>
-        <button
-          onClick={() => setViewMode('GRAPH')}
-          className={`px-3 py-1 border border-[#1a3a1a] uppercase cursor-pointer ${
-            viewMode === 'GRAPH' ? 'bg-[#1a4a1a] text-[#00ff44] font-bold text-shadow-sm' : 'text-gray-400 hover:text-[#00ff44]'
-          }`}
-        >
-          RELATION GRAPH
-        </button>
+      {/* Information Header */}
+      <div className="flex gap-1 items-center pl-1 font-bold text-gray-500">
+        <span>📶 SYSTEM DATA LAYERS</span>
       </div>
 
       {/* Layer Toggles */}
@@ -59,3 +40,4 @@ export default function MapControls({
     </div>
   );
 }
+
