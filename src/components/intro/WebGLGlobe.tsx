@@ -18,7 +18,8 @@ export const WebGLGlobe = forwardRef<WebGLGlobeRef, WebGLGlobeProps>(({
 }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
-  const materialRef = useRef<THREE.ShaderMaterial | null>(null);
+  const materialRef = useRef<THREE.MeshPhongMaterial | null>(null);
+  const greenTintRef = useRef<number>(0);
   const elapsedMsRef = useRef<number>(0);
 
   useEffect(() => {
@@ -27,9 +28,7 @@ export const WebGLGlobe = forwardRef<WebGLGlobeRef, WebGLGlobeProps>(({
 
   useImperativeHandle(ref, () => ({
     setGreenTint: (progress: number) => {
-      if (materialRef.current) {
-        materialRef.current.uniforms.greenTint.value = progress;
-      }
+      greenTintRef.current = progress;
     }
   }));
 
@@ -290,194 +289,103 @@ export const WebGLGlobe = forwardRef<WebGLGlobeRef, WebGLGlobeProps>(({
     fallbackDay.colorSpace = THREE.SRGBColorSpace;
     fallbackNight.colorSpace = THREE.SRGBColorSpace;
 
-    // Sculpted Directional Lighting Core
-    const sunDirection = new THREE.Vector3(7.5, 3.8, 4.5).normalize();
+    // --- SCENIC LIGHTS FOR SUPERB GLOBE RENDERING ---
+    const sunLight = new THREE.DirectionalLight(0xfffae5, 2.0);
+    sunLight.position.set(5, 3.5, 5);
+    scene.add(sunLight);
 
-    // --- EARTH SURFACE COHERENT CUSTOM SHADER ---
-    // Implements realistic day-side shading, dark-side emissive cities, a gorgeous 
-    // sunset/sunrise twilight band (terminator scattering), and high-contrast surface textures.
-    const earthMaterial = new THREE.ShaderMaterial({
-      uniforms: {
-        dayTexture: { value: fallbackDay },
-        nightTexture: { value: fallbackNight },
-        specTexture: { value: fallbackSpec },
-        sunDirection: { value: sunDirection },
-        greenTint: { value: 0.0 },
-        darkenFactor: { value: 0.0 }
-      },
-      vertexShader: `
-        varying vec2 vUv;
-        varying vec3 vNormal;
-        varying vec3 vPosition;
-        void main() {
-          vUv = uv;
-          vNormal = normalize(normalMatrix * normal);
-          vPosition = (modelViewMatrix * vec4(position, 1.0)).xyz;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: `
-        uniform sampler2D dayTexture;
-        uniform sampler2D nightTexture;
-        uniform sampler2D specTexture;
-        uniform vec3 sunDirection;
-        uniform float greenTint;
-        uniform float darkenFactor;
-        varying vec2 vUv;
-        varying vec3 vNormal;
-        varying vec3 vPosition;
-        void main() {
-          vec3 worldNormal = normalize(vNormal);
-          vec3 viewDir = normalize(-vPosition);
-          
-          float sunDot = dot(worldNormal, sunDirection);
-          
-          // Smooth day-to-night gradient
-          float dayStrength = smoothstep(-0.12, 0.12, sunDot);
-          
-          vec4 dayColor = texture2D(dayTexture, vUv);
-          vec4 nightColor = texture2D(nightTexture, vUv);
-          vec4 specValue = texture2D(specTexture, vUv);
+    const polarFilament = new THREE.DirectionalLight(0x00c4ff, 0.65);
+    polarFilament.position.set(-5, -3, -5);
+    scene.add(polarFilament);
 
-          // Subtle night lights on the dark hemisphere
-          vec3 nightLights = nightColor.rgb * 3.5;
-          
-          // Realistic glossy ocean solar specular reflection
-          float specIntensity = 0.0;
-          if (sunDot > 0.0) {
-            vec3 reflectDir = reflect(-sunDirection, worldNormal);
-            specIntensity = pow(max(dot(reflectDir, viewDir), 0.0), 38.0);
-          }
-          vec3 sunSpecular = vec3(1.0, 0.95, 0.88) * specIntensity * specValue.r * 1.5;
-          
-          // Physically based day rendering
-          float diffuse = max(sunDot, 0.0);
-          vec3 litDay = dayColor.rgb * (0.04 + 0.96 * diffuse) + sunSpecular;
-          
-          // Atmospheric twilight scattering (the elegant orange-red terminator ribbon)
-          float sunsetFactor = smoothstep(0.18, -0.05, sunDot) * smoothstep(-0.12, 0.22, sunDot);
-          vec3 twilightGlow = vec3(0.96, 0.40, 0.10) * sunsetFactor * 0.72;
-          
-          // Composite Day and Night hemispherical blending
-          vec3 finalSurface = mix(nightLights, litDay, dayStrength) + twilightGlow;
-          
-          // Darken during tactical nuclear scenarios
-          finalSurface = finalSurface * (1.0 - darkenFactor);
-          
-          // Apply phosphorus tint transition
-          vec3 tintedSurface = vec3(finalSurface.g * 0.1, finalSurface.g * 1.4 + 0.05, finalSurface.g * 0.3);
-          finalSurface = mix(finalSurface, tintedSurface, greenTint);
-          
-          // Extreme grazing-angle limb highlighting (thin, crisp outer horizon accent)
-          float rimFactor = 1.0 - max(dot(worldNormal, viewDir), 0.0);
-          float thinEdgeAccent = pow(rimFactor, 6.0) * (0.2 + 0.8 * dayStrength);
-          vec3 rimGlowCol = vec3(0.20, 0.55, 1.0) * thinEdgeAccent * 1.3;
-          
-          // Force edge back to green when green-tinting
-          vec3 rimGlowMuted = mix(rimGlowCol, vec3(0.01, 1.2, 0.4) * thinEdgeAccent * 1.5, greenTint);
-          
-          gl_FragColor = vec4(finalSurface + rimGlowMuted, 1.0);
-        }
-      `
-    });
+    const ambientLight = new THREE.AmbientLight(0x0b131c, 1.05);
+    scene.add(ambientLight);
 
-    materialRef.current = earthMaterial;
+    // --- SEAMLESS, EMBEDDED SENSORY RECOVERY TEXTURE PIPELINE ---
+    // Implements native background loading from local origin with automatic fallbacks.
+    const loadTextureWithFallback = (localPath: string, fallbackUrl: string) => {
+      const tex = new THREE.Texture();
+      tex.colorSpace = THREE.SRGBColorSpace;
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = localPath;
+      img.onload = () => {
+        tex.image = img;
+        tex.needsUpdate = true;
+      };
+      img.onerror = () => {
+        console.warn(`[GLOBE-INTRO] ⚠ Local asset failed: ${localPath}. Loading remote fallback: ${fallbackUrl}`);
+        img.src = fallbackUrl;
+      };
+      return tex;
+    };
 
-    // === DIAGNOSTIC CHECKPOINT 3: Material type check ===
-    console.log('[GLOBE-DEBUG-7] Earth material type:', earthMaterial.type);
-    console.log('[GLOBE-DEBUG-7b] Is ShaderMaterial:', earthMaterial instanceof THREE.ShaderMaterial);
-    if (earthMaterial instanceof THREE.ShaderMaterial) {
-      console.log('[GLOBE-DEBUG-7c] Uniforms:', Object.keys(earthMaterial.uniforms));
-      console.log('[GLOBE-DEBUG-7d] greenTint value:', earthMaterial.uniforms?.greenTint?.value);
-    }
+    const dayTex = loadTextureWithFallback(
+      '/textures/earth-blue-marble.jpg',
+      'https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-blue-marble.jpg'
+    );
+    const nightTex = loadTextureWithFallback(
+      '/textures/earth-night.jpg',
+      'https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-night.jpg'
+    );
+    const specTex = loadTextureWithFallback(
+      '/textures/earth-water.png',
+      'https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-water.png'
+    );
+    const cloudsTex = loadTextureWithFallback(
+      '/textures/earth-clouds.png',
+      'https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-clouds.png'
+    );
 
-    // Earth Sphere Core
+    // --- 1. Earth Core Mesh with Phong Shader ---
     const earthGeometry = new THREE.SphereGeometry(1, 64, 64);
+    const earthMaterial = new THREE.MeshPhongMaterial({
+      map: dayTex,
+      emissiveMap: nightTex,
+      emissive: new THREE.Color(0x112135),
+      emissiveIntensity: 1.6,
+      specularMap: specTex,
+      specular: new THREE.Color(0x0d283c),
+      shininess: 28,
+    });
     const earthMesh = new THREE.Mesh(earthGeometry, earthMaterial);
     scene.add(earthMesh);
 
-    // --- CLOUDS SPHERE LAYER ---
-    // Slow-moving semi-transparent vapor layer rotating on a slightly larger shell
-    const cloudMaterial = new THREE.ShaderMaterial({
-      uniforms: {
-        cloudTexture: { value: fallbackClouds },
-        sunDirection: { value: sunDirection }
-      },
-      vertexShader: `
-        varying vec2 vUv;
-        varying vec3 vNormal;
-        void main() {
-          vUv = uv;
-          vNormal = normalize(normalMatrix * normal);
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: `
-        uniform sampler2D cloudTexture;
-        uniform vec3 sunDirection;
-        varying vec2 vUv;
-        varying vec3 vNormal;
-        void main() {
-          vec4 cloudCol = texture2D(cloudTexture, vUv);
-          float sunDot = dot(normalize(vNormal), sunDirection);
-          float light = smoothstep(-0.15, 0.25, sunDot);
-          
-          // Clouds illuminated by direct solar projection
-          gl_FragColor = vec4(cloudCol.rgb * light, cloudCol.r * 0.28 * light);
-        }
-      `,
+    materialRef.current = earthMaterial;
+
+    // --- 2. Cybernetic wireframe grid overlay ---
+    const gridGeometry = new THREE.SphereGeometry(1.018, 48, 48);
+    const gridMaterial = new THREE.MeshBasicMaterial({
+      color: 0x00cfff,
+      wireframe: true,
       transparent: true,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false
+      opacity: 0.08,
     });
+    const gridMesh = new THREE.Mesh(gridGeometry, gridMaterial);
+    earthMesh.add(gridMesh);
 
-    const cloudGeometry = new THREE.SphereGeometry(1.006, 64, 64);
-    const cloudMesh = new THREE.Mesh(cloudGeometry, cloudMaterial);
-    scene.add(cloudMesh);
-
-    // --- COHERENT ATMOSPHERE SPACE BUFFER ---
-    // Beautiful backside atmospheric rim scattering concentrated strictly at the outer silhouette
-    const atmosGeometry = new THREE.SphereGeometry(1.020, 64, 64);
-    const atmosMaterial = new THREE.ShaderMaterial({
-      uniforms: {
-        sunDirection: { value: sunDirection }
-      },
-      vertexShader: `
-        varying vec3 vNormal;
-        varying vec3 vPosition;
-        void main() {
-          vNormal = normalize(normalMatrix * normal);
-          vPosition = (modelViewMatrix * vec4(position, 1.0)).xyz;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: `
-        uniform vec3 sunDirection;
-        varying vec3 vNormal;
-        varying vec3 vPosition;
-        void main() {
-          vec3 worldNormal = normalize(vNormal);
-          vec3 viewDir = normalize(-vPosition);
-          
-          // Concentrates the density solely at the grazing silhouette
-          float fresnel = pow(1.0 - max(dot(worldNormal, viewDir), 0.0), 3.2);
-          float sunDot = dot(worldNormal, sunDirection);
-          float lightScattering = smoothstep(-0.4, 0.3, sunDot);
-          
-          vec3 outerSpaceBlue = vec3(0.02, 0.38, 1.0);
-          vec3 upperAtmosCyan = vec3(0.35, 0.75, 1.0);
-          vec3 atmosCol = mix(outerSpaceBlue, upperAtmosCyan, fresnel);
-          
-          gl_FragColor = vec4(atmosCol * lightScattering, fresnel * 0.65 * lightScattering);
-        }
-      `,
-      side: THREE.BackSide,
-      blending: THREE.AdditiveBlending,
+    // --- 3. Atmosphere (Backside glowing shell) ---
+    const atmosGeometry = new THREE.SphereGeometry(1.04, 32, 32);
+    const atmosMaterial = new THREE.MeshBasicMaterial({
+      color: 0x00cfff,
       transparent: true,
-      depthWrite: false
+      opacity: 0.085,
+      side: THREE.BackSide,
     });
     const atmosMesh = new THREE.Mesh(atmosGeometry, atmosMaterial);
     scene.add(atmosMesh);
+
+    // --- 4. Volumetric Drifting Clouds Layer ---
+    const cloudGeometry = new THREE.SphereGeometry(1.008, 64, 64);
+    const cloudMaterial = new THREE.MeshPhongMaterial({
+      alphaMap: cloudsTex,
+      transparent: true,
+      opacity: 0.35,
+      color: 0xffffff,
+      blending: THREE.NormalBlending,
+    });
+    const cloudMesh = new THREE.Mesh(cloudGeometry, cloudMaterial);
+    scene.add(cloudMesh);
 
     // Helper: Dynamic Deep Space Starfield with custom high-fidelity alpha radial glow texture
     const createStarTexture = () => {
@@ -521,118 +429,6 @@ export const WebGLGlobe = forwardRef<WebGLGlobeRef, WebGLGlobeProps>(({
     });
     const starPoints = new THREE.Points(starGeometry, starMaterial);
     scene.add(starPoints);
-
-    // --- PROGRESSIVE TEXTURE ENHANCEMENT ENGINE (SELF-HEALING LOCAL-FIRST) ---
-    // Loads premium textures from the local workspace origin first to avoid CORS/sandbox sandbox isolation, 
-    // falling back to resilient CDN paths with full diagnostic checkpoints.
-    const loadGlobeTextures = async (): Promise<{
-      day: THREE.Texture;
-      night: THREE.Texture;
-      specular: THREE.Texture;
-      clouds: THREE.Texture;
-    }> => {
-      function applyQualitySettings(tex: THREE.Texture): THREE.Texture {
-        tex.minFilter = THREE.LinearMipmapLinearFilter;
-        tex.magFilter = THREE.LinearFilter;
-        tex.anisotropy = maxAnisotropy;
-        tex.generateMipmaps = true;
-        tex.needsUpdate = true;
-        return tex;
-      }
-
-      async function tryLoadTexture(urls: string[], name: 'day' | 'night' | 'spec' | 'clouds'): Promise<THREE.Texture> {
-        for (const url of urls) {
-          try {
-            const currentLoader = new THREE.TextureLoader();
-            const isLocal = !url.startsWith('http') && !url.startsWith('//');
-            if (isLocal) {
-              currentLoader.crossOrigin = undefined;
-            } else {
-              currentLoader.crossOrigin = 'anonymous';
-            }
-
-            const tex = await new Promise<THREE.Texture>((resolve, reject) => {
-              currentLoader.load(url, resolve, undefined, reject);
-            });
-            const img = tex.image as any;
-            if (img && (img.width > 8 || img.naturalWidth > 8)) {
-              console.log(`[GLOBE-TEXTURE] ✅ Successfully loaded ${name} texture from:`, url);
-
-              // === DIAGNOSTIC CHECKPOINT 2: Texture loading ===
-              if (name === 'day') {
-                console.log('[GLOBE-DEBUG-5] ✅ Day texture loaded:', {
-                  imageWidth:  img.width || img.naturalWidth,
-                  imageHeight: img.height || img.naturalHeight,
-                  format:      tex.format,
-                  minFilter:   tex.minFilter,
-                  magFilter:   tex.magFilter,
-                  src:         img.src?.slice(0, 80),
-                });
-              } else if (name === 'night') {
-                console.log('[GLOBE-DEBUG-6] ✅ Night texture loaded:', {
-                  imageWidth:  img.width || img.naturalWidth,
-                  imageHeight: img.height || img.naturalHeight,
-                });
-              }
-              return applyQualitySettings(tex);
-            }
-            console.warn(`[GLOBE-TEXTURE] ⚠ Texture for ${name} loaded but dimensions too small (fallback detected), trying next URL:`, url);
-          } catch (err) {
-            console.error(`[GLOBE-TEXTURE] ❌ Failed to load ${name} texture from URL: ${url}. Error:`, err);
-            if (name === 'day') {
-              console.error('[GLOBE-DEBUG-5] ❌ Day texture FAILED to load from URL:', url);
-            } else if (name === 'night') {
-              console.error('[GLOBE-DEBUG-6] ❌ Night texture FAILED to load from URL:', url);
-            }
-          }
-        }
-
-        console.warn(`[GLOBE-TEXTURE] All URLs for ${name} texture failed loading. Reverting to procedural local canvas fallback.`);
-        if (name === 'day') return fallbackDay;
-        if (name === 'night') return fallbackNight;
-        if (name === 'spec') return fallbackSpec;
-        return fallbackClouds;
-      }
-
-      const [day, night, specular, clouds] = await Promise.all([
-        tryLoadTexture([
-          '/textures/earth-blue-marble.jpg',
-          'https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-blue-marble.jpg',
-          'https://raw.githubusercontent.com/vasturiano/three-globe/master/example/img/earth-blue-marble.jpg'
-        ], 'day'),
-        tryLoadTexture([
-          '/textures/earth-night.jpg',
-          'https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-night.jpg',
-          'https://raw.githubusercontent.com/vasturiano/three-globe/master/example/img/earth-night.jpg'
-        ], 'night'),
-        tryLoadTexture([
-          '/textures/earth-water.png',
-          'https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-water.png',
-          'https://raw.githubusercontent.com/vasturiano/three-globe/master/example/img/earth-water.png'
-        ], 'spec'),
-        tryLoadTexture([
-          '/textures/earth-clouds.png',
-          'https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-clouds.png',
-          'https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/textures/planets/earth_clouds_1024.png'
-        ], 'clouds')
-      ]);
-
-      return { day, night, specular, clouds };
-    };
-
-    // Begin async asset streams with correct color spacing
-    loadGlobeTextures().then(({ day, night, specular, clouds }) => {
-      day.colorSpace = THREE.SRGBColorSpace;
-      night.colorSpace = THREE.SRGBColorSpace;
-
-      earthMaterial.uniforms.dayTexture.value = day;
-      earthMaterial.uniforms.nightTexture.value = night;
-      earthMaterial.uniforms.specTexture.value = specular;
-
-      if (cloudMesh && cloudMesh.material) {
-        (cloudMesh.material as THREE.ShaderMaterial).uniforms.cloudTexture.value = clouds;
-      }
-    });
 
     // Helper: Convert Lat/Lon coordinates to spherical points
     const latLonToVector3 = (lat: number, lon: number, radius: number): THREE.Vector3 => {
@@ -835,63 +631,32 @@ export const WebGLGlobe = forwardRef<WebGLGlobeRef, WebGLGlobeProps>(({
         }
       });
 
-      // Darken during tactical nuclear scenarios (starts at 14.0s)
-      let darkenValue = 0.0;
-      if (curElapsed >= 14000) {
-        darkenValue = Math.min((curElapsed - 14000) / 4000, 1.0) * 0.40;
-      }
+      // Interpolate phosphorus green tint transition
       if (materialRef.current) {
-        materialRef.current.uniforms.darkenFactor.value = darkenValue;
+        const progress = greenTintRef.current;
+        
+        const baseEmissive = new THREE.Color(0x112135);
+        const greenEmissive = new THREE.Color(0x02ff44);
+        materialRef.current.emissive.copy(baseEmissive.clone().lerp(greenEmissive, progress));
+        
+        const baseSpecular = new THREE.Color(0x0d283c);
+        const greenSpecular = new THREE.Color(0x008822);
+        materialRef.current.specular.copy(baseSpecular.clone().lerp(greenSpecular, progress));
+
+        const baseColor = new THREE.Color(0xffffff);
+        const greenColor = new THREE.Color(0x116622);
+        materialRef.current.color.copy(baseColor.clone().lerp(greenColor, progress));
+        
+        let darkenValue = 0.0;
+        if (curElapsed >= 14000) {
+          darkenValue = Math.min((curElapsed - 14000) / 4000, 1.0) * 0.40;
+        }
+        materialRef.current.emissiveIntensity = (1.6 + progress * 2.0) * (1.0 - darkenValue);
       }
 
       camera.lookAt(0, 0, 0);
 
       renderer.render(scene, camera);
-
-      if (!firstFrameRendered) {
-        firstFrameRendered = true;
-
-        const gl = renderer.getContext();
-        const programs = renderer.info.programs;
-
-        // === DIAGNOSTIC CHECKPOINT 4: Shader compilation ===
-        console.log('[GLOBE-DEBUG-8] Shader programs compiled:', programs?.length);
-        programs?.forEach((prog: any) => {
-          console.log('[GLOBE-DEBUG-8-prog]', prog.name, '| usedTimes:', prog.usedTimes);
-        });
-
-        // === DIAGNOSTIC CHECKPOINT 5: Check for WebGL errors ===
-        const glError = gl.getError();
-        if (glError !== gl.NO_ERROR) {
-          console.error('[GLOBE-DEBUG-9] ❌ WebGL ERROR code:', glError);
-        } else {
-          console.log('[GLOBE-DEBUG-9] ✅ No WebGL errors');
-        }
-
-        // === DIAGNOSTIC CHECKPOINT 6: Renderer capabilities ===
-        console.log('[GLOBE-DEBUG-10] Renderer capabilities:', {
-          maxTextures:      renderer.capabilities.maxTextures,
-          maxTextureSize:   renderer.capabilities.maxTextureSize,
-          floatFragTextures:(renderer.capabilities as any).floatFragmentTextures,
-          isWebGL2:         renderer.capabilities.isWebGL2,
-          precision:        renderer.capabilities.precision,
-        });
-
-        // FIX E: Self healing shader compile crash recovery check
-        if (glError !== 0) {
-          console.error('[GLOBE-SHADER-ERROR] WebGL error detected. Initializing self-healing fallback to standard MeshPhongMaterial...');
-          const fallbackMat = new THREE.MeshPhongMaterial({
-            map:              earthMaterial.uniforms.dayTexture.value,
-            emissiveMap:      earthMaterial.uniforms.nightTexture.value,
-            emissive:         new THREE.Color(0x112244),
-            emissiveIntensity: 0.5,
-            specular:         new THREE.Color(0x1a4a6a),
-            shininess:        30,
-          });
-          earthMesh.material = fallbackMat as any;
-          console.log('[GLOBE-FALLBACK] Successfully recovered using standard MeshPhongMaterial');
-        }
-      }
     };
 
     animateLoop();
@@ -913,10 +678,12 @@ export const WebGLGlobe = forwardRef<WebGLGlobeRef, WebGLGlobeProps>(({
       renderer.dispose();
       earthGeometry.dispose();
       earthMaterial.dispose();
-      cloudGeometry.dispose();
-      cloudMaterial.dispose();
+      gridGeometry.dispose();
+      gridMaterial.dispose();
       atmosGeometry.dispose();
       atmosMaterial.dispose();
+      cloudGeometry.dispose();
+      cloudMaterial.dispose();
       starGeometry.dispose();
       starMaterial.dispose();
       
