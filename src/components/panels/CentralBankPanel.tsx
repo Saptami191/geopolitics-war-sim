@@ -268,13 +268,14 @@ export default function CentralBankPanel() {
                   )}
                   <button
                     onClick={handleTogglePress}
-                    className={`px-3 py-1 font-bold uppercase text-[9px] rounded cursor-pointer transition-all active:translate-y-0.5 ${
+                    className={`px-3 py-1 font-bold uppercase text-[9px] rounded cursor-pointer transition-all active:translate-y-0.5 relative group ${
                       econ.printingPressActive
                         ? 'border-[#ff2244] text-[#ff2244] bg-[#2d0005] hover:bg-[#4d000a]'
                         : 'border-[#00ff44] text-[#00ff44] bg-[#021c02] hover:bg-[#063306]'
                     }`}
                   >
                     {econ.printingPressActive ? 'HALT PRESS' : 'ENABLE PRESS'}
+                    <span className="absolute -top-1.5 -right-1.5 bg-[#1a1a1a] text-gray-400 border border-[#444] text-[6px] font-mono font-bold px-1 rounded transition-opacity">ALT+P</span>
                   </button>
                 </div>
               </div>
@@ -319,9 +320,10 @@ export default function CentralBankPanel() {
               <div className="flex gap-2 font-mono">
                 <button
                   onClick={handleIssueBonds}
-                  className="flex-1 px-3 py-1.5 bg-[#002f3c] border border-[#00e5ff] text-[#00e5ff] rounded hover:bg-[#004e63] font-bold uppercase text-[9px] cursor-pointer transition-all active:translate-y-0.5"
+                  className="flex-1 px-3 py-1.5 bg-[#002f3c] border border-[#00e5ff] text-[#00e5ff] rounded hover:bg-[#004e63] font-bold uppercase text-[9px] cursor-pointer transition-all active:translate-y-0.5 relative group"
                 >
                   DISTRIBUTE BILL RELEASES
+                  <span className="absolute -top-1.5 -right-1 bg-black text-cyan-400 border border-current text-[6.5px] font-mono font-bold px-1 rounded transition-opacity">ALT+B</span>
                 </button>
                 <button
                   onClick={handleDefaultSovereign}

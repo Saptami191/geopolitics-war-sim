@@ -45,6 +45,11 @@ import StockMarketTicker from './components/reactive/StockMarketTicker';
 import NewspaperFeed from './components/reactive/NewspaperFeed';
 import UnSecurityCouncil from './components/reactive/UnSecurityCouncil';
 import BlackMarketBazaar from './components/blackmarket/BlackMarketBazaar';
+import CommandLogPanel from './components/hud/CommandLogPanel';
+import { GEO_COORDS } from './data/geoCoords';
+import { getTickIncrement } from './sim/militaryEngine';
+import { useEconomyStore } from './store/economyStore';
+import { useUIStore } from './store/uiStore';
 
 export default function App() {
   const currentTick = useWorldStore((s) => s.currentTick);
@@ -72,6 +77,47 @@ export default function App() {
   const [showBazaar, setShowBazaar] = useState(false);
 
   const playerCountryData = countries[playerCountryId];
+
+  // Real-time State-Driven KPI extractor for each F-Tab
+  const getTabKPI = (tabId: number): string => {
+    if (!playerCountryData) return '';
+    switch (tabId) {
+      case 1: { // GOVERNMENT
+        const pol = playerCountryData.political;
+        return pol ? `unrest:${Math.round(pol.popularUnrest)}% appr:${Math.round(pol.leaderApprovalRating)}%` : '';
+      }
+      case 2: { // CENTRAL BANK
+        const econ = playerCountryData.economic;
+        return econ ? `inf:${econ.inflationRate.toFixed(1)}% cash:$${econ.treasuryCashB.toFixed(0)}B` : '';
+      }
+      case 3: { // ARSENAL
+        const ars = playerCountryData.arsenal;
+        const count = ars?.units.reduce((sum, u) => sum + u.count, 0) ?? 0;
+        return ars ? `stock:${count} abm:${ars.abmShieldStrength}%` : '';
+      }
+      case 4: { // DIPLOMACY
+        const partners = playerCountryData.tradePartners?.length ?? 0;
+        return `bloc:${playerCountryData.allianceBlock.substring(0, 4)} part:${partners}`;
+      }
+      case 5: { // RESEARCH
+        const unlockedCount = playerCountryData.researchUnlocked?.length ?? 0;
+        return `r&d:${unlockedCount}/6 tech`;
+      }
+      case 6: { // INTELLIGENCE
+        const intel = playerCountryData.intelligence;
+        return intel ? `ops:${intel.activeCovertOps?.length ?? 0} slush:$${intel.blackBudgetB.toFixed(1)}B` : '';
+      }
+      case 7: { // SPACE
+        const sats = playerCountryData.intelligence?.satellites?.length ?? 0;
+        return `sats:${sats} haarp:${playerCountryData.haarpActive ? 'active' : 'stby'}`;
+      }
+      case 8: { // POPULATION
+        return `civs:${playerCountryData.population.toFixed(1)}m unrest:${Math.round(playerCountryData.political.popularUnrest)}%`;
+      }
+      default:
+        return '';
+    }
+  };
 
   // Initiate scenario from lobby selection
   const selectScenario = (id: ScenarioId, playableCountryId?: string) => {
@@ -133,11 +179,352 @@ export default function App() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // 1. Standard F1 - F8 tab switcher
       if (e.key >= 'F1' && e.key <= 'F8') {
         e.preventDefault();
         const tabNum = parseInt(e.key.substring(1), 10);
         audio.sfxKeyClick();
         usePlayerStore.getState().setActiveTab(tabNum);
+        return;
+      }
+
+      // 2. Alt combinations for strategic rapid actions
+      if (e.altKey) {
+        const key = e.key.toLowerCase();
+        
+        // Safety guard: ignore if typing in fields or selectors
+        const isInputActive = document.activeElement && (
+          document.activeElement.tagName === 'INPUT' ||
+          document.activeElement.tagName === 'TEXTAREA' ||
+          document.activeElement.tagName === 'SELECT' ||
+          document.activeElement.getAttribute('contenteditable') === 'true'
+        );
+        if (isInputActive) return;
+
+        const pCountry = countries[playerCountryId];
+        if (!pCountry) return;
+
+        if (key === 'm') {
+          // Alt+M: Toggle Martial Law
+          e.preventDefault();
+          let nextActiveState = false;
+          useWorldStore.getState().applyTickDelta((draft) => {
+            const c = draft.countries[playerCountryId];
+            if (c) {
+              if (c.political.martialLawActive) {
+                c.political.martialLawActive = false;
+                c.political.martialLawTicksRemaining = 0;
+              } else {
+                c.political.martialLawActive = true;
+                c.political.martialLawTicksRemaining = 25;
+                c.political.stabilityIndex = Math.min(100, c.political.stabilityIndex + 15);
+                c.political.popularUnrest = Math.max(0, c.political.popularUnrest - 20);
+                nextActiveState = true;
+              }
+            }
+          });
+          
+          audio.sfxKeyClick();
+          useWorldStore.getState().addGlobalEvent(
+            `Federal martial decree updated in ${pCountry.name}: Status is ${nextActiveState ? 'OPERATIONAL' : 'DORMANT'}.`,
+            nextActiveState ? 'WARNING' : 'INFO'
+          );
+
+          useUIStore.getState().pushAlert({
+            title: nextActiveState ? 'MARTIAL LAW ENFORCED' : 'MARTIAL LAW STAND-DOWN',
+            message: nextActiveState 
+              ? 'Sovereign forces deployed to metropolitan sectors. Unrest is suppressed, borders secured.'
+              : 'Emergency martial guidelines lifted. Democratic channels restored.',
+            type: nextActiveState ? 'WARNING' : 'INFO'
+          });
+        } else if (key === 'b') {
+          // Alt+B: Issue Sovereign Bonds
+          e.preventDefault();
+          const bondAmt = 10;
+          const bondRate = 5.5;
+          const bondTicks = 20;
+
+          useWorldStore.getState().applyTickDelta((draft) => {
+            const c = draft.countries[playerCountryId];
+            if (c) {
+              c.economic.treasuryCashB += bondAmt;
+              c.economic.debtToGdpRatio += Math.round((bondAmt / c.economic.gdpB) * 100);
+              c.economic.bonds.push({
+                id: `bond_${Math.random().toString().substring(2,6)}`,
+                amount: bondAmt,
+                interestRate: bondRate,
+                maturityTicks: bondTicks,
+                remainingTicks: bondTicks,
+                holder: 'MARKET',
+              });
+            }
+          });
+          usePlayerStore.setState({ cashB: usePlayerStore.getState().cashB + bondAmt });
+
+          audio.sfxKeyClick();
+          useWorldStore.getState().addGlobalEvent(`Bond Desk: Discharged $${bondAmt}B treasury bills via Alt+B.`, 'INFO');
+          
+          useUIStore.getState().pushAlert({
+            title: 'BOND ENVELOPE ISSUED (ALT+B)',
+            message: `Distributed $${bondAmt}B sovereign treasury bills at ${bondRate}% APY maturing in ${bondTicks} ticks. Cash injected immediately.`,
+            type: 'INFO'
+          });
+        } else if (key === 'p') {
+          // Alt+P: Toggle Printing Press
+          e.preventDefault();
+          let isPrinting = false;
+          useWorldStore.getState().applyTickDelta((draft) => {
+            const c = draft.countries[playerCountryId];
+            if (c) {
+              c.economic.printingPressActive = !c.economic.printingPressActive;
+              isPrinting = c.economic.printingPressActive;
+            }
+          });
+
+          audio.sfxKeyClick();
+          useWorldStore.getState().addGlobalEvent(`Central Bank: Printing press toggled via Hotkey. Status: ${isPrinting ? 'ACTIVE' : 'INACTIVE'}.`, 'INFO');
+          
+          useUIStore.getState().pushAlert({
+            title: isPrinting ? 'PRINTING PRESS ENGAGED' : 'PRINTING PRESS HALTED',
+            message: isPrinting 
+              ? 'Quantitative easing active. Treasury gains instant liquidity but fuels inflation index risk.' 
+              : 'Sovereign currency printing stopped.',
+            type: isPrinting ? 'WARNING' : 'INFO'
+          });
+        } else if (key === 'r') {
+          // Alt+R: Refuel All Missiles
+          e.preventDefault();
+          const cost = 2.0;
+          if (usePlayerStore.getState().cashB < cost) {
+            audio.sfxKeyClick();
+            useUIStore.getState().pushAlert({
+              title: 'REFUELLING DIRECTIVE REJECTED',
+              message: 'Treasury bounds error: Refuelling operation requires $2.0B.',
+              type: 'DANGER'
+            });
+            return;
+          }
+
+          usePlayerStore.setState(s => ({ cashB: s.cashB - cost }));
+          usePlayerStore.getState().syncCashToCountry();
+
+          audio.sfxKeyClick();
+          useWorldStore.getState().addGlobalEvent('Logistics Desk: Propellant full fuel charge injected via Alt+R.', 'INFO');
+          
+          useUIStore.getState().pushAlert({
+            title: 'FLEET FUEL RESET (ALT+R)',
+            message: 'All ordnance missile compartments refueled to 100% and ready to launch.',
+            type: 'INFO'
+          });
+        } else if (key === 'l') {
+          // Alt+L: Deploy Tactical Rocket Strike
+          e.preventDefault();
+          const targetId = usePlayerStore.getState().selectedTargetCountryId;
+          if (!targetId) {
+            audio.sfxKeyClick();
+            useUIStore.getState().pushAlert({
+              title: 'LAUNCH ABORTED: OFF-LOCK',
+              message: 'System lock error: Assign a target from the world map directory to input lock-on telemetry coordinate.',
+              type: 'DANGER'
+            });
+            return;
+          }
+          if (targetId === playerCountryId) {
+            audio.sfxKeyClick();
+            useUIStore.getState().pushAlert({
+              title: 'LAUNCH FAILS: TARGET INVALID',
+              message: 'Launch failed: Self-targeting Capital assets triggered security lock safeguards.',
+              type: 'DANGER'
+            });
+            return;
+          }
+
+          // Choose the first weapon with quantity > 0
+          let pickedWeaponModule: any = null;
+          useWorldStore.getState().applyTickDelta((draft) => {
+            const p = draft.countries[playerCountryId];
+            if (p) {
+              const u = p.arsenal.units.find(ut => ut.count > 0 && ut.fuelLevel >= 20);
+              if (u) {
+                pickedWeaponModule = u.type;
+                u.count--;
+                u.operational = u.count;
+              }
+            }
+          });
+
+          if (!pickedWeaponModule) {
+            audio.sfxKeyClick();
+            useUIStore.getState().pushAlert({
+              title: 'WEAPON COLD LOCK',
+              message: 'Ordnance failed: No in-stock missile units available in weapons bunkers, or fuel is depleted (<20%).',
+              type: 'DANGER'
+            });
+            return;
+          }
+
+          audio.sfxMissileLaunch();
+          const scCoords = GEO_COORDS[playerCountryId];
+          const tgCoords = GEO_COORDS[targetId];
+          const sx = scCoords ? scCoords.cx : 500;
+          const sy = scCoords ? scCoords.cy : 250;
+          const tx = tgCoords ? tgCoords.cx : 400;
+          const ty = tgCoords ? tgCoords.cy : 200;
+          const tickDist = Math.max(8, Math.round(100 / getTickIncrement(pickedWeaponModule)));
+
+          useWorldStore.getState().applyTickDelta((draft) => {
+            draft.activeStrikes.push({
+              id: `strike_alt_${Math.random().toString().substring(2, 8)}`,
+              sourceCountryId: playerCountryId,
+              targetCountryId: targetId,
+              weaponType: pickedWeaponModule,
+              progressPct: 0,
+              status: 'IN_FLIGHT',
+              bezier: {
+                startX: sx,
+                startY: sy,
+                controlX: (sx + tx) / 2,
+                controlY: Math.min(sy, ty) - 150,
+                endX: tx,
+                endY: ty,
+              },
+              launchTick: currentTick,
+              impactTick: currentTick + tickDist,
+              isRetaliatory: false,
+              interceptAttempted: false,
+            });
+            draft.globalEventLog.unshift({
+              tick: currentTick,
+              text: `WAR CLERK: Dispatched 1x ${pickedWeaponModule.replace('_', ' ')} targeting ${targetId} via Rapid Strike Hotkey [AL+L].`,
+              severity: 'CRITICAL',
+            });
+          });
+
+          useUIStore.getState().pushAlert({
+            title: 'RAPID MISSILE DEPLOYED (ALT+L)',
+            message: `1x Operational "${pickedWeaponModule.replace('_', ' ')}" launched out of silos, targeting [${targetId}]. ETA: ${tickDist} T.`,
+            type: 'WARNING'
+          });
+        } else if (key === 'a') {
+          // Alt+A: Dispatch Foreign Aid
+          e.preventDefault();
+          const targetId = usePlayerStore.getState().selectedTargetCountryId;
+          if (!targetId || targetId === playerCountryId) {
+            audio.sfxKeyClick();
+            useUIStore.getState().pushAlert({
+              title: 'FOREIGN AID DENIED',
+              message: 'Direct transfer failed: Select a foreign sovereign target to compile aid allocation parameters.',
+              type: 'DANGER'
+            });
+            return;
+          }
+
+          const aidAmt = 5.0;
+          if (usePlayerStore.getState().cashB < aidAmt) {
+            audio.sfxKeyClick();
+            useUIStore.getState().pushAlert({
+              title: 'FOREIGN AID BLOCKED',
+              message: `Liquidity warning: Sovereign treasury bounds exceeded. Requires $${aidAmt}B cash.`,
+              type: 'DANGER'
+            });
+            return;
+          }
+
+          usePlayerStore.setState(s => ({ cashB: s.cashB - aidAmt }));
+          usePlayerStore.getState().syncCashToCountry();
+
+          useWorldStore.getState().applyTickDelta((draft) => {
+            const tgt = draft.countries[targetId];
+            if (tgt) {
+              tgt.economic.treasuryCashB += aidAmt;
+              tgt.opinions[playerCountryId] = Math.min(100, (tgt.opinions[playerCountryId] ?? 0) + 15);
+            }
+          });
+
+          audio.sfxKeyClick();
+          useWorldStore.getState().addGlobalEvent(`State Ministry: Sent $${aidAmt}B in direct economic aid to ${targetId} via ALT+A.`, 'INFO');
+          
+          useUIStore.getState().pushAlert({
+            title: 'FOREIGN AID TRANSCRIBED (ALT+A)',
+            message: `Dispatched an official $${aidAmt}B aid package to ${targetId}. opinion rating improved.`,
+            type: 'INFO'
+          });
+        } else if (key === 's') {
+          // Alt+S: Impose Sanctions
+          e.preventDefault();
+          const targetId = usePlayerStore.getState().selectedTargetCountryId;
+          const tgtC = countries[targetId || ''];
+          if (!targetId || targetId === playerCountryId || !tgtC) {
+            audio.sfxKeyClick();
+            useUIStore.getState().pushAlert({
+              title: 'SANCTIONS DISENGAGED',
+              message: 'Execution error: Select an operational target country to impose embargo parameters.',
+              type: 'DANGER'
+            });
+            return;
+          }
+
+          useEconomyStore.getState().imposeSanction(playerCountryId, targetId);
+          audio.sfxKeyClick();
+          
+          useWorldStore.getState().addGlobalEvent(`BLOCKADE DECREE: Placed aggregate sanctions on ${targetId} via Rapid Command [Alt+S].`, 'WARNING');
+          
+          useUIStore.getState().pushAlert({
+            title: 'TRADE EMBARGO RATIFIED (ALT+S)',
+            message: `Sovereign trade block imposed blockades on all import tech-transfers involving [${targetId}].`,
+            type: 'WARNING'
+          });
+        } else if (key === 't') {
+          // Alt+T: Partnership Pact
+          e.preventDefault();
+          const targetId = usePlayerStore.getState().selectedTargetCountryId;
+          const tgtC = countries[targetId || ''];
+          if (!targetId || targetId === playerCountryId || !tgtC) {
+            audio.sfxKeyClick();
+            useUIStore.getState().pushAlert({
+              title: 'TREATY RATIFICATION FAILED',
+              message: 'Execution error: Select an allied candidate country to propose border alignments.',
+              type: 'DANGER'
+            });
+            return;
+          }
+
+          if ((tgtC.opinions[playerCountryId] ?? 0) < 55) {
+            audio.sfxKeyClick();
+            useUIStore.getState().pushAlert({
+              title: 'ALLIANCE NEGOTIATIONS FAILED',
+              message: `Treaty rejected: ${tgtC.name} opinion of player block is too low (${Math.round(tgtC.opinions[playerCountryId] ?? 0)}/55 ratio limit).`,
+              type: 'WARNING'
+            });
+            return;
+          }
+
+          useWorldStore.getState().applyTickDelta((draft) => {
+            const playerC = draft.countries[playerCountryId];
+            const targetC = draft.countries[targetId];
+            if (playerC && targetC) {
+              if (targetC.allianceBlock !== 'NEUTRAL') {
+                playerC.allianceBlock = targetC.allianceBlock;
+              } else {
+                if (!playerC.tradePartners.includes(targetId)) {
+                  playerC.tradePartners.push(targetId);
+                }
+              }
+              if (playerC.allianceBlock === 'NEUTRAL' && !targetC.tradePartners.includes(playerCountryId)) {
+                targetC.tradePartners.push(playerCountryId);
+              }
+            }
+          });
+
+          audio.sfxKeyClick();
+          useWorldStore.getState().addGlobalEvent(`TREATY RATIFIED: Formalized Mutual Defensive Pact aligned with ${targetId} [Alt+T].`, 'INFO');
+          
+          useUIStore.getState().pushAlert({
+            title: 'PARTNERSHIP SIGNED (ALT+T)',
+            message: `Ratified bilateral defensive parameters with ${tgtC.name}. Border lines synchronized.`,
+            type: 'INFO'
+          });
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -145,7 +532,7 @@ export default function App() {
       window.removeEventListener('keydown', handleKeyDown);
       stopTickTimer();
     };
-  }, []);
+  }, [countries, playerCountryId, currentTick]);
 
   const resolution: 'ONGOING' | 'VICTORY' | 'DEFEAT' = playerState.victoryAchieved
     ? 'VICTORY'
@@ -312,11 +699,11 @@ export default function App() {
 
         {/* Right Side: Tab action decks and world intelligence boxes */}
         {!isMaximized && (
-          <div className="flex-1 flex flex-col h-full overflow-y-auto p-4 bg-[#040704] justify-between animate-fade-in">
+          <div className="flex-1 flex flex-col h-full overflow-y-auto p-4 bg-[#040704] justify-between animate-fade-in scrollbar-thin">
           <div>
             {/* Action command tabs button matrices (F1 - F8) */}
             <div className="flex justify-between items-center mb-3">
-              <div className="flex gap-1 overflow-x-auto py-1">
+              <div className="flex gap-1 overflow-x-auto py-1 scrollbar-none w-full">
                 {[
                   { id: 1, label: 'GOVERNMENT (F1)' },
                   { id: 2, label: 'CENTRAL BANK (F2)' },
@@ -332,11 +719,14 @@ export default function App() {
                     <button
                       key={tab.id}
                       onClick={() => { audio.sfxKeyClick(); playerState.setActiveTab(tab.id); }}
-                      className={`btn-sovereign text-[8px] tracking-wider py-1.5 whitespace-nowrap ${
-                        isActive ? 'active' : ''
+                      className={`btn-sovereign text-[8px] tracking-wider py-1.5 px-3.5 whitespace-nowrap flex flex-col justify-center items-center min-w-[110px] border rounded transition-all select-none cursor-pointer ${
+                        isActive 
+                          ? 'border-[#00ff44] text-[#00ff44] bg-[#0c1f0d] shadow-[0_0_8px_rgba(0,255,68,0.15)] active' 
+                          : 'border-[#1a5c1a]/35 bg-[#020502] text-gray-400 hover:border-green-800 hover:text-white'
                       }`}
                     >
-                      {tab.label}
+                      <span className="font-bold tracking-widest">{tab.label}</span>
+                      <span className="text-[7.5px] text-[#00e5ff] font-medium mt-0.5 tracking-normal opacity-90 select-none">{getTabKPI(tab.id)}</span>
                     </button>
                   );
                 })}
@@ -344,7 +734,7 @@ export default function App() {
             </div>
 
             {/* Active panel — customized with .instrument-block design system */}
-            <div className="instrument-block mb-4" style={{ minHeight: '340px' }}>
+            <div className="instrument-block mb-3.5" style={{ minHeight: '340px' }}>
               {playerState.activeTab === 1 && <GovernmentPanel />}
               {playerState.activeTab === 2 && <CentralBankPanel />}
               {playerState.activeTab === 3 && <ArsenalPanel />}
@@ -354,6 +744,9 @@ export default function App() {
               {playerState.activeTab === 7 && <SpacePanel />}
               {playerState.activeTab === 8 && <PopulationPanel />}
             </div>
+
+            {/* PERSISTENT OPERATIONS LOG CHANNEL */}
+            <CommandLogPanel />
           </div>
 
           {/* Bottom Reactive columns: Newspaper and UN Council Chambers side-by-side */}

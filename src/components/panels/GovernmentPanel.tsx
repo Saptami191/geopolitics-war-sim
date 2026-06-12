@@ -302,13 +302,14 @@ export default function GovernmentPanel() {
                 <button
                   id="martial-law-toggle-btn"
                   onClick={handleToggleMartialLaw}
-                  className={`w-[150px] py-2 border font-bold uppercase text-[9px] rounded cursor-pointer text-center tracking-wider transition-all active:translate-y-0.5 ${
+                  className={`w-[150px] py-2 border font-bold uppercase text-[9px] rounded cursor-pointer text-center tracking-wider transition-all active:translate-y-0.5 relative group ${
                     pol.martialLawActive
                       ? 'border-[#ff2244] text-[#ff2244] bg-[#220002] hover:bg-[#400005]'
                       : 'border-[#ffb300] text-[#ffb300] bg-[#1d1400] hover:bg-[#352000]'
                   }`}
                 >
                   {pol.martialLawActive ? 'DISABLE MARTIAL LAW' : 'ENACT MARTIAL LAW'}
+                  <span className="absolute -top-1.5 -right-1 bg-black text-gray-400 border border-current text-[6.5px] font-mono font-bold px-1 rounded transition-opacity">ALT+M</span>
                 </button>
               </div>
             </div>

@@ -200,9 +200,10 @@ export default function DiplomacyPanel() {
 
                 <button
                   onClick={() => handleDispatchAid('ECONOMIC')}
-                  className="px-2.5 py-1 border border-cyan-800 text-cyan-400 font-mono hover:bg-[#002e3b] text-[9px] uppercase cursor-pointer transition-colors"
+                  className="px-2.5 py-1 border border-cyan-800 text-cyan-400 font-mono hover:bg-[#002e3b] text-[9px] uppercase cursor-pointer transition-colors relative group"
                 >
                   DISPATCH ECONOMIC AID
+                  <span className="absolute -top-1.5 -right-1 bg-black text-cyan-400 border border-current text-[6.5px] font-mono font-bold px-1 rounded transition-opacity">ALT+A</span>
                 </button>
               </div>
             </div>
@@ -211,15 +212,17 @@ export default function DiplomacyPanel() {
             <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-[#0d1f0d]">
               <button
                 onClick={handleSignPact}
-                className="py-1.5 border border-[#00ff44] text-[#00ff44] hover:bg-[#021c02] font-semibold uppercase text-[9px] rounded cursor-pointer transition-colors text-shadow"
+                className="py-1.5 border border-[#00ff44] text-[#00ff44] hover:bg-[#021c02] font-semibold uppercase text-[9px] rounded cursor-pointer transition-colors text-shadow relative group"
               >
                 🤝 PARTNERSHIP PACT
+                <span className="absolute -top-1.5 right-1.5 bg-black text-[#00ff44] border border-current text-[6.5px] font-mono font-bold px-1 rounded transition-opacity">ALT+T</span>
               </button>
               <button
                 onClick={handleImposeBlockade}
-                className="py-1.5 border border-[#ff2244] text-[#ff2244] hover:bg-[#220002] font-semibold uppercase text-[9px] rounded cursor-pointer transition-colors text-shadow"
+                className="py-1.5 border border-[#ff2244] text-[#ff2244] hover:bg-[#220002] font-semibold uppercase text-[9px] rounded cursor-pointer transition-colors text-shadow relative group"
               >
                 🚫 IMPOSE SANCTIONS
+                <span className="absolute -top-1.5 right-1.5 bg-black text-[#ff2244] border border-current text-[6.5px] font-mono font-bold px-1 rounded transition-opacity">ALT+S</span>
               </button>
             </div>
           </div>

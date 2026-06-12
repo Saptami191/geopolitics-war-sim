@@ -236,9 +236,10 @@ export default function ArsenalPanel() {
                 </span>
                 <button
                   onClick={handleRefuelArsenal}
-                  className="px-3 py-1.5 bg-[#102a10] border border-[#2aff44] text-[#00ff44] rounded hover:bg-[#1a401a] font-bold uppercase text-[9px] cursor-pointer transition-all active:translate-y-0.5"
+                  className="px-3 py-1.5 bg-[#102a10] border border-[#2aff44] text-[#00ff44] rounded hover:bg-[#1a401a] font-bold uppercase text-[9px] cursor-pointer transition-all active:translate-y-0.5 relative group"
                 >
                   REFUEL ALL MISSILES ($2.0B)
+                  <span className="absolute -top-1.5 -right-1 bg-black text-[#00ff44] border border-current text-[6.5px] font-mono font-bold px-1 rounded transition-opacity">ALT+R</span>
                 </button>
               </div>
             </div>
@@ -347,7 +348,7 @@ export default function ArsenalPanel() {
 
                 <button
                   onClick={handleLaunchStrike}
-                  className={`w-full py-2 flex justify-center items-center font-bold tracking-widest uppercase rounded cursor-pointer transition-all ${
+                  className={`w-full py-2 flex justify-center items-center font-bold tracking-widest uppercase rounded cursor-pointer transition-all relative group ${
                     !targetId
                       ? 'bg-gray-800 border-gray-900 border text-gray-500 select-none cursor-not-allowed opacity-50'
                       : isNukeW
@@ -356,6 +357,7 @@ export default function ArsenalPanel() {
                   }`}
                 >
                   {isNukeW ? '⚡ DEPLOY THERMONUCLEAR STRIKE' : '🚀 DISPATCH ACTIVE MISSILE'}
+                  <span className="absolute -top-1.5 -right-1 bg-black text-[#ffb300] border border-current text-[6.5px] font-mono font-bold px-1 rounded transition-opacity">ALT+L</span>
                 </button>
               </div>
             </div>
