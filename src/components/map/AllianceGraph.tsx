@@ -217,7 +217,7 @@ export default function AllianceGraph() {
         if (srcId >= tgtId) return;
         const target = countries[tgtId];
         // High mutual opinion + same alliance block suggests strong intelligence integration
-        if (c.allianceBlock !== 'NEUTRAL' && c.allianceBlock === target.allianceBlock && (c.opinions[tgtId] || 0) > 40) {
+        if (c.allianceBlock !== 'NEUTRAL' && c.allianceBlock === target.allianceBlock && (c.opinions?.[tgtId] || 0) > 40) {
           listLinks.push({
             id: `intel_${srcId}_${tgtId}`,
             source: srcId,
@@ -250,7 +250,7 @@ export default function AllianceGraph() {
         if (srcId >= tgtId) return;
         const target = countries[tgtId];
         // Nuclear nations of opposing blocks or highly negative opinions
-        if (c.arsenal?.nuclearCapable && target.arsenal?.nuclearCapable && (c.opinions[tgtId] || 0) < -20) {
+        if (c.arsenal?.nuclearCapable && target.arsenal?.nuclearCapable && (c.opinions?.[tgtId] || 0) < -20) {
           listLinks.push({
             id: `deterrence_${srcId}_${tgtId}`,
             source: srcId,

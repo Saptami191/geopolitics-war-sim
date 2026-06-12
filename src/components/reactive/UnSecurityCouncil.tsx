@@ -43,8 +43,8 @@ export default function UnSecurityCouncil() {
       const votesAgainst: string[] = [];
 
       Object.keys(countries).forEach((cId) => {
-        const srcOpinion = countries[srcId]?.opinions[cId] ?? 50;
-        const tgtOpinion = countries[tgtId]?.opinions[cId] ?? 50;
+        const srcOpinion = countries[srcId]?.opinions?.[cId] ?? 50;
+        const tgtOpinion = countries[tgtId]?.opinions?.[cId] ?? 50;
         
         if (srcOpinion > tgtOpinion) {
           votesFor.push(cId);
@@ -78,7 +78,7 @@ export default function UnSecurityCouncil() {
         const votesFor = Object.keys(countries).filter((cId) => {
           if (cId === selectedCountryId) return true;
           const isSameBlock = countries[cId].allianceBlock !== 'NEUTRAL' && countries[cId].allianceBlock === c.allianceBlock;
-          const hasGoodOpinion = (c.opinions[cId] ?? 50) > 40;
+          const hasGoodOpinion = (c.opinions?.[cId] ?? 50) > 40;
           return isSameBlock || hasGoodOpinion;
         });
 
@@ -86,7 +86,7 @@ export default function UnSecurityCouncil() {
         const votesAgainst = Object.keys(countries).filter((cId) => {
           if (cId === selectedCountryId) return false;
           const isOppositeBlock = countries[cId].allianceBlock !== 'NEUTRAL' && c.allianceBlock !== 'NEUTRAL' && countries[cId].allianceBlock !== c.allianceBlock;
-          const hasBadOpinion = (c.opinions[cId] ?? 50) <= 40;
+          const hasBadOpinion = (c.opinions?.[cId] ?? 50) <= 40;
           return isOppositeBlock || hasBadOpinion || c.atWarWith.includes(cId);
         });
 
