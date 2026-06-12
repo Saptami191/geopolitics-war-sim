@@ -597,22 +597,22 @@ export const WebGLGlobe = forwardRef<WebGLGlobeRef, WebGLGlobeProps>(({
       const [day, night, specular, clouds] = await Promise.all([
         tryLoadTexture([
           '/textures/earth-blue-marble.jpg',
-          'https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg',
+          'https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-blue-marble.jpg',
           'https://raw.githubusercontent.com/vasturiano/three-globe/master/example/img/earth-blue-marble.jpg'
         ], 'day'),
         tryLoadTexture([
           '/textures/earth-night.jpg',
-          'https://unpkg.com/three-globe/example/img/earth-night.jpg',
+          'https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-night.jpg',
           'https://raw.githubusercontent.com/vasturiano/three-globe/master/example/img/earth-night.jpg'
         ], 'night'),
         tryLoadTexture([
           '/textures/earth-water.png',
-          'https://unpkg.com/three-globe/example/img/earth-water.png',
+          'https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-water.png',
           'https://raw.githubusercontent.com/vasturiano/three-globe/master/example/img/earth-water.png'
         ], 'spec'),
         tryLoadTexture([
           '/textures/earth-clouds.png',
-          'https://unpkg.com/three-globe/example/img/earth-clouds.png',
+          'https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-clouds.png',
           'https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/textures/planets/earth_clouds_1024.png'
         ], 'clouds')
       ]);

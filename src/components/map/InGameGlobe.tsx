@@ -154,9 +154,9 @@ export function InGameGlobe({ theme = 'dark', layers }: InGameGlobeProps) {
 
     // BLUE MARBLE RASTER CORES
     const loader = new THREE.TextureLoader();
-    const dayTex = loader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg');
-    const nightTex = loader.load('https://unpkg.com/three-globe/example/img/earth-night.jpg');
-    const cloudsTex = loader.load('https://unpkg.com/three-globe/example/img/earth-clouds.png');
+    const dayTex = loader.load('/textures/earth-blue-marble.jpg');
+    const nightTex = loader.load('/textures/earth-night.jpg');
+    const cloudsTex = loader.load('/textures/earth-clouds.png');
 
     // 1. Solid Earth Core (Day / Night Shaded)
     const earthGeo = new THREE.SphereGeometry(1, 64, 64);
