@@ -152,25 +152,194 @@ export function InGameGlobe({ theme = 'dark', layers }: InGameGlobeProps) {
     const globeGroup = new THREE.Group();
     scene.add(globeGroup);
 
-    // --- RESILIENT TEXTURE PIPELINE WITH MULTIPLE CDN FALLBACKS ---
-    const loadTextureWithFallback = (localPath: string, fallbacks: string[]) => {
-      const tex = new THREE.Texture();
-      tex.colorSpace = THREE.SRGBColorSpace;
-      const img = new Image();
+    const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
+
+    // --- HIGH-FIDELITY PROCEDURAL TEXTURE GENERATOR FOR ABSOLUTE ZERO LATENCY ---
+    const noiseTableSize = 256;
+    const perm: number[] = [];
+    for (let i = 0; i < noiseTableSize; i++) {
+      perm.push(Math.floor(Math.sin(i * 12.9898) * 43758.5453) & 255);
+    }
+    const noisePerm = [...perm, ...perm];
+    
+    const fade = (t: number) => t * t * t * (t * (t * 6 - 15) + 10);
+    const lerp = (t: number, a: number, b: number) => a + t * (b - a);
+    
+    const valueNoise3D = (x: number, y: number, z: number): number => {
+      const X = Math.floor(x) & 255;
+      const Y = Math.floor(y) & 255;
+      const Z = Math.floor(z) & 255;
       
+      const xf = x - Math.floor(x);
+      const yf = y - Math.floor(y);
+      const zf = z - Math.floor(z);
+      
+      const u = fade(xf);
+      const v = fade(yf);
+      const w = fade(zf);
+      
+      const aaa = noisePerm[noisePerm[noisePerm[X] + Y] + Z] / 255;
+      const aba = noisePerm[noisePerm[noisePerm[X] + Y + 1] + Z] / 255;
+      const aab = noisePerm[noisePerm[noisePerm[X] + Y] + Z + 1] / 255;
+      const abb = noisePerm[noisePerm[noisePerm[X] + Y + 1] + Z + 1] / 255;
+      const baa = noisePerm[noisePerm[noisePerm[X + 1] + Y] + Z] / 255;
+      const bba = noisePerm[noisePerm[noisePerm[X + 1] + Y + 1] + Z] / 255;
+      const bab = noisePerm[noisePerm[noisePerm[X + 1] + Y] + Z + 1] / 255;
+      const bbb = noisePerm[noisePerm[noisePerm[X + 1] + Y + 1] + Z + 1] / 255;
+      
+      const x1 = lerp(u, aaa, baa);
+      const x2 = lerp(u, aba, bba);
+      const x3 = lerp(u, aab, bab);
+      const x4 = lerp(u, abb, bbb);
+      
+      const y1 = lerp(v, x1, x2);
+      const y2 = lerp(v, x3, x4);
+      
+      return lerp(w, y1, y2);
+    };
+
+    const getSeamlessElevation = (u: number, v: number): number => {
+      const r = 1.6;
+      const angle = u * Math.PI * 2;
+      const nx = r * Math.cos(angle);
+      const ny = r * Math.sin(angle);
+      const nz = (v - 0.5) * 3.2;
+
+      let val = 0;
+      let amp = 1.0;
+      let freq = 0.85;
+      let totalAmp = 0;
+      
+      for (let i = 0; i < 4; i++) { // 4 octaves for faster performance in-game
+        val += valueNoise3D(nx * freq + 8.2, ny * freq + 4.9, nz * freq + 3.1) * amp;
+        totalAmp += amp;
+        amp *= 0.5;
+        freq *= 2.05;
+      }
+      val /= totalAmp;
+
+      let bias = -0.16;
+      if (u > 0.15 && u < 0.40) {
+        const amerDist = Math.sin((u - 0.15) / 0.25 * Math.PI) * Math.sin((v - 0.12) / 0.74 * Math.PI);
+        bias += amerDist * 0.48;
+      }
+      if (u > 0.46 && u < 0.88) {
+        const eurasiaDist = Math.sin((u - 0.46) / 0.42 * Math.PI) * Math.sin((v - 0.10) / 0.72 * Math.PI);
+        bias += eurasiaDist * 0.52;
+      }
+      if (u > 0.74 && u < 0.90 && v > 0.56 && v < 0.78) {
+        bias += 0.28;
+      }
+      if (v < 0.14) bias += (0.14 - v) * 2.5;
+      if (v > 0.82) bias += (v - 0.82) * 2.5;
+
+      return Math.max(0, Math.min(1, val * 0.44 + bias));
+    };
+
+    const smoothstep = (edge0: number, edge1: number, x: number) => {
+      const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+      return t * t * (3 - 2 * t);
+    };
+
+    // Keep resolution slightly smaller (e.g., 1024x512) for fast rendering
+    const createFallbackTexture = (type: 'day' | 'night' | 'clouds') => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d')!;
+      const imgData = ctx.createImageData(1024, 512);
+      const data = imgData.data;
+
+      for (let y = 0; y < 512; y++) {
+        const v = y / 511;
+        for (let x = 0; x < 1024; x++) {
+          const u = x / 1023;
+          const idx = (y * 1024 + x) * 4;
+
+          const elev = getSeamlessElevation(u, v);
+          const isLand = elev > 0.44;
+
+          if (type === 'day') {
+            if (isLand) {
+              if (v < 0.16 || v > 0.83 || elev > 0.76) {
+                data[idx] = 245; data[idx+1] = 248; data[idx+2] = 250; data[idx+3] = 255;
+              } else {
+                const isDesert = v > 0.32 && v < 0.54 && getSeamlessElevation(u * 1.5, v * 1.5) > 0.48;
+                if (isDesert) {
+                  const dFactor = Math.floor(elev * 18);
+                  data[idx] = 210 + dFactor; data[idx+1] = 175 + dFactor; data[idx+2] = 125; data[idx+3] = 255;
+                } else {
+                  data[idx] = Math.floor(34 + elev * 12); data[idx+1] = Math.floor(74 + (1.0 - elev) * 22); data[idx+2] = Math.floor(36 + elev * 8); data[idx+3] = 255;
+                }
+              }
+            } else {
+              const shelf = smoothstep(0.36, 0.44, elev);
+              data[idx] = Math.floor(4 * (1 - shelf) + 12 * shelf); data[idx+1] = Math.floor(18 * (1 - shelf) + 52 * shelf); data[idx+2] = Math.floor(38 * (1 - shelf) + 98 * shelf); data[idx+3] = 255;
+            }
+          } else if (type === 'night') {
+            if (isLand) {
+              data[idx] = 8; data[idx+1] = 10; data[idx+2] = 14; data[idx+3] = 255;
+              const isCoastal = elev > 0.44 && elev < 0.51;
+              const popDensity = getSeamlessElevation(u * 3.5, v * 3.5);
+              if ((isCoastal && popDensity > 0.62) || popDensity > 0.72) {
+                data[idx] = 255; data[idx+1] = 188 + Math.floor(popDensity * 50); data[idx+2] = 80; data[idx+3] = 255;
+              }
+            } else {
+              data[idx] = 2; data[idx+1] = 3; data[idx+2] = 6; data[idx+3] = 255;
+            }
+          } else if (type === 'clouds') {
+            const cloudFactor = getSeamlessElevation(u * 1.8 + 0.5, v * 1.6 - 0.2);
+            const clOpacity = smoothstep(0.48, 0.78, cloudFactor) * 235;
+            data[idx] = 255; data[idx+1] = 255; data[idx+2] = 255; data[idx+3] = Math.floor(clOpacity);
+          }
+        }
+      }
+      ctx.putImageData(imgData, 0, 0);
+      
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.ClampToEdgeWrapping;
+      texture.anisotropy = maxAnisotropy;
+      texture.minFilter = THREE.LinearMipmapLinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+      texture.generateMipmaps = true;
+      return texture;
+    };
+
+    const fallbackDay = createFallbackTexture('day');
+    const fallbackNight = createFallbackTexture('night');
+    const fallbackClouds = createFallbackTexture('clouds');
+
+    fallbackDay.colorSpace = THREE.SRGBColorSpace;
+    fallbackNight.colorSpace = THREE.SRGBColorSpace;
+
+    // --- RESILIENT TEXTURE PIPELINE WITH MULTIPLE CDN FALLBACKS ---
+    const loadTextureWithFallback = (localPath: string, fallbacks: string[], placeholderTex: THREE.Texture) => {
+      // Initialize with our beautiful fallback so there is never a blank frame!
+      const tex = placeholderTex.clone();
+      tex.colorSpace = THREE.SRGBColorSpace;
+      
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.ClampToEdgeWrapping;
+      tex.minFilter = THREE.LinearMipmapLinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      tex.anisotropy = maxAnisotropy;
+      tex.generateMipmaps = true;
+
+      const img = new Image();
       const urls = [localPath, ...fallbacks];
       let attemptIndex = 0;
 
       const tryLoadNext = () => {
         if (attemptIndex >= urls.length) {
-          console.error(`[GLOBE-INGAME] ❌ All attempts failed for texture: ${localPath}`);
+          console.warn(`[GLOBE-INGAME] ❌ All attempts failed for texture: ${localPath}. Keeping procedural canvas decoration.`);
           return;
         }
         const currentUrl = urls[attemptIndex];
         attemptIndex++;
         
         const isLocal = !currentUrl.startsWith('http') && !currentUrl.startsWith('//');
-        img.crossOrigin = isLocal ? null : 'anonymous';
+        img.crossOrigin = isLocal ? undefined : 'anonymous';
         img.src = currentUrl;
       };
 
@@ -192,15 +361,15 @@ export function InGameGlobe({ theme = 'dark', layers }: InGameGlobeProps) {
     const dayTex = loadTextureWithFallback('/textures/earth-blue-marble.jpg', [
       'https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-blue-marble.jpg',
       'https://raw.githubusercontent.com/vasturiano/three-globe/master/example/img/earth-blue-marble.jpg'
-    ]);
+    ], fallbackDay);
     const nightTex = loadTextureWithFallback('/textures/earth-night.jpg', [
       'https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-night.jpg',
       'https://raw.githubusercontent.com/vasturiano/three-globe/master/example/img/earth-night.jpg'
-    ]);
+    ], fallbackNight);
     const cloudsTex = loadTextureWithFallback('/textures/earth-clouds.png', [
       'https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-clouds.png',
       'https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/textures/planets/earth_clouds_1024.png'
-    ]);
+    ], fallbackClouds);
 
     // 1. Solid Earth Core (Day / Night Shaded)
     const earthGeo = new THREE.SphereGeometry(1, 64, 64);

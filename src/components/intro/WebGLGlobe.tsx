@@ -303,38 +303,84 @@ export const WebGLGlobe = forwardRef<WebGLGlobeRef, WebGLGlobeProps>(({
 
     // --- SEAMLESS, EMBEDDED SENSORY RECOVERY TEXTURE PIPELINE ---
     // Implements native background loading from local origin with automatic fallbacks.
-    const loadTextureWithFallback = (localPath: string, fallbackUrl: string) => {
-      const tex = new THREE.Texture();
+    const loadTextureWithFallback = (localPath: string, fallbacks: string[], placeholderTex: THREE.Texture) => {
+      // Use the procedural texture canvas as the starting texture so it is never blank/empty!
+      const tex = placeholderTex.clone();
       tex.colorSpace = THREE.SRGBColorSpace;
+      
+      // Apply advanced linear filtering and anisotropic parameters to eliminate grazing-angle pixelation
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.ClampToEdgeWrapping;
+      tex.minFilter = THREE.LinearMipmapLinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      tex.anisotropy = maxAnisotropy;
+      tex.generateMipmaps = true;
+
       const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.src = localPath;
+      const urls = [localPath, ...fallbacks];
+      let attemptIndex = 0;
+
+      const tryLoadNext = () => {
+        if (attemptIndex >= urls.length) {
+          console.warn(`[GLOBE-INTRO] ❌ All asset streams failed for: ${localPath}. Retaining high-fidelity procedural canvas fallback.`);
+          return;
+        }
+        const currentUrl = urls[attemptIndex];
+        attemptIndex++;
+        
+        const isLocal = !currentUrl.startsWith('http') && !currentUrl.startsWith('//');
+        img.crossOrigin = isLocal ? undefined : 'anonymous';
+        img.src = currentUrl;
+      };
+
       img.onload = () => {
         tex.image = img;
         tex.needsUpdate = true;
+        console.log(`[GLOBE-INTRO] ✅ Successfully loaded asset: ${img.src}`);
       };
+
       img.onerror = () => {
-        console.warn(`[GLOBE-INTRO] ⚠ Local asset failed: ${localPath}. Loading remote fallback: ${fallbackUrl}`);
-        img.src = fallbackUrl;
+        console.warn(`[GLOBE-INTRO] ⚠ Load failed for: ${img.src}. Trying next fallback...`);
+        tryLoadNext();
       };
+
+      tryLoadNext();
       return tex;
     };
 
     const dayTex = loadTextureWithFallback(
       '/textures/earth-blue-marble.jpg',
-      'https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-blue-marble.jpg'
+      [
+        'https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-blue-marble.jpg',
+        'https://raw.githubusercontent.com/vasturiano/three-globe/master/example/img/earth-blue-marble.jpg'
+      ],
+      fallbackDay
     );
     const nightTex = loadTextureWithFallback(
       '/textures/earth-night.jpg',
-      'https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-night.jpg'
+      [
+        'https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-night.jpg',
+        'https://raw.githubusercontent.com/vasturiano/three-globe/master/example/img/earth-night.jpg'
+      ],
+      fallbackNight
     );
     const specTex = loadTextureWithFallback(
       '/textures/earth-water.png',
-      'https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-water.png'
+      [
+        'https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-water.png',
+        'https://raw.githubusercontent.com/vasturiano/three-globe/master/example/img/earth-water.png'
+      ],
+      fallbackSpec
     );
     const cloudsTex = loadTextureWithFallback(
       '/textures/earth-clouds.png',
-      'https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-clouds.png'
+      [
+        'https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-clouds.png',
+        'https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/textures/planets/earth_clouds_1024.png',
+        'https://raw.githubusercontent.com/vasturiano/three-globe/master/example/img/earth-clouds.png',
+        'https://unpkg.com/three-globe/example/img/earth-clouds.png'
+      ],
+      fallbackClouds
     );
 
     // --- 1. Earth Core Mesh with Phong Shader ---
