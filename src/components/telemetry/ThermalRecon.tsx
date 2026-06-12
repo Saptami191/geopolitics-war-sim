@@ -99,10 +99,18 @@ export default function ThermalRecon() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    const dpr = window.devicePixelRatio || 1;
+    const baseW = 192;
+    const baseH = 148;
+    
+    canvas.width = baseW * dpr;
+    canvas.height = baseH * dpr;
+    ctx.scale(dpr, dpr);
+
     const COLS = 16;
     const ROWS = 12;
-    const cellW = canvas.width / COLS;
-    const cellH = canvas.height / ROWS;
+    const cellW = baseW / COLS;
+    const cellH = baseH / ROWS;
 
     // Static environmental hot spots (cities, tactical reactors)
     const hotSpots = [

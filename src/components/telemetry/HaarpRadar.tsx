@@ -45,8 +45,16 @@ export default function HaarpRadar() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const W = canvas.width;
-    const H = canvas.height;
+    const dpr = window.devicePixelRatio || 1;
+    const baseW = 192;
+    const baseH = 148;
+    
+    canvas.width = baseW * dpr;
+    canvas.height = baseH * dpr;
+    ctx.scale(dpr, dpr);
+
+    const W = baseW;
+    const H = baseH;
     const cx = W / 2;
     const cy = H / 2;
     const R = Math.min(cx, cy) - 9;
@@ -56,8 +64,10 @@ export default function HaarpRadar() {
       sweepAngle.current = (sweepAngle.current + sweepSpeed) % 360;
       const sa = sweepAngle.current;
 
-      // Pixel-level phosphor persistence decay (comet tail trailing)
-      const imageData = ctx!.getImageData(0, 0, W, H);
+      // Pixel-level phosphor persistence decay (comet tail trailing) in physical backing pixels
+      const dprW = Math.round(baseW * dpr);
+      const dprH = Math.round(baseH * dpr);
+      const imageData = ctx!.getImageData(0, 0, dprW, dprH);
       const data = imageData.data;
       for (let i = 0; i < data.length; i += 4) {
         // Simple distance check to keep decay bounded within active screen circles

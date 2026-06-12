@@ -105,8 +105,16 @@ export default function CyberFeed() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const W = canvas.width;
-    const H = canvas.height;
+    const dpr = window.devicePixelRatio || 1;
+    const baseW = 192;
+    const baseH = 148;
+    
+    canvas.width = baseW * dpr;
+    canvas.height = baseH * dpr;
+    ctx.scale(dpr, dpr);
+
+    const W = baseW;
+    const H = baseH;
     const COLS = 15;
     const colW = W / COLS;
 
@@ -118,7 +126,9 @@ export default function CyberFeed() {
       tick++;
 
       // Pixel decay matrix persistence (authentic glowing phosphor effect)
-      const imageData = ctx!.getImageData(0, 0, W, H);
+      const dprW = Math.round(baseW * dpr);
+      const dprH = Math.round(baseH * dpr);
+      const imageData = ctx!.getImageData(0, 0, dprW, dprH);
       const data = imageData.data;
       for (let i = 0; i < data.length; i += 4) {
         data[i] = data[i] * 0.86;      // R decayed

@@ -761,8 +761,23 @@ export default function AllianceGraph() {
   const activeFocusDossier = getDossierNode();
 
   // Highlight line styling rules
-  const getLineStyles = (type: string, isMainSelected: boolean, isHovered: boolean, isPathCandidate: boolean) => {
-    const defaultOpacity = isHovered ? '1.0' : isMainSelected ? '1.0' : '0.28';
+  const getLineStyles = (type: string, isMainSelected: boolean, isHovered: boolean, isPathCandidate: boolean, isHighPriorityEdge: boolean, currentZoom: number) => {
+    let defaultOpacity = isHovered ? '1.0' : isMainSelected ? '1.0' : '0.28';
+    
+    // Thin or hide low-priority edges when zoomed out
+    const isZoomedOut = currentZoom < 0.6;
+    if (isZoomedOut && !isHighPriorityEdge) {
+      if (type === 'TRADE' || type === 'SANCTIONS') {
+        // Completely hide minor relations in zoomed out density view
+        return { stroke: 'transparent', strokeDasharray: undefined, opacity: '0', className: 'hidden' };
+      } else {
+        // Significantly thin out other secondary lines
+        defaultOpacity = '0.05';
+      }
+    } else if (isZoomedOut && isHighPriorityEdge) {
+      defaultOpacity = '0.45'; // keep high priority visible yet subtle
+    }
+
     let stroke = 'rgba(0, 255, 68, 0.4)';
     let dash = undefined;
     let className = '';
@@ -1227,7 +1242,8 @@ export default function AllianceGraph() {
               const isHovered = hoveredNodeId === srcId || hoveredNodeId === tgtId;
               const isPathLink = isLinkInShortestPath(link);
 
-              const lineStyle = getLineStyles(link.type, isMainSelected, isHovered, isPathLink);
+              const isHighPriorityEdge = isMainSelected || isHovered || isPathLink || link.type === 'WAR' || link.type === 'NUCLEAR_DETERRENCE';
+              const lineStyle = getLineStyles(link.type, isMainSelected, isHovered, isPathLink, isHighPriorityEdge, transform.k);
 
               return (
                 <g
@@ -1384,30 +1400,53 @@ export default function AllianceGraph() {
                     {node.flag}
                   </text>
 
-                  {/* Key-code labels beneath node body */}
-                  <g transform={`translate(0, ${radius + 11})`}>
-                    <rect
-                      x="-14"
-                      y="-6"
-                      width="28"
-                      height="11"
-                      fill="#020503"
-                      stroke={isSelected ? '#00ff44' : nodeStroke}
-                      strokeWidth="0.5"
-                      rx="1"
-                    />
-                    <text
-                      dy="2.5"
-                      textAnchor="middle"
-                      fill={isSelected ? '#00ff44' : '#ffffff'}
-                      fontSize="7"
-                      fontFamily="monospace"
-                      fontWeight="black"
-                      className="tracking-widest uppercase transition-colors pointer-events-none select-none text-[7px]"
-                    >
-                      {node.id}
-                    </text>
-                  </g>
+                  {/* Key-code labels beneath node body with LOD checks */}
+                  {(() => {
+                    const isHighPriorityNode = isSelected || isHovered || node.id === playerCountryId || isCopilotHighlighted || node.vulnerabilityIndex > 60 || node.influence > 65;
+                    const shouldShowLabel = transform.k >= 0.65 || isHighPriorityNode;
+                    return shouldShowLabel && (
+                      <g transform={`translate(0, ${radius + 11})`}>
+                        <rect
+                          x="-14"
+                          y="-6"
+                          width="28"
+                          height="11"
+                          fill="#020503"
+                          stroke={isSelected ? '#00ff44' : nodeStroke}
+                          strokeWidth="0.5"
+                          rx="1"
+                        />
+                        <text
+                          dy="2.5"
+                          textAnchor="middle"
+                          fill={isSelected ? '#00ff44' : '#ffffff'}
+                          fontSize="7"
+                          fontFamily="monospace"
+                          fontWeight="black"
+                          className="tracking-widest uppercase transition-colors pointer-events-none select-none text-[7px]"
+                        >
+                          {node.id}
+                        </text>
+                      </g>
+                    );
+                  })()}
+
+                  {/* Enhanced sub-label revealed on close inspection zoom */}
+                  {transform.k >= 1.25 && (
+                    <g transform={`translate(0, ${radius + 21})`}>
+                      <text
+                        dy="2.5"
+                        textAnchor="middle"
+                        fill="rgba(0, 229, 255, 0.85)"
+                        fontSize="6"
+                        fontWeight="black"
+                        fontFamily="monospace"
+                        className="tracking-wider uppercase pointer-events-none select-none text-[6px]"
+                      >
+                        INF:{node.influence}%
+                      </text>
+                    </g>
+                  )}
                 </g>
               );
             })}

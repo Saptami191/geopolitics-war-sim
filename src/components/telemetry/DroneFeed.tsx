@@ -52,8 +52,16 @@ export default function DroneFeed() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const W = canvas.width;
-    const H = canvas.height;
+    const dpr = window.devicePixelRatio || 1;
+    const baseW = 192;
+    const baseH = 148;
+    
+    canvas.width = baseW * dpr;
+    canvas.height = baseH * dpr;
+    ctx.scale(dpr, dpr);
+
+    const W = baseW;
+    const H = baseH;
 
     function drawAltitudeTape(alt: number) {
       ctx!.strokeStyle = 'rgba(0, 255, 68, 0.65)';

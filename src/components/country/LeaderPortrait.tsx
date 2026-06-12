@@ -14,9 +14,11 @@ export const LeaderPortrait: React.FC<LeaderPortraitProps> = ({ countryId }) => 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    const dpr = window.devicePixelRatio || 1;
     // Reset size
-    canvas.width = 120;
-    canvas.height = 150;
+    canvas.width = 120 * dpr;
+    canvas.height = 150 * dpr;
+    ctx.scale(dpr, dpr);
 
     const leader = getLeaderProfile(countryId);
     const { skinTone, uniformType, hairStyle, facialHair, glassesStyle, backgroundType } = leader.portraitSeed;

@@ -147,11 +147,22 @@ export function InGameGlobe({ theme = 'dark', layers }: InGameGlobeProps) {
     camera.position.z = zoomFactor.current;
 
     // RENDERER Setup
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(W, H);
+    const renderer = new THREE.WebGLRenderer({ 
+      antialias: true, 
+      alpha: true, 
+      powerPreference: 'high-performance' 
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.2));
+    renderer.setSize(W, H, false);
+    renderer.domElement.style.width = '100%';
+    renderer.domElement.style.height = '100%';
+    renderer.domElement.style.display = 'block';
+    renderer.domElement.style.position = 'absolute';
+    renderer.domElement.style.top = '0';
+    renderer.domElement.style.left = '0';
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.35;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
     mountRef.current.appendChild(renderer.domElement);
 
     // GLOBE ROOT BUNDLE
@@ -471,7 +482,7 @@ export function InGameGlobe({ theme = 'dark', layers }: InGameGlobeProps) {
       const h = mountRef.current.clientHeight;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
-      renderer.setSize(w, h);
+      renderer.setSize(w, h, false);
     };
 
     const resizeObserver = new ResizeObserver(() => handleResize());
@@ -780,6 +791,18 @@ export function InGameGlobe({ theme = 'dark', layers }: InGameGlobeProps) {
           pinColor = 0xff4d00;
         } else {
           pinColor = 0x768790;
+        }
+      }
+
+      // If we are zoomed out, filter out low-priority pins to keep scene content legible
+      const isZoomedOut = zoomFactor.current > 2.2;
+      const isHighPriorityPin = id === playerCountryId || id === targetCountryId || (c.atWarWith && c.atWarWith.length > 0);
+      if (isZoomedOut && !isHighPriorityPin) {
+        const hasHighPower = c.arsenal?.totalPowerRating && c.arsenal.totalPowerRating > 200;
+        const hasHighGdp = c.economic?.gdpB && c.economic.gdpB > 600;
+        const isNuclear = c.arsenal?.nuclearCapable;
+        if (!hasHighPower && !hasHighGdp && !isNuclear) {
+          shouldRender = false;
         }
       }
 
