@@ -50,6 +50,12 @@ export const WebGLGlobe = forwardRef<WebGLGlobeRef, WebGLGlobeProps>(({
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(width, height, false); // false = let CSS control container constraints
+    renderer.domElement.style.width = '100%';
+    renderer.domElement.style.height = '100%';
+    renderer.domElement.style.display = 'block';
+    renderer.domElement.style.position = 'absolute';
+    renderer.domElement.style.top = '0';
+    renderer.domElement.style.left = '0';
     renderer.shadowMap.enabled = true;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.2;
@@ -525,9 +531,6 @@ export const WebGLGlobe = forwardRef<WebGLGlobeRef, WebGLGlobeProps>(({
       specular: THREE.Texture;
       clouds: THREE.Texture;
     }> => {
-      const loader = new THREE.TextureLoader();
-      loader.crossOrigin = 'anonymous';
-
       function applyQualitySettings(tex: THREE.Texture): THREE.Texture {
         tex.minFilter = THREE.LinearMipmapLinearFilter;
         tex.magFilter = THREE.LinearFilter;
@@ -540,18 +543,26 @@ export const WebGLGlobe = forwardRef<WebGLGlobeRef, WebGLGlobeProps>(({
       async function tryLoadTexture(urls: string[], name: 'day' | 'night' | 'spec' | 'clouds'): Promise<THREE.Texture> {
         for (const url of urls) {
           try {
+            const currentLoader = new THREE.TextureLoader();
+            const isLocal = !url.startsWith('http') && !url.startsWith('//');
+            if (isLocal) {
+              currentLoader.crossOrigin = undefined;
+            } else {
+              currentLoader.crossOrigin = 'anonymous';
+            }
+
             const tex = await new Promise<THREE.Texture>((resolve, reject) => {
-              loader.load(url, resolve, undefined, reject);
+              currentLoader.load(url, resolve, undefined, reject);
             });
             const img = tex.image as any;
-            if (img && img.width > 8) {
+            if (img && (img.width > 8 || img.naturalWidth > 8)) {
               console.log(`[GLOBE-TEXTURE] ✅ Successfully loaded ${name} texture from:`, url);
 
               // === DIAGNOSTIC CHECKPOINT 2: Texture loading ===
               if (name === 'day') {
                 console.log('[GLOBE-DEBUG-5] ✅ Day texture loaded:', {
-                  imageWidth:  img.width,
-                  imageHeight: img.height,
+                  imageWidth:  img.width || img.naturalWidth,
+                  imageHeight: img.height || img.naturalHeight,
                   format:      tex.format,
                   minFilter:   tex.minFilter,
                   magFilter:   tex.magFilter,
@@ -559,8 +570,8 @@ export const WebGLGlobe = forwardRef<WebGLGlobeRef, WebGLGlobeProps>(({
                 });
               } else if (name === 'night') {
                 console.log('[GLOBE-DEBUG-6] ✅ Night texture loaded:', {
-                  imageWidth:  img.width,
-                  imageHeight: img.height,
+                  imageWidth:  img.width || img.naturalWidth,
+                  imageHeight: img.height || img.naturalHeight,
                 });
               }
               return applyQualitySettings(tex);
