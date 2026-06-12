@@ -22,6 +22,10 @@ import {
   buildTradeTetherLayer,
   buildDetonationPulseLayer,
   buildMilitaryBasesLayer,
+  buildIsrCoverageLayer,
+  buildRadarDefenseLayer,
+  buildLogisticsCorridorsLayer,
+  buildLiveAssetTracesLayer,
 } from './layerBuilders';
 
 interface GeoMapProps {
@@ -50,6 +54,7 @@ export function GeoMap({ mode, layers, theme = 'dark' }: GeoMapProps) {
   const hudMode = mapState.activeHudMode;
   const targetCountryId = mapState.targetCountryId;
   const activeLayerName = mapState.activeLayer;
+  const currentTick = mapState.currentTick || 0;
 
   const setTargetCountry = usePlayerStore((s) => s.setTargetCountry);
   const setCountryInspector = useUIStore((s) => s.setCountryInspector);
@@ -221,9 +226,22 @@ export function GeoMap({ mode, layers, theme = 'dark' }: GeoMapProps) {
       );
     }
 
+    // LAYER G: Operations Overlays (ISR, Radar, Logistics, Live Asset Traces)
+    const isrCoverage = buildIsrCoverageLayer(countries, playerCountryId, targetCountryId, currentTick, !!layers.isr);
+    if (isrCoverage) currentDeckLayers.push(isrCoverage);
+
+    const radarDefense = buildRadarDefenseLayer(countries, playerCountryId, targetCountryId, currentTick, !!layers.radar);
+    if (radarDefense) currentDeckLayers.push(radarDefense);
+
+    const logistics = buildLogisticsCorridorsLayer(countries, !!layers.logistics);
+    if (logistics) currentDeckLayers.push(logistics);
+
+    const liveAssetTraces = buildLiveAssetTracesLayer(activeStrikes, currentTick, !!layers.traces);
+    if (liveAssetTraces) currentDeckLayers.push(liveAssetTraces);
+
     // Apply layers to DeckGL instance
-    deckRef.current.setProps({ layers: currentDeckLayers });
-  }, [geoJsonData, countries, activeStrikes, layers, playerCountryId, targetCountryId, hudMode, activeLayerName]);
+    deckRef.current.setProps({ layers: currentDeckLayers.filter(Boolean) });
+  }, [geoJsonData, countries, activeStrikes, layers, playerCountryId, targetCountryId, hudMode, activeLayerName, currentTick]);
 
   const isDark = theme === 'dark';
 

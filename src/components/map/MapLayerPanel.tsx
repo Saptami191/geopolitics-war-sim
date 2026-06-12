@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type LayerKey = 'political' | 'military' | 'conflicts' | 'economic' | 'nuclear' | 'cyber' | 'population';
+export type LayerKey = 'political' | 'military' | 'conflicts' | 'economic' | 'nuclear' | 'cyber' | 'population' | 'isr' | 'radar' | 'logistics' | 'traces';
 
 export interface LayerToggleState {
   political: boolean;
@@ -10,6 +10,10 @@ export interface LayerToggleState {
   nuclear: boolean;
   cyber: boolean;
   population: boolean;
+  isr: boolean;
+  radar: boolean;
+  logistics: boolean;
+  traces: boolean;
 }
 
 type LayerConfig = {
@@ -20,7 +24,7 @@ type LayerConfig = {
   description: string;
 };
 
-const LAYER_CONFIG: LayerConfig[] = [
+const BASE_LAYER_CONFIG: LayerConfig[] = [
   { key: 'political',  label: 'POLITICAL DECREE', color: '#00e5c8', icon: '◈', description: 'Sovereign boundaries, regime blocks, and alignment.' },
   { key: 'conflicts',  label: 'COMBAT DOMAINS',  color: '#ff3b4e', icon: '⚔', description: 'Active conflicts, disputed territories, and flashpoints.' },
   { key: 'military',   label: 'MILITARY SHIELD',   color: '#f5a623', icon: '▲', description: 'Active bases, deployed divisions, and military indicators.' },
@@ -29,6 +33,14 @@ const LAYER_CONFIG: LayerConfig[] = [
   { key: 'cyber',      label: 'CYBER INTERCEPTS',   color: '#b87fff', icon: '⬡', description: 'Undersea optical fibre stations, and intrusion activities.' },
   { key: 'population', label: 'CIVIL DISCONTENT', color: '#eec152', icon: '●', description: 'Populated zones, displacement tracks, and civilian unrest.' },
 ];
+
+const OPS_LAYER_CONFIG: LayerConfig[] = [
+  { key: 'isr',        label: 'ISR SENSOR SPAN',  color: '#00ffaa', icon: '📡', description: 'Active satellite footprint swaths and scan sectors.' },
+  { key: 'radar',      label: 'RADAR AD SHIELD',  color: '#ff7700', icon: '⚙', description: 'Tactical early-warning grids and dynamic coverage domes.' },
+  { key: 'logistics',  label: 'LOGISTICS LANES',  color: '#00f0ff', icon: '⇄', description: 'Strategic commerce routes and maritime trade pipelines.' },
+  { key: 'traces',     label: 'LIVE ASSET TRACES',color: '#ff0055', icon: '✈', description: 'Active operations, flight patrols, and weapon tracking vector paths.' },
+];
+
 
 interface MapLayerPanelProps {
   layers: LayerToggleState;
@@ -116,15 +128,18 @@ export function MapLayerPanel({
         </div>
 
         {/* Layer rows */}
-        <div className="flex flex-col">
-          {LAYER_CONFIG.map(({ key, label, color, icon, description }) => {
+        <div className="flex flex-col max-h-[420px] overflow-y-auto">
+          <div className={`px-3 py-1 text-[8px] font-bold font-mono tracking-wider border-b ${isDark ? 'text-slate-500 bg-slate-950/50 border-slate-900/40' : 'text-zinc-400 bg-zinc-100/50 border-zinc-200'}`}>
+            BASE THEMATIC MAP
+          </div>
+          {BASE_LAYER_CONFIG.map(({ key, label, color, icon, description }) => {
             const active = layers[key];
             return (
               <button
                 key={key}
                 onClick={() => onToggle(key)}
                 title={description}
-                className={`flex items-center gap-3 px-3 py-2 border-b text-left outline-none transition-all duration-150 relative overflow-hidden group
+                className={`flex items-center gap-3 px-3 py-1.5 border-b text-left outline-none transition-all duration-150 relative overflow-hidden group
                   ${isDark 
                     ? `border-slate-900/40 ${active ? 'bg-slate-900/40 text-slate-100' : 'bg-transparent hover:bg-slate-900/10 text-slate-400'}`
                     : `border-zinc-200 ${active ? 'bg-zinc-100/80 text-zinc-900' : 'bg-transparent hover:bg-zinc-50 text-zinc-500'}`
@@ -138,7 +153,7 @@ export function MapLayerPanel({
 
                 {/* Status color indicator box */}
                 <div
-                  className="w-2.5 h-2.5 flex-shrink-0 border transition-all duration-150 rounded-[1px]"
+                  className="w-2 h-2 flex-shrink-0 border transition-all duration-150 rounded-[1px]"
                   style={{
                     borderColor: color,
                     backgroundColor: active ? color : 'transparent',
@@ -147,13 +162,13 @@ export function MapLayerPanel({
                 />
 
                 {/* Semantic tactical icon */}
-                <span className="font-mono text-[10px] font-bold shrink-0 text-center select-none w-3.5" style={{ color }}>
+                <span className="font-mono text-[9px] font-bold shrink-0 text-center select-none w-3.5" style={{ color }}>
                   {icon}
                 </span>
 
                 {/* Text metadata */}
                 <div className="flex-1 min-w-0 pr-1 select-none">
-                  <p className={`text-[9px] font-bold font-display tracking-wider leading-none transition-colors duration-150
+                  <p className={`text-[8.5px] font-bold font-display tracking-wider leading-none transition-colors duration-150
                     ${active 
                       ? (isDark ? 'text-slate-100' : 'text-zinc-900') 
                       : (isDark ? 'text-slate-500 group-hover:text-slate-400' : 'text-zinc-400 group-hover:text-zinc-650')
@@ -164,7 +179,69 @@ export function MapLayerPanel({
                 </div>
 
                 {/* Active Toggle Tag */}
-                <span className={`font-mono text-[8px] font-bold tracking-tight transition-all duration-150
+                <span className={`font-mono text-[7.5px] font-bold tracking-tight transition-all duration-150
+                  ${active 
+                    ? (isDark ? 'text-cyan-400 opacity-100' : 'text-cyan-700 opacity-100') 
+                    : (isDark ? 'text-slate-650 opacity-40 group-hover:opacity-75' : 'text-zinc-400 opacity-40 group-hover:opacity-75')
+                  }
+                `}>
+                  {active ? 'ON' : 'OFF'}
+                </span>
+              </button>
+            );
+          })}
+
+          <div className={`px-3 py-1 text-[8px] font-bold font-mono tracking-wider border-b border-t ${isDark ? 'text-slate-500 bg-slate-950/50 border-slate-900/40' : 'text-zinc-400 bg-zinc-100/50 border-zinc-200'}`}>
+            OPERATIONS DETECTORS
+          </div>
+          {OPS_LAYER_CONFIG.map(({ key, label, color, icon, description }) => {
+            const active = layers[key];
+            return (
+              <button
+                key={key}
+                onClick={() => onToggle(key)}
+                title={description}
+                className={`flex items-center gap-3 px-3 py-1.5 border-b text-left outline-none transition-all duration-150 relative overflow-hidden group
+                  ${isDark 
+                    ? `border-slate-900/40 ${active ? 'bg-slate-900/40 text-slate-100' : 'bg-transparent hover:bg-slate-900/10 text-slate-400'}`
+                    : `border-zinc-200 ${active ? 'bg-zinc-100/80 text-zinc-900' : 'bg-transparent hover:bg-zinc-50 text-zinc-500'}`
+                  }
+                `}
+              >
+                {/* Dynamic status line left */}
+                {active && (
+                  <span className="absolute left-0 top-0 bottom-0 w-[2.5px]" style={{ backgroundColor: color }} />
+                )}
+
+                {/* Status color indicator box */}
+                <div
+                  className="w-2 h-2 flex-shrink-0 border transition-all duration-150 rounded-[1px]"
+                  style={{
+                    borderColor: color,
+                    backgroundColor: active ? color : 'transparent',
+                    boxShadow: active && isDark ? `0 0 6px ${color}` : 'none'
+                  }}
+                />
+
+                {/* Semantic tactical icon */}
+                <span className="font-mono text-[9px] font-bold shrink-0 text-center select-none w-3.5" style={{ color }}>
+                  {icon}
+                </span>
+
+                {/* Text metadata */}
+                <div className="flex-1 min-w-0 pr-1 select-none">
+                  <p className={`text-[8.5px] font-bold font-display tracking-wider leading-none transition-colors duration-150
+                    ${active 
+                      ? (isDark ? 'text-slate-100' : 'text-zinc-900') 
+                      : (isDark ? 'text-slate-500 group-hover:text-slate-400' : 'text-zinc-400 group-hover:text-zinc-650')
+                    }
+                  `}>
+                    {label}
+                  </p>
+                </div>
+
+                {/* Active Toggle Tag */}
+                <span className={`font-mono text-[7.5px] font-bold tracking-tight transition-all duration-150
                   ${active 
                     ? (isDark ? 'text-cyan-400 opacity-100' : 'text-cyan-700 opacity-100') 
                     : (isDark ? 'text-slate-650 opacity-40 group-hover:opacity-75' : 'text-zinc-400 opacity-40 group-hover:opacity-75')

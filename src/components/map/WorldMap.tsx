@@ -25,6 +25,10 @@ export default function WorldMap({ activeLayer }: WorldMapProps) {
     nuclear: true,
     cyber: true,
     population: true,
+    isr: true,
+    radar: true,
+    logistics: true,
+    traces: true,
   });
 
   // Count active layers
@@ -62,6 +66,10 @@ export default function WorldMap({ activeLayer }: WorldMapProps) {
       nuclear: true,
       cyber: true,
       population: true,
+      isr: true,
+      radar: true,
+      logistics: true,
+      traces: true,
     });
   };
 
@@ -75,6 +83,10 @@ export default function WorldMap({ activeLayer }: WorldMapProps) {
       nuclear: false,
       cyber: false,
       population: false,
+      isr: false,
+      radar: false,
+      logistics: false,
+      traces: false,
     });
   };
 

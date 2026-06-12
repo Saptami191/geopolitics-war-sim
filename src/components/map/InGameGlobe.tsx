@@ -83,6 +83,11 @@ export function InGameGlobe({ theme = 'dark', layers }: InGameGlobeProps) {
   const zoomFactor = useRef(2.5); // Current camera distance z-factor
   const targetZoomFactor = useRef(2.5);
 
+  const layersRef = useRef(layers);
+  useEffect(() => {
+    layersRef.current = layers;
+  }, [layers]);
+
   const isDark = theme === 'dark';
 
   // Satellite simulation array setup in ref to prevent instanced resets
@@ -357,6 +362,18 @@ export function InGameGlobe({ theme = 'dark', layers }: InGameGlobeProps) {
       const coneMesh = new THREE.Mesh(coneGeo, coneMat);
       satellitesGroup.add(coneMesh);
       sat.cone = coneMesh;
+
+      // Ground footprint ring tracking the satellite projection on outer crust
+      const footprintGeo = new THREE.RingGeometry(0.016, 0.034, 32);
+      const footprintMat = new THREE.MeshBasicMaterial({
+        color: sat.color,
+        transparent: true,
+        opacity: 0,
+        side: THREE.DoubleSide,
+      });
+      const footprintMesh = new THREE.Mesh(footprintGeo, footprintMat);
+      satellitesGroup.add(footprintMesh);
+      sat.footprint = footprintMesh;
     });
 
     // SUNLIGHTS FOR EXCELLENT GLOBE RENDERING
@@ -503,18 +520,21 @@ export function InGameGlobe({ theme = 'dark', layers }: InGameGlobeProps) {
         const y = Math.sin(sat.angle) * sat.altitude * Math.cos(tiltRad);
         const z = Math.sin(sat.angle) * sat.altitude * Math.sin(tiltRad);
 
+        const satPos = new THREE.Vector3(x, y, z);
+
         if (sat.mesh) {
-          sat.mesh.position.set(x, y, z);
+          sat.mesh.position.copy(satPos);
           // Orient the satellite body to point its camera lens straight down to the center axis
           sat.mesh.lookAt(0, 0, 0);
           // Tilt matching solar panels
           sat.mesh.rotateY(Math.PI / 2);
         }
 
-        // Project the downward scanning cones
+        // Project the downward scanning cones according to the ISR layer toggle
+        const isrEnabled = !!layersRef.current.isr;
         if (sat.cone) {
+          sat.cone.visible = isrEnabled;
           // Mid position between the satellite block and the Earth point (0,0,0)
-          const satPos = new THREE.Vector3(x, y, z);
           const midPos = satPos.clone().multiplyScalar(0.5);
           sat.cone.position.copy(midPos);
 
@@ -522,9 +542,20 @@ export function InGameGlobe({ theme = 'dark', layers }: InGameGlobeProps) {
           sat.cone.lookAt(satPos);
           sat.cone.rotateX(Math.PI / 2);
         }
+
+        // Position ground footprint tracking rings directly on the sphere crust
+        if (sat.footprint) {
+          sat.footprint.visible = isrEnabled;
+          const groundPos = satPos.clone().normalize().multiplyScalar(1.002);
+          sat.footprint.position.copy(groundPos);
+          sat.footprint.lookAt(0, 0, 0);
+          if (sat.footprint.material instanceof THREE.MeshBasicMaterial) {
+            sat.footprint.material.opacity = isrEnabled ? (0.25 + Math.sin(Date.now() * 0.004) * 0.1) : 0;
+          }
+        }
       });
 
-      // 5. Strike arcs spark flow animations
+      // 5. Strike arcs spark flow animations and air patrol loops
       arcs.children.forEach((c: any) => {
         if (c.userData?.isSpark && c.userData?.curve) {
           c.userData.pct += 0.005;
@@ -533,6 +564,25 @@ export function InGameGlobe({ theme = 'dark', layers }: InGameGlobeProps) {
           }
           const pt = c.userData.curve.getPointAt(c.userData.pct);
           c.position.copy(pt);
+        }
+
+        // Animate combat air patrol jets crawling over the Earth
+        if (c.userData?.isPatrolJet && c.userData?.center) {
+          c.userData.phase += 0.012;
+          const theta = c.userData.phase;
+
+          const center = c.userData.center as THREE.Vector3;
+          // Build local tangent coordinate axes (perpendicular basis)
+          const u = new THREE.Vector3(1, 0, 0).projectOnPlane(center).normalize();
+          const v = new THREE.Vector3().crossVectors(center, u).normalize();
+
+          const offsetPos = center.clone()
+            .add(u.clone().multiplyScalar(Math.cos(theta) * c.userData.radius))
+            .add(v.clone().multiplyScalar(Math.sin(theta) * c.userData.radius))
+            .multiplyScalar(1.004); // lift slightly above surface
+
+          c.position.copy(offsetPos);
+          c.lookAt(center.clone().multiplyScalar(1.05));
         }
       });
 
@@ -873,6 +923,119 @@ export function InGameGlobe({ theme = 'dark', layers }: InGameGlobeProps) {
         line.computeLineDistances();
         arcs.add(line);
       }
+    }
+
+    // 4. RADAR & AIR DEFENSE WARNING ARCHITECTURAL DOME FIELDS (TRANS-AMBER WIREFRAMES)
+    if (layers.radar) {
+      Object.entries(countries).forEach(([id, c]) => {
+        const power = c.arsenal?.totalPowerRating ?? 0;
+        if (power > 150) {
+          const coord = getCentroid(id);
+          if (coord[0] !== 0) {
+            const pCent = latLngToVector3(coord[1], coord[0], 1.0);
+            const isPlayer = id === playerCountryId;
+            const domeColor = isPlayer ? 0x00ffaa : 0xff7700;
+
+            const domeGeo = new THREE.SphereGeometry(0.045, 12, 12, 0, Math.PI * 2, 0, Math.PI / 2);
+            const domeMat = new THREE.MeshBasicMaterial({
+              color: domeColor,
+              transparent: true,
+              opacity: 0.12,
+              wireframe: true,
+              side: THREE.DoubleSide,
+            });
+            const domeMesh = new THREE.Mesh(domeGeo, domeMat);
+            domeMesh.position.copy(pCent);
+            domeMesh.lookAt(pCent.clone().multiplyScalar(1.1));
+            domeMesh.rotateX(Math.PI / 2);
+
+            arcs.add(domeMesh);
+          }
+        }
+      });
+    }
+
+    // 5. STRATEGIC TRANSPORT LOGISTICS PATHWAYS (CYAN GREAT ARCS)
+    if (layers.logistics) {
+      const corridors = [
+        { from: 'US', to: 'GB' },
+        { from: 'US', to: 'JP' },
+        { from: 'CN', to: 'SA' },
+        { from: 'RU', to: 'IN' },
+        { from: 'DE', to: 'BR' },
+      ];
+
+      corridors.forEach((corr) => {
+        const fromCent = getCentroid(corr.from);
+        const toCent = getCentroid(corr.to);
+        if (fromCent[0] !== 0 && toCent[0] !== 0) {
+          const pStart = latLngToVector3(fromCent[1], fromCent[0], 1.002);
+          const pEnd = latLngToVector3(toCent[1], toCent[0], 1.002);
+
+          const midPoint = new THREE.Vector3().addVectors(pStart, pEnd).multiplyScalar(0.5);
+          const dist = pStart.distanceTo(pEnd);
+          const arcHeight = dist * 0.15;
+          const pMid = midPoint.normalize().multiplyScalar(1.0 + arcHeight);
+
+          const curve = new THREE.QuadraticBezierCurve3(pStart, pMid, pEnd);
+          const pts = curve.getPoints(24);
+          const corridorGeo = new THREE.BufferGeometry().setFromPoints(pts);
+          const corridorMat = new THREE.LineDashedMaterial({
+            color: 0x00f0ff,
+            transparent: true,
+            opacity: 0.50,
+            dashSize: 0.012,
+            gapSize: 0.008,
+          });
+          const line = new THREE.Line(corridorGeo, corridorMat);
+          line.computeLineDistances();
+          arcs.add(line);
+        }
+      });
+    }
+
+    // 6. FIGHTER SURVEILLANCE RADIALS & CAP FLIGHT PATROLS
+    if (layers.traces) {
+      const patrols3D = [
+        { center: [121.5, 23.5], radius: 0.045 },
+        { center: [37.6, 55.7], radius: 0.055 },
+        { center: [-77.0, 38.9], radius: 0.050 },
+        { center: [35.0, 31.5], radius: 0.038 },
+      ];
+
+      patrols3D.forEach((pat, index) => {
+        const centerPos = latLngToVector3(pat.center[1], pat.center[0], 1.003);
+        const radius = pat.radius;
+
+        // Visual radar sweep boundary orbit line
+        const ringGeo = new THREE.RingGeometry(radius - 0.0015, radius + 0.0015, 32);
+        const ringMat = new THREE.MeshBasicMaterial({
+          color: 0xb87fff,
+          transparent: true,
+          opacity: 0.30,
+          side: THREE.DoubleSide,
+        });
+        const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+        ringMesh.position.copy(centerPos);
+        ringMesh.lookAt(0, 0, 0);
+        arcs.add(ringMesh);
+
+        // Rotating dynamic recon air asset cone
+        const jetGeo = new THREE.ConeGeometry(0.005, 0.012, 4);
+        const jetMat = new THREE.MeshBasicMaterial({
+          color: 0x00ffaa,
+          transparent: true,
+          opacity: 0.90,
+        });
+        const jetMesh = new THREE.Mesh(jetGeo, jetMat);
+        jetMesh.userData = {
+          isPatrolJet: true,
+          center: centerPos,
+          radius: radius,
+          phase: index * 1.5,
+        };
+        arcs.add(jetMesh);
+      });
     }
 
   }, [activeStrikes, countries, playerCountryId, targetCountryId, theme, layers]);

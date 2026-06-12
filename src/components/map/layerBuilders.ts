@@ -389,3 +389,248 @@ export function buildMilitaryBasesLayer(
     },
   });
 }
+
+/**
+ * OPERATIONS LAYERS 1: ISR / SENSOR COVERAGE GROUND TRACES
+ */
+export function buildIsrCoverageLayer(
+  countries: Record<string, Country>,
+  playerCountryId: string,
+  targetCountryId: string | undefined,
+  currentTick: number,
+  enabled: boolean
+) {
+  if (!enabled) return null;
+
+  const data: any[] = [];
+  
+  // Keplerian high-altitude satellites crossing the coordinate space
+  const orbits = [
+    { name: 'KOSMOS-2544 (RECON)', speed: 0.9, color: [0, 255, 170], offset: 0, latOffset: 20 },
+    { name: 'AEGIS ORBITAL-3 (ABM)', speed: 0.6, color: [0, 207, 255], offset: 120, latOffset: -10 },
+    { name: 'NROL-44 (SIGINT ELITE)', speed: 0.5, color: [255, 77, 0], offset: 240, latOffset: 40 },
+    { name: 'CHINASAT-1C (EARLY WARN)', speed: 1.1, color: [238, 193, 82], offset: 60, latOffset: 0 },
+  ];
+
+  orbits.forEach((orb) => {
+    const angle = (currentTick * orb.speed + orb.offset) * (Math.PI / 180);
+    const lng = ((angle * (180 / Math.PI)) % 360) - 180;
+    const lat = orb.latOffset + Math.sin(angle * 2.5) * 35;
+
+    data.push({
+      id: orb.name,
+      position: [lng, lat],
+      color: orb.color,
+      radius: 1200000 + Math.sin(currentTick * 0.08) * 150000,
+      opacity: 25,
+    });
+  });
+
+  // Multi-spectrum scanner circle for current selected focus nation
+  const focusedId = targetCountryId || playerCountryId;
+  if (focusedId && countries[focusedId]) {
+    const centroid = getCentroid(focusedId);
+    if (centroid[0] !== 0) {
+      data.push({
+        id: `coverage-${focusedId}`,
+        position: centroid,
+        color: focusedId === playerCountryId ? [0, 255, 170] : [255, 30, 70],
+        radius: 2200000,
+        opacity: 35,
+      });
+    }
+  }
+
+  return new ScatterplotLayer({
+    id: 'deck-isr-coverage',
+    data,
+    getPosition: (d: any) => [d.position[0], d.position[1], 0],
+    getRadius: (d: any) => d.radius,
+    getFillColor: (d: any) => [...d.color, d.opacity] as [number, number, number, number],
+    getLineColor: (d: any) => [...d.color, 160] as [number, number, number, number],
+    lineWidthMinPixels: 1.5,
+    stroked: true,
+    filled: true,
+    pickable: true,
+    updateTriggers: {
+      getPosition: [currentTick],
+      getRadius: [currentTick],
+    },
+  });
+}
+
+/**
+ * OPERATIONS LAYERS 2: RADAR & AIR DEFENSE WARNING ENVELOPE DOME FIELDS
+ */
+export function buildRadarDefenseLayer(
+  countries: Record<string, Country>,
+  playerCountryId: string,
+  targetCountryId: string | undefined,
+  currentTick: number,
+  enabled: boolean
+) {
+  if (!enabled) return null;
+
+  const data: any[] = [];
+
+  // Render multi-band early warning circles around military powers
+  Object.entries(countries).forEach(([id, c]) => {
+    const power = c.arsenal?.totalPowerRating ?? 0;
+    if (power > 150) {
+      const centroid = getCentroid(id);
+      if (centroid[0] !== 0) {
+        const isPlayer = id === playerCountryId;
+        const color = isPlayer ? [0, 255, 170] : [255, 110, 0];
+        
+        // Inner absolute intercept shield
+        data.push({
+          id: `radar-inner-${id}`,
+          position: centroid,
+          color,
+          radius: 800000,
+          opacity: 15,
+        });
+        
+        // Outer strategic early-warning mesh
+        data.push({
+          id: `radar-outer-${id}`,
+          position: centroid,
+          color,
+          radius: 1700000 + Math.sin(currentTick * 0.04) * 50000,
+          opacity: 6,
+        });
+      }
+    }
+  });
+
+  return new ScatterplotLayer({
+    id: 'deck-radar-coverage',
+    data,
+    getPosition: (d: any) => [d.position[0], d.position[1], 0],
+    getRadius: (d: any) => d.radius,
+    getFillColor: (d: any) => [...d.color, d.opacity] as [number, number, number, number],
+    getLineColor: (d: any) => [...d.color, 110] as [number, number, number, number],
+    lineWidthMinPixels: 1.0,
+    stroked: true,
+    filled: true,
+    updateTriggers: {
+      getRadius: [currentTick],
+    },
+  });
+}
+
+/**
+ * OPERATIONS LAYERS 3: STRATEGIC LOGISTICS CORRIDORS
+ */
+export function buildLogisticsCorridorsLayer(
+  countries: Record<string, Country>,
+  enabled: boolean
+) {
+  if (!enabled) return null;
+
+  const corridors = [
+    { from: 'US', to: 'GB', name: 'Trans-Atlantic Express Belt' },
+    { from: 'US', to: 'JP', name: 'Trans-Pacific Bridge' },
+    { from: 'CN', to: 'SA', name: 'Mideast Commercial Corridor' },
+    { from: 'RU', to: 'IN', name: 'Eurasian Logistics Route' },
+    { from: 'DE', to: 'BR', name: 'Latam Merchant Lane' },
+    { from: 'CN', to: 'JP', name: 'East-Sea Ingress Pathway' },
+  ];
+
+  const data: any[] = [];
+  corridors.forEach((corr) => {
+    const fromCent = getCentroid(corr.from);
+    const toCent = getCentroid(corr.to);
+    if (fromCent[0] !== 0 && toCent[0] !== 0) {
+      data.push({
+        id: `logistic-${corr.from}-${corr.to}`,
+        source: fromCent,
+        target: toCent,
+      });
+    }
+  });
+
+  return new ArcLayer({
+    id: 'deck-logistics-corridors',
+    data,
+    pickable: true,
+    getSourcePosition: (d: any) => d.source,
+    getTargetPosition: (d: any) => d.target,
+    getSourceColor: [0, 240, 255, 110],
+    getTargetColor: [0, 120, 255, 30],
+    getWidth: 2.0,
+    getHeight: 0.18,
+    greatCircle: true,
+  });
+}
+
+/**
+ * OPERATIONS LAYERS 4: LIVE ASSET MOVE TRACES
+ */
+export function buildLiveAssetTracesLayer(
+  activeStrikes: BallisticStrike[],
+  currentTick: number,
+  enabled: boolean
+) {
+  if (!enabled) return null;
+
+  const data: any[] = [];
+
+  // Ballistic tracking vectors in flight
+  activeStrikes.forEach((strike) => {
+    if (strike.status === 'IN_FLIGHT') {
+      const srcCent = getCentroid(strike.sourceCountryId);
+      const tgtCent = getCentroid(strike.targetCountryId);
+
+      if (srcCent[0] !== 0 && tgtCent[0] !== 0) {
+        const pct = Math.min(1.0, Math.max(0.0, strike.progressPct / 100));
+        const lng = srcCent[0] + (tgtCent[0] - srcCent[0]) * pct;
+        const lat = srcCent[1] + (tgtCent[1] - srcCent[1]) * pct;
+
+        const isNuke = strike.weaponType === 'ICBM' || strike.weaponType === 'SLBM';
+        data.push({
+          id: `trace-${strike.id}`,
+          position: [lng, lat],
+          color: isNuke ? [0, 207, 255] : [255, 0, 85],
+          radius: 170000,
+        });
+      }
+    }
+  });
+
+  // Combat Air Patrol (CAP) fighter flights near flashpoints
+  const patrolSec = (currentTick * 2.2) * (Math.PI / 180);
+  const patrols = [
+    { center: [121.5, 23.5], radius: 1.5, color: [184, 127, 255] },
+    { center: [37.6, 55.7], radius: 1.9, color: [184, 127, 255] },
+    { center: [-77.0, 38.9], radius: 1.6, color: [184, 127, 255] },
+    { center: [35.0, 31.5], radius: 1.0, color: [184, 127, 255] },
+  ];
+
+  patrols.forEach((pat, i) => {
+    const lng = pat.center[0] + Math.cos(patrolSec + i * 4) * pat.radius;
+    const lat = pat.center[1] + Math.sin(patrolSec + i * 4) * pat.radius;
+
+    data.push({
+      id: `patrol-${i}`,
+      position: [lng, lat],
+      color: pat.color,
+      radius: 90000,
+    });
+  });
+
+  return new ScatterplotLayer({
+    id: 'deck-live-traces',
+    data,
+    getPosition: (d: any) => [d.position[0], d.position[1], 0],
+    getRadius: (d: any) => d.radius,
+    getFillColor: (d: any) => [...d.color, 210] as [number, number, number, number],
+    getLineColor: [255, 255, 255, 170],
+    lineWidthMinPixels: 1.5,
+    stroked: true,
+    filled: true,
+    updateTriggers: {
+      getPosition: [currentTick],
+    },
+  });
+}
