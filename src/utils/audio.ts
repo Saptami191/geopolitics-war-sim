@@ -7,6 +7,7 @@ class AudioEngine {
   private sfxGain: GainNode | null = null;
   private ambientOscillators: OscillatorNode[] = [];
   private currentDefcon: DefconLevel = 5;
+  private isMuted: boolean = false;
 
   init() {
     try {
@@ -14,7 +15,7 @@ class AudioEngine {
       if (!AudioCtx) return;
       this.ctx = new AudioCtx();
       this.master = this.ctx.createGain();
-      this.master.gain.value = 0.7;
+      this.master.gain.value = this.isMuted ? 0.0 : 0.7;
       this.master.connect(this.ctx.destination);
       
       this.ambientGain = this.ctx.createGain();
@@ -401,6 +402,69 @@ class AudioEngine {
         });
       } catch (err) {}
     }, 700);
+  }
+
+  sfxIntelChime() {
+    if (!this.ctx || this.isMuted) return;
+    this.resume();
+    [1046.50, 1567.98].forEach((freq, i) => {
+      if (!this.ctx) return;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.06, this.ctx.currentTime + i * 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + i * 0.1 + 0.3);
+      osc.connect(gain);
+      gain.connect(this.sfxGain || this.ctx.destination);
+      osc.start(this.ctx.currentTime + i * 0.1);
+      osc.stop(this.ctx.currentTime + i * 0.1 + 0.35);
+    });
+  }
+
+  sfxSuccessConfirmation() {
+    if (!this.ctx || this.isMuted) return;
+    this.resume();
+    [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+      if (!this.ctx) return;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.04, this.ctx.currentTime + i * 0.06);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + i * 0.06 + 0.4);
+      osc.connect(gain);
+      gain.connect(this.sfxGain || this.ctx.destination);
+      osc.start(this.ctx.currentTime + i * 0.06);
+      osc.stop(this.ctx.currentTime + i * 0.06 + 0.45);
+    });
+  }
+
+  sfxCrisisWarning() {
+    if (!this.ctx || this.isMuted) return;
+    this.resume();
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(140, this.ctx.currentTime);
+    osc.frequency.linearRampToValueAtTime(100, this.ctx.currentTime + 0.45);
+    gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.45);
+    osc.connect(gain);
+    gain.connect(this.sfxGain || this.ctx.destination);
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.47);
+  }
+
+  setMute(muted: boolean) {
+    this.isMuted = muted;
+    if (this.master) {
+      this.master.gain.value = muted ? 0.0 : 0.7;
+    }
+  }
+
+  getMute() {
+    return this.isMuted;
   }
 }
 

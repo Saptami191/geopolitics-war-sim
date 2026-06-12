@@ -37,6 +37,11 @@ import AlertBanner from './components/shared/AlertBanner';
 import DataTicker from './components/shared/DataTicker';
 import CountryInspector from './components/popups/CountryInspector';
 
+// Immersion upgrade: Comms
+import CommsPanel from './components/hud/CommsPanel';
+import CommsSyncController from './components/hud/CommsSyncController';
+import { useCommsStore } from './store/commsStore';
+
 // New features Phase 5 - 10
 import CinematicIntro from './components/intro/CinematicIntro';
 import GameLobby from './components/intro/GameLobby';
@@ -75,6 +80,8 @@ export default function App() {
 
   // Floating modules
   const [showBazaar, setShowBazaar] = useState(false);
+  const [commsOpen, setCommsOpen] = useState(false);
+  const unreadCommsCount = useCommsStore((s) => s.unreadCount);
 
   const playerCountryData = countries[playerCountryId];
 
@@ -186,6 +193,22 @@ export default function App() {
         audio.sfxKeyClick();
         usePlayerStore.getState().setActiveTab(tabNum);
         return;
+      }
+
+      // Check key 'c' to toggle Comms Center
+      if (e.key.toLowerCase() === 'c' && !e.altKey && !e.ctrlKey && !e.metaKey) {
+        const isInputActive = document.activeElement && (
+          document.activeElement.tagName === 'INPUT' ||
+          document.activeElement.tagName === 'TEXTAREA' ||
+          document.activeElement.tagName === 'SELECT' ||
+          document.activeElement.getAttribute('contenteditable') === 'true'
+        );
+        if (!isInputActive) {
+          e.preventDefault();
+          audio.sfxKeyClick();
+          setCommsOpen((prev) => !prev);
+          return;
+        }
       }
 
       // 2. Alt combinations for strategic rapid actions
@@ -572,6 +595,8 @@ export default function App() {
       <CountryInspector />
       <AlertBanner />
       {showBazaar && <BlackMarketBazaar onClose={() => setShowBazaar(false)} />}
+      <CommsSyncController />
+      <CommsPanel isOpen={commsOpen} onClose={() => setCommsOpen(false)} />
 
       {/* Header bar */}
       <header className="w-full h-11 bg-[#040804] border-b border-[#1a3a1a] flex justify-between items-center px-4 shrink-0 select-none">
@@ -590,6 +615,23 @@ export default function App() {
 
         {/* Global actions: Black Market & Speed controls */}
         <div className="flex gap-2 items-center">
+          <button
+            onClick={() => { audio.sfxKeyClick(); setCommsOpen(true); }}
+            className={`px-2.5 py-1 border text-[9px] uppercase font-bold cursor-pointer transition-all flex items-center gap-1.5 ${
+              unreadCommsCount > 0
+                ? 'border-red-500 text-red-500 bg-red-950/25'
+                : 'border-[#00ff44]/60 text-[#00ff44] bg-[#00ff44]/5 hover:bg-[#00ff44]/15'
+            }`}
+          >
+            <span className="relative flex h-1.5 w-1.5">
+              <span className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${unreadCommsCount > 0 ? 'animate-ping bg-red-400' : 'bg-green-400'}`}></span>
+              <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${unreadCommsCount > 0 ? 'bg-red-500' : 'bg-green-500'}`}></span>
+            </span>
+            📡 COMMS PORT {unreadCommsCount > 0 ? `(${unreadCommsCount})` : ''}
+          </button>
+
+          <div className="h-4 w-[1px] bg-[#1a3a1a]" />
+
           <button
             onClick={() => { audio.sfxKeyClick(); setShowBazaar(true); }}
             className="px-2.5 py-1 border border-yellow-800 text-yellow-500 bg-yellow-950/10 hover:bg-yellow-950/30 text-[9px] uppercase font-bold cursor-pointer transition-all"
