@@ -29,6 +29,7 @@ export default function WorldMap({ activeLayer }: WorldMapProps) {
     radar: true,
     logistics: true,
     traces: true,
+    propaganda: true,
   });
 
   // Count active layers
@@ -38,7 +39,7 @@ export default function WorldMap({ activeLayer }: WorldMapProps) {
   useEffect(() => {
     if (activeLayer) {
       const mappedKey = activeLayer.toLowerCase() as any;
-      const validKeys: LayerKey[] = ['political', 'military', 'conflicts', 'economic', 'nuclear', 'cyber', 'population'];
+      const validKeys: LayerKey[] = ['political', 'military', 'conflicts', 'economic', 'nuclear', 'cyber', 'population', 'propaganda'];
       if (validKeys.includes(mappedKey)) {
         setLayers((prev) => ({
           ...prev,
@@ -70,6 +71,7 @@ export default function WorldMap({ activeLayer }: WorldMapProps) {
       radar: true,
       logistics: true,
       traces: true,
+      propaganda: true,
     });
   };
 
@@ -87,6 +89,7 @@ export default function WorldMap({ activeLayer }: WorldMapProps) {
       radar: false,
       logistics: false,
       traces: false,
+      propaganda: false,
     });
   };
 

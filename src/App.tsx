@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useWorldStore } from './store/worldStore';
 import { usePlayerStore } from './store/playerStore';
+import { usePropagandaStore } from './store/propagandaStore';
 import { SCENARIOS } from './data/scenarios';
 import { initScenario } from './sim/scenarioEngine';
 import { restartTickTimer, stopTickTimer } from './sim/tickEngine';
@@ -20,6 +21,7 @@ import ResearchPanel from './components/panels/ResearchPanel';
 import IntelPanel from './components/panels/IntelPanel';
 import SpacePanel from './components/panels/SpacePanel';
 import PopulationPanel from './components/panels/PopulationPanel';
+import PropagandaPanel from './components/panels/PropagandaPanel';
 
 import AnalysisModeSwitcher from './components/map/AnalysisModeSwitcher';
 import TimelineStrip from './components/map/TimelineStrip';
@@ -60,6 +62,7 @@ import StockMarketTicker from './components/reactive/StockMarketTicker';
 import NewspaperFeed from './components/reactive/NewspaperFeed';
 import UnSecurityCouncil from './components/reactive/UnSecurityCouncil';
 import BlackMarketBazaar from './components/blackmarket/BlackMarketBazaar';
+import { useBlackMarketStore } from './store/blackMarketStore';
 import CommandLogPanel from './components/hud/CommandLogPanel';
 import DefconBar from './components/hud/DefconBar';
 import { useDefconStore, applyDefconPalette } from './store/defconStore';
@@ -149,6 +152,7 @@ function ActivePanelWrapper({ activeTab, getTabClassification }: { activeTab: nu
       {activeTab === 6 && <IntelPanel />}
       {activeTab === 7 && <SpacePanel />}
       {activeTab === 8 && <PopulationPanel />}
+      {activeTab === 9 && <PropagandaPanel />}
     </div>
   );
 }
@@ -167,6 +171,7 @@ export default function App() {
   const playerCountryId = usePlayerStore((s) => s.countryId);
   const playerState = usePlayerStore();
   const setTickSpeed = usePlayerStore((s) => s.setTickSpeed);
+  const suspicion = useBlackMarketStore((s) => s.internationalSuspicion);
 
   useEffect(() => {
     // Synchronize DEFCON variables and classes on initial mount
@@ -226,6 +231,11 @@ export default function App() {
       }
       case 8: { // POPULATION
         return `civs:${playerCountryData.population.toFixed(1)}m unrest:${Math.round(playerCountryData.political.popularUnrest)}%`;
+      }
+      case 9: { // PROPAGANDA
+        const opsCount = usePropagandaStore.getState().activeOperations.filter(o => o.createdBy === 'PLAYER' && o.active).length;
+        const score = playerCountryData.domesticNarrative ?? 55;
+        return `ops:${opsCount} dms:${score.toFixed(0)}%`;
       }
       default:
         return '';
@@ -292,8 +302,8 @@ export default function App() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // 1. Standard F1 - F8 tab switcher
-      if (e.key >= 'F1' && e.key <= 'F8') {
+      // 1. Standard F1 - F9 tab switcher
+      if (e.key >= 'F1' && e.key <= 'F9') {
         e.preventDefault();
         const tabNum = parseInt(e.key.substring(1), 10);
         audio.sfxKeyClick();
@@ -721,6 +731,15 @@ export default function App() {
             <span>PLAYER BASE: {playerCountryId} {playerCountryData?.flagEmoji}</span>
             <span>TICK CLOCK: {currentTick}</span>
             <span>TREASURY RES: $<AnimatedValue target={playerState.cashB} formatter={(v) => v.toFixed(1)} />B</span>
+            <span className="flex items-center gap-1.5 border-l border-[#1a3a1a] pl-3">
+              SUSPICION: <span className={`font-bold ${suspicion > 80 ? 'text-red-500 animate-pulse' : suspicion > 60 ? 'text-orange-400' : 'text-yellow-500'}`}>{suspicion}%</span>
+              <div className="w-12 bg-gray-950 h-1.5 border border-[#1a3a1a] overflow-hidden rounded relative">
+                <div 
+                  className={`h-full transition-all duration-300 ${suspicion > 80 ? 'bg-red-500 animate-pulse' : suspicion > 60 ? 'bg-orange-400' : 'bg-yellow-500'}`} 
+                  style={{ width: `${suspicion}%` }}
+                />
+              </div>
+            </span>
             <span>GLOBAL STATUS: ACTIVE</span>
           </div>
         </div>
@@ -877,6 +896,7 @@ export default function App() {
                   { id: 6, label: 'INTELLIGENCE (F6)' },
                   { id: 7, label: 'SPACE (F7)' },
                   { id: 8, label: 'POPULATION (F8)' },
+                  { id: 9, label: 'PROPAGANDA (F9)' },
                 ].map((tab) => {
                   const isActive = playerState.activeTab === tab.id;
                   return (

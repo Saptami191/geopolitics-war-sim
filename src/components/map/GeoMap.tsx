@@ -81,6 +81,7 @@ export function GeoMap({ mode: initialMode, layers: initialLayers, theme = 'dark
     nuclear: true,
     cyber: false,
     population: false,
+    propaganda: true,
     ...initialLayers,
   });
 
@@ -421,6 +422,96 @@ export function GeoMap({ mode: initialMode, layers: initialLayers, theme = 'dark
       );
     }
 
+    // --- PROPAGANDA NARRATIVE WARFARE LAYER ---
+    if (localLayers.propaganda) {
+      const propagandaNodes = Object.entries(countries).map(([id, country]: [string, any]) => {
+        const centroid = getCentroid(id);
+        const narrative = country.domesticNarrative !== undefined ? country.domesticNarrative : (country.political?.ideology === 'DEMOCRACY' ? 55 : 75);
+        const delta = country.recentNarrativeDelta || 0;
+        return {
+          id,
+          name: country.name,
+          coordinates: centroid,
+          narrative,
+          delta,
+        };
+      }).filter(d => d.coordinates[0] !== 0 || d.coordinates[1] !== 0);
+
+      // Pulse multiplier for auras
+      const pressurePulse = 1 + 0.3 * Math.sin(animationTick * 0.08);
+
+      activeDeckLayers.push(
+        // Layer A: Outer pressure aura (opacity is tied directly to narrative delta)
+        new ScatterplotLayer({
+          id: 'propaganda-pressure-auras',
+          data: propagandaNodes,
+          getPosition: (d: any) => d.coordinates,
+          getRadius: (d: any) => {
+            const base = 250000;
+            // Expand slightly under active campaign pressure
+            const multiplier = d.delta !== 0 ? pressurePulse : 1;
+            return base * multiplier;
+          },
+          getFillColor: (d: any) => {
+            const absDelta = Math.abs(d.delta);
+            // Opacity is tied to narrative delta: stronger pressure = more visible, zero pressure = faint (opacity 5)
+            const alpha = Math.min(220, Math.max(5, Math.round(absDelta * 240)));
+            
+            if (d.delta < 0) {
+              return [255, 34, 68, alpha]; // Red core for hostile/destabilizing pressure
+            } else if (d.delta > 0) {
+              return [0, 255, 170, alpha]; // Cyan for stabilizing/positive pressure
+            } else {
+              return [148, 163, 184, 5]; // extremely faint default if zero pressure
+            }
+          },
+          getLineColor: (d: any) => {
+            const absDelta = Math.abs(d.delta);
+            const alpha = Math.min(255, Math.max(0, Math.round(absDelta * 255)));
+            return d.delta < 0 ? [255, 59, 78, alpha] : [0, 255, 200, alpha];
+          },
+          lineWidthMinPixels: 1.5,
+          stroked: true,
+          pickable: true,
+          onClick: handleItemClick,
+          updateTriggers: {
+            getFillColor: [countries, animationTick],
+            getLineColor: [countries, animationTick],
+            getRadius: [animationTick]
+          }
+        }),
+
+        // Layer B: Core domestic narrative health status dot
+        new ScatterplotLayer({
+          id: 'propaganda-narrative-cores',
+          data: propagandaNodes,
+          getPosition: (d: any) => d.coordinates,
+          getRadius: () => 90000,
+          getFillColor: (d: any) => {
+            const val = d.narrative;
+            // Standard red -> yellow -> green/cyan gradient based on narrative alignment
+            if (val < 25) {
+              return [239, 68, 68, 220]; // Danger Red (unrest risk)
+            } else if (val < 50) {
+              return [245, 158, 11, 220]; // Warning Yellow
+            } else if (val < 75) {
+              return [0, 215, 255, 220]; // Info Cyan
+            } else {
+              return [34, 197, 94, 220]; // High compliance Emerald Green
+            }
+          },
+          getLineColor: [255, 255, 255, 80],
+          lineWidthMinPixels: 1,
+          stroked: true,
+          pickable: true,
+          onClick: handleItemClick,
+          updateTriggers: {
+            getFillColor: [countries]
+          }
+        })
+      );
+    }
+
     // --- STRIKE ARCS BASELINE ---
     const liveStrikes = activeStrikes.filter((s: any) => s.status === 'IN_FLIGHT' || s.progressPct < 100);
 
@@ -544,6 +635,7 @@ export function GeoMap({ mode: initialMode, layers: initialLayers, theme = 'dark
       nuclear: true,
       cyber: true,
       population: true,
+      propaganda: true,
     });
   };
 
@@ -556,6 +648,7 @@ export function GeoMap({ mode: initialMode, layers: initialLayers, theme = 'dark
       nuclear: false,
       cyber: false,
       population: false,
+      propaganda: false,
     });
   };
 

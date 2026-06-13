@@ -27,6 +27,7 @@ const SEVEN_LAYERS: LayerItem[] = [
   { key: 'nuclear', label: 'NUCLEAR', color: '#00cfff' },
   { key: 'cyber', label: 'CYBER', color: '#b87fff' },
   { key: 'population', label: 'POPULATION', color: '#7ee787' },
+  { key: 'propaganda', label: 'PROPAGANDA', color: '#ec4899' },
 ];
 
 const EXTENDED_OPS_LAYERS: LayerItem[] = [

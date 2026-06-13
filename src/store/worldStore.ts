@@ -3,6 +3,7 @@ import { produce } from 'immer';
 import { WorldState, Country, BallisticStrike, CommodityMarket, ArmsDeal, ThreatLevel } from '../types';
 import { INITIAL_COUNTRIES } from '../data/countries';
 import { COMMODITY_BASELINES } from '../constants';
+import { useBlackMarketStore } from './blackMarketStore';
 
 interface WorldStoreActions {
   applyTickDelta: (updater: (draft: WorldState) => void) => void;
@@ -89,28 +90,31 @@ export const useWorldStore = create<WorldState & WorldStoreActions>((set) => ({
     draft.globalThreatLevel = level;
   })),
 
-  resetWorld: () => set({
-    countries: JSON.parse(JSON.stringify(INITIAL_COUNTRIES)),
-    activeStrikes: [],
-    commodityMarkets: Object.keys(COMMODITY_BASELINES).map((key) => {
-      const baseline = COMMODITY_BASELINES[key as keyof typeof COMMODITY_BASELINES];
-      return {
-        type: key as any,
-        spotPriceUSD: baseline.base,
-        baselinePrice: baseline.base,
-        volatilityIndex: baseline.volatility,
-        supplyShockActive: false,
-        embargoed: false,
-        embargoedBy: [],
-        priceHistory: [baseline.base],
-      };
-    }),
-    activeArmsDeals: [],
-    globalThreatLevel: 'GREEN',
-    nuclearExchangeOccurred: false,
-    globalEventLog: [
-      { tick: 0, text: 'Sovereign Command Simulator systems reset. Stand by for directive input.', severity: 'SYSTEM' }
-    ],
-    currentTick: 0,
-  }),
+  resetWorld: () => {
+    useBlackMarketStore.getState().resetMarket();
+    set({
+      countries: JSON.parse(JSON.stringify(INITIAL_COUNTRIES)),
+      activeStrikes: [],
+      commodityMarkets: Object.keys(COMMODITY_BASELINES).map((key) => {
+        const baseline = COMMODITY_BASELINES[key as keyof typeof COMMODITY_BASELINES];
+        return {
+          type: key as any,
+          spotPriceUSD: baseline.base,
+          baselinePrice: baseline.base,
+          volatilityIndex: baseline.volatility,
+          supplyShockActive: false,
+          embargoed: false,
+          embargoedBy: [],
+          priceHistory: [baseline.base],
+        };
+      }),
+      activeArmsDeals: [],
+      globalThreatLevel: 'GREEN',
+      nuclearExchangeOccurred: false,
+      globalEventLog: [
+        { tick: 0, text: 'Sovereign Command Simulator systems reset. Stand by for directive input.', severity: 'SYSTEM' }
+      ],
+      currentTick: 0,
+    });
+  },
 }));

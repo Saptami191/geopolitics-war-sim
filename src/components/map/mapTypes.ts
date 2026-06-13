@@ -9,7 +9,8 @@ export type LayerKey =
   | 'isr'
   | 'radar'
   | 'logistics'
-  | 'traces';
+  | 'traces'
+  | 'propaganda';
 
 export interface LayerToggleState {
   political: boolean;
@@ -23,4 +24,5 @@ export interface LayerToggleState {
   radar?: boolean;
   logistics?: boolean;
   traces?: boolean;
+  propaganda?: boolean;
 }

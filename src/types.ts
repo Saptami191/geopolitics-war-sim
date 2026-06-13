@@ -322,6 +322,13 @@ export interface Country {
   provinces?: Province[];
   populationSim?: PopulationProfile;
   cabinet?: Cabinet;
+  
+  // T3.2 Propaganda / Narrative Warfare System properties
+  domesticNarrative?: number;          // 0-100 score representing state/regime narrative alignment
+  mediaResistance?: number;            // 0-1 scaling resistance/resilience to external influence
+  recentNarrativeDelta?: number;       // Change in narrative score in the last tick
+  hasCivilUnrestTriggered?: boolean;   // civil unrest threshold flag (<20)
+  hasElectionInterferenceTriggered?: boolean; // election interference threshold flag (>80)
 }
 
 export interface BezierCurve {
@@ -505,5 +512,32 @@ export interface SpecForceUnit extends BaseUnit {
 }
 
 export type Unit = CarrierGroupUnit | SubmarineUnit | ICBMSiloUnit | AirWingUnit | SpecForceUnit;
+
+// ==========================================
+// T3.3 - BLACK MARKET TYPES
+// ==========================================
+export type BlackMarketItemType = 'MANPADS' | 'NUCLEAR_TRIGGERS' | 'SATELLITE_JAMMERS' | 'CRUISE_MISSILE';
+
+export interface AuctionLot {
+  id: string;
+  itemType: BlackMarketItemType;
+  title: string;
+  description: string;
+  sellerTag: string;
+  rarity: 'COMMON' | 'RARE';
+  basePrice: number;
+  currentBid: number;
+  currentLeaderId: string | null; // 'PLAYER' or AI countryId (e.g. 'CN', 'RU', etc.)
+  expiresAtTick: number;
+  spawnedAtTick: number;
+  status: 'LIVE' | 'RESOLVED' | 'DELIVERING' | 'DELIVERED' | 'EXPIRED';
+  deliveryTick: number | null;
+  suspicionOnWin: number;
+  aiInterestProfile?: {
+    baseDesire: number; // 0-100 rating of how much AI wants this
+    interestedAIs: string[]; // countryIds that are competing
+  };
+}
+
 
 

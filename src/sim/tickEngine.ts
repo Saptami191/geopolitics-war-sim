@@ -2,6 +2,7 @@ import { useWorldStore } from '../store/worldStore';
 import { usePlayerStore } from '../store/playerStore';
 import { useClockStore } from '../store/clockStore';
 import { useUnitStore } from '../store/unitStore';
+import { useBlackMarketStore } from '../store/blackMarketStore';
 import { pollScenarioStatus } from './scenarioEngine';
 import { processFactions } from './factionEngine';
 import { processFiscal } from './fiscalEngine';
@@ -97,6 +98,9 @@ export function executeSimulationStep() {
 
     // 11. Advance deployable tactical units position state
     useUnitStore.getState().updateUnitPositions(draft.currentTick);
+
+    // T3.3 Black Market ticker integration
+    useBlackMarketStore.getState().tickMarket(draft.currentTick);
   });
 
   // 10. Sync player's cash levels with their nation's real treasury reserves
