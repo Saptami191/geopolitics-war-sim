@@ -740,7 +740,7 @@ export function SatelliteWorkstation({ onClose }: { onClose: () => void }) {
       ctx.font = 'bold 8px "JetBrains Mono", monospace';
       ctx.fillText(`TARGET ZONE: ${targetCountryId || 'AOI_COORD_LOCK'}`, 14, 21);
       ctx.fillStyle = '#999999';
-      ctx.font = '7px sans-serif';
+      ctx.font = '7px "JetBrains Mono", monospace';
       ctx.fillText(`LAT/LON: ${(45.2 + rx / 10).toFixed(4)}°N / ${(12.8 + ry / 10).toFixed(4)}°E`, 14, 32);
 
       // Status notifications

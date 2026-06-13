@@ -54,7 +54,7 @@ export const LeaderPortrait: React.FC<LeaderPortraitProps> = ({ countryId }) => 
       ctx.beginPath();
       ctx.arc(60, 75, 40, 0, Math.PI * 2);
       ctx.stroke();
-      ctx.font = '7px sans-serif';
+      ctx.font = '7.5px "JetBrains Mono", monospace';
       ctx.fillStyle = '#00a833';
       ctx.fillText(`GEO_RAD_E4`, 8, 15);
       ctx.fillText(`${countryId}_COORDS`, 82, 142);

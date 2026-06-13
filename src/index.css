@@ -1,9 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=JetBrains+Mono:wght@400;700&family=Chakra+Petch:wght@300;400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
 @import "tailwindcss";
+@import "./styles/typography.css";
 
 @theme {
-  --font-mono: "JetBrains Mono", "Fira Code", "Courier New", monospace;
-  --font-display: "Chakra Petch", "Share Tech Mono", "JetBrains Mono", monospace;
+  --font-mono: "JetBrains Mono", monospace;
+  --font-sans: "Chakra Petch", monospace;
+  --font-display: "Chakra Petch", monospace;
 }
 
 :root {
@@ -58,8 +60,8 @@
   --defcon-accent: var(--defcon-5-accent);
 
   /* === TYPOGRAPHY === */
-  --font-display: 'Chakra Petch', 'Share Tech Mono', monospace;
-  --font-mono:    'JetBrains Mono', 'Courier New', monospace;
+  --font-display: "Chakra Petch", monospace;
+  --font-mono:    "JetBrains Mono", monospace;
 
   /* Type scale */
   --text-xl:   22px;  /* Primary readout values */
@@ -123,7 +125,7 @@ body {
                     linear-gradient(90deg, var(--color-grid) 1px, transparent 1px);
   background-size: 20px 20px;
   color: var(--color-green);
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
   overflow-x: hidden;
   position: relative;
   height: 100vh;
@@ -459,7 +461,7 @@ body::after {
 /* 5. LED Status Bar Displays */
 .led-display {
   position: relative;
-  font-family: 'Share Tech Mono', var(--font-mono);
+  font-family: var(--font-mono);
   color: var(--color-green);
   text-shadow:
     0 0 4px var(--color-green),
@@ -763,7 +765,7 @@ body::after {
 
 /* Section header label — military style */
 .section-label {
-  font: 700 9px/1 'Share Tech Mono', monospace;
+  font: 700 9px/1 var(--font-display);
   letter-spacing: 0.18em;
   color: #00aa2e;
   text-transform: uppercase;
@@ -789,7 +791,7 @@ body::after {
 /* THREE-TIER DATA HIERARCHY */
 /* Tier 1: Primary values (GDP, treasury, key metrics) */
 .val-primary {
-  font: 700 22px/1 'JetBrains Mono', monospace;
+  font: 700 22px/1 var(--font-mono);
   color: #00ff44;
   text-shadow: 0 0 6px rgba(0,255,68,0.8), 0 0 12px rgba(0,255,68,0.3);
   letter-spacing: -0.01em;
@@ -798,7 +800,7 @@ body::after {
 
 /* Tier 2: Secondary values (rates, deltas, sub-stats) */
 .val-secondary {
-  font: 400 12px/1 'JetBrains Mono', monospace;
+  font: 400 12px/1 var(--font-mono);
   color: #88ffaa;
   display: block;
 }
@@ -808,7 +810,7 @@ body::after {
 
 /* Tier 3: Labels */
 .val-label {
-  font: 400 9px/1 'Share Tech Mono', monospace;
+  font: 400 9px/1 var(--font-display);
   letter-spacing: 0.14em;
   color: #00aa2e;
   text-transform: uppercase;
@@ -858,7 +860,7 @@ input[type='range'].sovereign-slider::-webkit-slider-thumb:active {
 
 /* BUTTONS — primary action style */
 .btn-sovereign {
-  font: 700 9px/1 'Share Tech Mono', monospace;
+  font: 700 9px/1 var(--font-display);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: #00ff44;
@@ -896,7 +898,7 @@ input[type='range'].sovereign-slider::-webkit-slider-thumb:active {
 
 /* Feed buttons (smaller, for telemetry feed controls) */
 .feed-btn {
-  font: 400 7px/1 'Share Tech Mono', monospace;
+  font: 400 7px/1 var(--font-display);
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: #00aa2e;
@@ -913,7 +915,7 @@ input[type='range'].sovereign-slider::-webkit-slider-thumb:active {
 .feed-btn:disabled { opacity: 0.25; cursor: default; }
 
 .feed-select {
-  font: 400 7.5px/1 'JetBrains Mono', monospace;
+  font: 400 7.5px/1 var(--font-mono);
   color: #00aa2e;
   background: rgba(0,20,5,0.9);
   border: 1px solid #0d2e0d;

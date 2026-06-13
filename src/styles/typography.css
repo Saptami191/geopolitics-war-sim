@@ -1,0 +1,131 @@
+:root {
+  --font-display: "Chakra Petch", monospace;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --text-readout-xl: 22px;
+  --text-data-lg: 18px;
+  --text-data-md: 13px;
+  --text-chrome-sm: 9px;
+  --text-chrome-xs: 8px;
+  --text-classification: 7px;
+
+  --tracking-chrome: 0.14em;
+  --tracking-field: 0.2em;
+  --tracking-classification: 0.25em;
+
+  --line-tight: 1;
+  --line-ui: 1.05;
+  --line-data: 1.1;
+}
+
+.chrome {
+  font-family: var(--font-display);
+  font-size: var(--text-chrome-sm);
+  line-height: var(--line-ui);
+  font-weight: 600;
+  letter-spacing: var(--tracking-chrome);
+  text-transform: uppercase;
+}
+
+.data-value {
+  font-family: var(--font-mono);
+  font-size: var(--text-data-lg);
+  line-height: var(--line-data);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.field-label {
+  font-family: var(--font-display);
+  font-size: var(--text-chrome-xs);
+  line-height: var(--line-tight);
+  font-weight: 400;
+  letter-spacing: var(--tracking-field);
+  text-transform: uppercase;
+}
+
+.readout {
+  font-family: var(--font-mono);
+  font-size: var(--text-readout-xl);
+  line-height: var(--line-tight);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.classification {
+  font-family: var(--font-display);
+  font-size: var(--text-classification);
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: var(--tracking-classification);
+  text-transform: uppercase;
+}
+
+.data-inline {
+  font-family: var(--font-mono);
+  font-size: var(--text-data-md);
+  line-height: var(--line-data);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.chrome-header {
+  font-family: var(--font-display);
+  font-size: 10px;
+  line-height: 1.05;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.chrome-subtle {
+  font-family: var(--font-display);
+  font-size: 8px;
+  line-height: 1;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.data-critical {
+  font-family: var(--font-mono);
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* Global rules and overrides */
+html, body, #root {
+  font-family: var(--font-display);
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: var(--font-display);
+}
+
+code,
+pre,
+kbd,
+samp {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.numeric-scope,
+.numeric-scope * {
+  font-family: var(--font-mono) !important;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.chrome-scope,
+.chrome-scope * {
+  font-family: var(--font-display);
+}

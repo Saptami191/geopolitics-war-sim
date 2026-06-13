@@ -17,16 +17,16 @@ export const DefconBar: React.FC = () => {
   const palette = DEFCON_PALETTES[currentDefcon];
 
   const levels = [
-    { value: 5, name: '5 PEACE' },
-    { value: 4, name: '4 WATCH' },
-    { value: 3, name: '3 ELEVATED' },
-    { value: 2, name: '2 ARMED' },
-    { value: 1, name: '1 NUCLEAR' },
+    { value: 5, name: 'PEACE 5' },
+    { value: 4, name: 'WATCH 4' },
+    { value: 3, name: 'ELEVATED 3' },
+    { value: 2, name: 'ARMED 2' },
+    { value: 1, name: 'NUCLEAR 1' },
   ];
 
   return (
     <div 
-      className="w-full bg-[#030603] border-b border-[#1a5c1a] relative z-40 select-none font-mono py-1 px-4 flex justify-between items-center text-[10px]"
+      className="w-full bg-[#030603] border-b border-[#1a5c1a] relative z-40 select-none py-1 px-4 flex justify-between items-center"
       style={{
         borderBottom: `2px solid ${palette.primary}`,
         boxShadow: `0 2px 10px ${palette.panelBg}`,
@@ -36,20 +36,20 @@ export const DefconBar: React.FC = () => {
       {/* HUD left brand */}
       <div className="flex items-center gap-2">
         <span 
-          className="font-display font-medium tracking-widest text-[#00ff44] uppercase"
+          className="classification text-[#00ff44]"
           style={{ color: palette.primary, textShadow: currentDefcon <= 2 ? `0 0 5px ${palette.primary}` : 'none' }}
         >
-          SOVEREIGN COMMAND HUB
+          TOP SECRET SOVEREIGN COMMAND EYES ONLY
         </span>
-        <span className="text-gray-600">/</span>
-        <span className="text-white font-bold tracking-widest">
+        <span className="chrome text-gray-600">/</span>
+        <span className="chrome text-white">
           COGNATE: {playerCountryId}
         </span>
       </div>
 
       {/* DEFCON status pips inside HUD with correct palette indicators (Section 6.3) */}
       <div className="flex items-center gap-3">
-        <span className="text-gray-500 uppercase tracking-widest text-[8px] font-bold">MILITARY ALERT INDEX:</span>
+        <span className="chrome text-gray-500">DEFCON:</span>
         <div className="flex gap-2">
           {levels.map((lvl) => {
             const isActive = lvl.value === currentDefcon;
@@ -71,7 +71,7 @@ export const DefconBar: React.FC = () => {
                     boxShadow: isActive ? `0 0 4px ${palette.primary}` : 'none'
                   }}
                 />
-                <span className="text-[8px] font-bold tracking-wider">{lvl.name}</span>
+                <span className="data-inline text-[8px] font-bold tracking-wider">{lvl.name}</span>
               </div>
             );
           })}
@@ -79,20 +79,20 @@ export const DefconBar: React.FC = () => {
       </div>
 
       {/* Clocks & Chronos Display (Section 4.3) */}
-      <div className="flex items-center gap-4 text-[9px]">
+      <div className="flex items-center gap-4">
         <div className="flex items-center gap-1.5 text-[#ffb300]">
-          <span>📅 Date:</span>
-          <span className="font-bold tracking-wider uppercase">{fmtDate(calendarDate)}</span>
+          <span className="chrome">📅 Date:</span>
+          <span className="data-inline font-bold tracking-wider uppercase">{fmtDate(calendarDate)}</span>
         </div>
         
         <div className="flex items-center gap-1.5 text-[#00ff44]">
-          <span>⏱ Session:</span>
-          <span className="font-bold tracking-wider">{fmtSession(sessionElapsed)}</span>
+          <span className="chrome">⏱ Session:</span>
+          <span className="data-inline font-bold tracking-wider">{fmtSession(sessionElapsed)}</span>
         </div>
 
         <div className="flex items-center gap-1 bg-[#102010] p-1 border border-[#0d2e0d] text-[#00ff44]">
-          <span className="text-gray-500">TICK:</span>
-          <span className="font-bold">{String(currentTick).padStart(4, '0')}</span>
+          <span className="chrome text-gray-500">TICK:</span>
+          <span className="data-inline font-bold">{String(currentTick).padStart(4, '0')}</span>
         </div>
       </div>
     </div>

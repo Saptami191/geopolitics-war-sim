@@ -220,7 +220,7 @@ export default function DroneFeed() {
         ctx.fillText(String(roundedSpd), 6, yCoord + 2.5);
       }
       ctx.fillStyle = '#ffb300';
-      ctx.font = 'bold 5px sans-serif';
+      ctx.font = 'bold 5.5px "Chakra Petch", sans-serif';
       ctx.fillText('IAS', 5, cy - 38);
 
       ctx.fillStyle = 'rgba(2, 6, 2, 0.7)';
@@ -236,7 +236,7 @@ export default function DroneFeed() {
         ctx.fillText(String(roundedAlt), W - 22, yCoord + 2.5);
       }
       ctx.fillStyle = '#ffb300';
-      ctx.font = 'bold 5px sans-serif';
+      ctx.font = 'bold 5.5px "Chakra Petch", sans-serif';
       ctx.fillText('BARO', W - 24, cy - 38);
 
       ctx.fillStyle = 'rgba(2, 6, 2, 0.7)';
@@ -654,7 +654,7 @@ export function DroneWorkstation({ onClose }: { onClose: () => void }) {
         const tickSpd = Math.round(flightSpd / 10) * 10 + i * 10;
         const yCoord = cy + i * -16;
         ctx.fillStyle = i === 0 ? '#00ff44' : 'rgba(0,250,50,0.45)';
-        ctx.font = '7px sans-serif';
+        ctx.font = '7px "JetBrains Mono", monospace';
         ctx.fillText(`${tickSpd}`, 14, yCoord + 3.5);
       }
       ctx.fillStyle = '#ffb300';

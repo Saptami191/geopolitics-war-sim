@@ -245,7 +245,7 @@ export default function CyberFeed() {
       ctx.stroke();
 
       ctx.fillStyle = '#888888';
-      ctx.font = '5px sans-serif';
+      ctx.font = '5.5px "Chakra Petch", sans-serif';
       ctx.fillText('SOC SCAN FLOW INTENSITY', 10, timelineY + 4);
 
       const compromisedNodes = networkNodes.filter((n) => n.status === 'COMPROMISED');

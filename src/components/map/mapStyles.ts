@@ -43,7 +43,7 @@ export const MAP_THEME = {
   },
 
   fonts: {
-    display: '"Chakra Petch", "Share Tech Mono", sans-serif',
+    display: '"Chakra Petch", sans-serif',
     mono: '"JetBrains Mono", SFMono-Regular, monospace',
   },
 
