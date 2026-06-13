@@ -6,6 +6,7 @@ import { getTickIncrement } from '../../sim/militaryEngine';
 import { WeaponType, WeaponUnit } from '../../types';
 import { useUIStore } from '../../store/uiStore';
 import { audio } from '../../utils/audio';
+import AnimatedValue from '../shared/AnimatedValue';
 
 export default function ArsenalPanel() {
   const countryId = usePlayerStore((s) => s.countryId);
@@ -247,12 +248,12 @@ export default function ArsenalPanel() {
             <div className="combat-panel flex justify-around items-center h-[72px] border border-[#1a4a1a] bg-[#030603] rounded p-2">
               <div className="text-center font-mono">
                 <div className="text-[8px] text-gray-400 uppercase tracking-wider">Arsenal Readiness</div>
-                <div className="text-base font-extrabold text-[#00ff44]">{Math.round(arsenal.readinessLevel)}%</div>
+                <div className="text-base font-extrabold text-[#00ff44]"><AnimatedValue target={arsenal.readinessLevel} formatter={(v) => `${Math.round(v)}%`} /></div>
               </div>
               <div className="h-6 w-[1px] bg-[#1a4a1a]" />
               <div className="text-center font-mono">
                 <div className="text-[8px] text-gray-400 uppercase tracking-wider">Intercept Anti-Air Cover</div>
-                <div className="text-base font-extrabold text-[#00e5ff]">{playerCountry.arsenal.abmShieldStrength}%</div>
+                <div className="text-base font-extrabold text-[#00e5ff]"><AnimatedValue target={playerCountry.arsenal.abmShieldStrength} formatter={(v) => `${Math.round(v)}%`} /></div>
               </div>
             </div>
           </div>

@@ -3,6 +3,7 @@ import { useWorldStore } from '../../store/worldStore';
 import { usePlayerStore } from '../../store/playerStore';
 import { useUIStore } from '../../store/uiStore';
 import HexGauge from '../shared/HexGauge';
+import AnimatedValue from '../shared/AnimatedValue';
 
 export default function CountryInspector() {
   const inspectorId = useUIStore((s) => s.countryInspectorId);
@@ -97,30 +98,32 @@ export default function CountryInspector() {
               <h3 className="font-bold pb-1 text-[10px] text-phosphor-cyan uppercase tracking-wider">
                 MACRO FISCAL TELEMETRY
               </h3>
-              <div className="gotham-data-grid text-[10px] uppercase">
+               <div className="gotham-data-grid text-[10px] uppercase">
                 <div className="gotham-data-cell">
                   <span className="data-label">GDP Core Size</span>
-                  <span className="data-value text-[#00ff44]">${econ.gdpB.toFixed(1)}B</span>
+                  <span className="data-value text-[#00ff44]"><AnimatedValue target={econ.gdpB} formatter={(v) => `$${v.toFixed(1)}B`} /></span>
                 </div>
                 <div className="gotham-data-cell">
                   <span className="data-label">Treasury Reserves</span>
-                  <span className="data-value text-[#00ff44]">${econ.treasuryCashB.toFixed(1)}B</span>
+                  <span className="data-value text-[#00ff44]"><AnimatedValue target={econ.treasuryCashB} formatter={(v) => `$${v.toFixed(1)}B`} /></span>
                 </div>
                 <div className="gotham-data-cell">
                   <span className="data-label">Debt-to-GDP</span>
-                  <span className="data-value text-[#00ff44]">{econ.debtToGdpRatio}%</span>
+                  <span className="data-value text-[#00ff44]"><AnimatedValue target={econ.debtToGdpRatio} formatter={(v) => `${v.toFixed(1)}%`} /></span>
                 </div>
                 <div className="gotham-data-cell">
                   <span className="data-label">Inflation Velocity</span>
-                  <span className={`data-value ${econ.inflationRate > 15 ? 'text-phosphor-red' : 'text-phosphor-amber'}`}>{econ.inflationRate.toFixed(1)}%</span>
+                  <span className={`data-value ${econ.inflationRate > 15 ? 'text-phosphor-red' : 'text-phosphor-amber'}`}>
+                    <AnimatedValue target={econ.inflationRate} formatter={(v) => `${v.toFixed(1)}%`} />
+                  </span>
                 </div>
                 <div className="gotham-data-cell">
                   <span className="data-label">Interest Index</span>
-                  <span className="data-value text-phosphor-cyan">{econ.interestRate}%</span>
+                  <span className="data-value text-phosphor-cyan"><AnimatedValue target={econ.interestRate} formatter={(v) => `${v.toFixed(1)}%`} /></span>
                 </div>
                 <div className="gotham-data-cell">
                   <span className="data-label">Currency Strength</span>
-                  <span className="data-value text-[#00ff44]">{econ.currencyStrength} VAL</span>
+                  <span className="data-value text-[#00ff44]"><AnimatedValue target={econ.currencyStrength} formatter={(v) => `${v.toFixed(0)} VAL`} /></span>
                 </div>
               </div>
             </div>
@@ -153,7 +156,7 @@ export default function CountryInspector() {
               <div className="font-mono uppercase text-[9px]">
                 Bilateral opinion of Player ({playerCountryId}):
                 <div className="text-[12px] font-bold text-phosphor-green text-shadow uppercase mt-0.5">
-                  {targetCountry.opinions[playerCountryId] != null ? `${Math.round(targetCountry.opinions[playerCountryId])}%` : '50% (NOMINAL)'}
+                  <AnimatedValue target={targetCountry.opinions[playerCountryId] ?? 50} formatter={(v) => `${Math.round(v)}%`} />
                 </div>
               </div>
 

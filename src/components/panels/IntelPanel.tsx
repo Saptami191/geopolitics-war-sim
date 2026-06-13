@@ -4,6 +4,7 @@ import { usePlayerStore } from '../../store/playerStore';
 import { CovertOpType } from '../../types';
 import { audio } from '../../utils/audio';
 import { useUIStore } from '../../store/uiStore';
+import AnimatedValue from '../shared/AnimatedValue';
 
 export default function IntelPanel() {
   const countryId = usePlayerStore((s) => s.countryId);
@@ -238,7 +239,7 @@ export default function IntelPanel() {
             <div className="combat-panel flex justify-between items-center h-[72px] border border-[#1a3a1a] bg-[#030503] p-4 rounded shadow-sm">
               <div>
                 <div className="text-[8.5px] text-gray-500 uppercase tracking-wider font-bold">Covert Slush Reserves</div>
-                <div className="text-base font-black text-[#00ff44]">${intel.blackBudgetB.toFixed(1)}B</div>
+                <div className="text-base font-black text-[#00ff44]">$<AnimatedValue target={intel.blackBudgetB} formatter={(v) => v.toFixed(1)} />B</div>
               </div>
               <button
                 onClick={handleFundBlackSlush}

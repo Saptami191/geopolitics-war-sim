@@ -3,6 +3,7 @@ import { useWorldStore } from '../../store/worldStore';
 import { usePlayerStore } from '../../store/playerStore';
 import { useUIStore } from '../../store/uiStore';
 import { audio } from '../../utils/audio';
+import AnimatedValue from '../shared/AnimatedValue';
 
 export default function PopulationPanel() {
   const countryId = usePlayerStore((s) => s.countryId);
@@ -83,11 +84,11 @@ export default function PopulationPanel() {
             <div className="space-y-2.5 text-xs">
               <div className="flex justify-between">
                 <span className="text-gray-500 uppercase">Urbanization:</span>
-                <span className="text-[#00ff44] font-bold">{sim?.urbanization || 75}%</span>
+                <span className="text-[#00ff44] font-bold"><AnimatedValue target={sim?.urbanization || 75} formatter={(v) => `${v.toFixed(0)}%`} /></span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500 uppercase">Education Level:</span>
-                <span className="text-[#00ff44] font-bold">{sim?.educationLevel || 80}%</span>
+                <span className="text-[#00ff44] font-bold"><AnimatedValue target={sim?.educationLevel || 80} formatter={(v) => `${v.toFixed(0)}%`} /></span>
               </div>
               {sim?.religiousComposition && (
                 <div className="flex justify-between border-t border-[#0d2e0d] pt-1.5 mt-1.5 text-[10px]">
@@ -158,7 +159,7 @@ export default function PopulationPanel() {
             <div className="space-y-2 text-xs">
               <div className="flex justify-between">
                 <span className="text-gray-500 uppercase">Total Headcount:</span>
-                <span className="text-white font-bold">{country.population.toFixed(1)}M citizens</span>
+                <span className="text-white font-bold"><AnimatedValue target={country.population} formatter={(v) => `${v.toFixed(1)}M`} /> citizens</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500 uppercase">Birth Rate:</span>

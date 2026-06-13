@@ -5,6 +5,7 @@ import HexGauge from '../shared/HexGauge';
 import { EconomicSectors, SupplyChains } from '../../types';
 import { audio } from '../../utils/audio';
 import { useUIStore } from '../../store/uiStore';
+import AnimatedValue from '../shared/AnimatedValue';
 
 export default function CentralBankPanel() {
   const countryId = usePlayerStore((s) => s.countryId);
@@ -214,11 +215,11 @@ export default function CentralBankPanel() {
             <div className="combat-panel flex justify-around items-center h-[112px] py-2 px-4 border border-[#1a3a1a] bg-[#030503] rounded">
               <div className="text-center font-mono">
                 <div className="text-[9px] text-gray-500 uppercase tracking-widest font-bold">Treasury Cash</div>
-                <div className="text-lg font-black text-[#00ff44]">${econ.treasuryCashB.toFixed(1)}B</div>
+                <div className="text-lg font-black text-[#00ff44]">$<AnimatedValue target={econ.treasuryCashB} formatter={(v) => v.toFixed(1)} />B</div>
               </div>
               <div className="text-center font-mono">
                 <div className="text-[9px] text-gray-500 uppercase tracking-widest font-bold">Sovereign Debt</div>
-                <div className="text-lg font-black text-[#ffb300]">{econ.debtToGdpRatio.toFixed(1)}% GDP</div>
+                <div className="text-lg font-black text-[#ffb300]"><AnimatedValue target={econ.debtToGdpRatio} formatter={(v) => v.toFixed(1)} />% GDP</div>
               </div>
               <HexGauge label="Inflation Index" value={econ.inflationRate} color={econ.inflationRate > 12 ? 'red' : 'green'} />
             </div>

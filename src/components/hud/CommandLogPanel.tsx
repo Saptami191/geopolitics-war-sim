@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useWorldStore } from '../../store/worldStore';
+import { usePlayerStore } from '../../store/playerStore';
 import { audio } from '../../utils/audio';
 
 export function getEventCategory(text: string): 'MILITARY' | 'ECONOMY' | 'DIPLOMACY' | 'INTELLIGENCE' | 'SYSTEM' {
@@ -22,6 +23,76 @@ export function getEventCategory(text: string): 'MILITARY' | 'ECONOMY' | 'DIPLOM
 export default function CommandLogPanel() {
   const globalEventLog = useWorldStore((s) => s.globalEventLog);
   const [selectedFilter, setSelectedFilter] = useState<'ALL' | 'MILITARY' | 'ECONOMY' | 'DIPLOMACY' | 'INTELLIGENCE' | 'SYSTEM'>('ALL');
+
+  const playerCountryId = usePlayerStore((s) => s.countryId);
+  const updateCountry = useWorldStore((s) => s.updateCountry);
+
+  const handleTriggerDrill = (type: 'MIL_CRITICAL' | 'LOCAL_FRICTION' | 'COLLAPSE_CRISIS' | 'STAND_DOWN') => {
+    audio.sfxKeyClick();
+    if (!playerCountryId) return;
+
+    if (type === 'MIL_CRITICAL') {
+      updateCountry(playerCountryId, (draft) => {
+        draft.arsenal.readinessLevel = 5;
+      });
+      useWorldStore.getState().applyTickDelta((draft) => {
+        draft.globalEventLog.unshift({
+          tick: draft.currentTick,
+          text: 'TACTICAL SYSTEMS DRILL: Arsenal readiness level manually forced to combat-critical 5%.',
+          severity: 'CRITICAL'
+        });
+      });
+    } else if (type === 'LOCAL_FRICTION') {
+      updateCountry(playerCountryId, (draft) => {
+        draft.political.stabilityIndex = 47; 
+        draft.political.popularUnrest = 48;  
+        draft.economic.treasuryCashB = 4.2;  
+        draft.economic.inflationRate = 12.5; 
+        draft.arsenal.readinessLevel = 80;   
+      });
+      useWorldStore.getState().applyTickDelta((draft) => {
+        draft.globalEventLog.unshift({
+          tick: draft.currentTick,
+          text: 'REGIONAL FRICTION DRILL: Moderate civil unrest and reserves depreciation injected.',
+          severity: 'WARNING'
+        });
+      });
+    } else if (type === 'COLLAPSE_CRISIS') {
+      updateCountry(playerCountryId, (draft) => {
+        draft.political.stabilityIndex = 24; 
+        draft.political.popularUnrest = 82;  
+        draft.economic.treasuryCashB = 0.8;  
+        draft.economic.inflationRate = 22.4; 
+        draft.arsenal.readinessLevel = 5;    
+      });
+      useWorldStore.getState().applyTickDelta((draft) => {
+        draft.globalEventLog.unshift({
+          tick: draft.currentTick,
+          text: '🚨 MULTI-SYSTEMS COLLAPSE DRILL: Extreme civil instability, treasury insolvency, and readiness depreciation active!',
+          severity: 'CRITICAL'
+        });
+      });
+    } else if (type === 'STAND_DOWN') {
+      updateCountry(playerCountryId, (draft) => {
+        draft.political.stabilityIndex = 80;
+        draft.political.popularUnrest = 15;
+        draft.economic.treasuryCashB = 15.0;
+        draft.economic.inflationRate = 2.4;
+        draft.economic.debtToGdpRatio = 35.0;
+        draft.arsenal.readinessLevel = 80;
+        if (draft.researchUnlocked.length < 3) {
+          draft.researchUnlocked = ['HAARP_V1', 'IRON_DOME_V1', 'CYBER_FIREWALL_V1'];
+        }
+      });
+      useWorldStore.getState().applyTickDelta((draft) => {
+        draft.globalEventLog.unshift({
+          tick: draft.currentTick,
+          text: 'SOVEREIGN STAND-DOWN: Emergency simulation ceased. All military and financial sectors restored.',
+          severity: 'SYSTEM'
+        });
+      });
+    }
+  };
 
   // Categorize log entries on the fly safely using our exact semantic matcher
   const categorizedEvents = useMemo(() => {
@@ -50,7 +121,7 @@ export default function CommandLogPanel() {
   };
 
   return (
-    <div className="gotham-panel gotham-panel--secondary p-3 flex flex-col font-mono text-[10.5px] shrink-0 overflow-hidden w-full mb-3" data-classification="SECRET" style={{ minHeight: '190px', maxHeight: '280px' }}>
+    <div className="gotham-panel gotham-panel--secondary p-3 flex flex-col font-mono text-[10.5px] shrink-0 overflow-hidden w-full mb-3" data-classification="SECRET" style={{ minHeight: '210px', maxHeight: '310px' }}>
       {/* Header and Filter Buttons */}
       <div className="flex justify-between items-center border-b border-[#1a5c1a]/50 pb-2 mb-2 select-none">
         <span className="text-[10px] font-black uppercase text-[#00ff44] tracking-widest flex items-center gap-1.5 animate-pulse">
@@ -138,6 +209,44 @@ export default function CommandLogPanel() {
             );
           })
         )}
+      </div>
+
+      {/* Sovereign Command simulated crisis diagnostic injector */}
+      <div className="border-t border-[#1a5c1a]/40 mt-2 pt-2 flex flex-col gap-1.5 select-none shrink-0">
+        <div className="text-[7.5px] text-gray-500 font-bold uppercase tracking-widest flex justify-between items-center">
+          <span>⚠️ EMERGENCY DRILL SIMULATOR</span>
+          <span className="text-[#00ff44] animate-pulse">● ONLINE</span>
+        </div>
+        <div className="grid grid-cols-4 gap-1">
+          <button
+            onClick={() => handleTriggerDrill('MIL_CRITICAL')}
+            className="px-1 py-1 bg-[#1a0808] border border-red-900 text-red-500 hover:bg-red-950/40 rounded transition-all text-[7px] font-black uppercase cursor-pointer"
+            title="Drill: Set Military readiness strength directly to 5%"
+          >
+            Readiness 5%
+          </button>
+          <button
+            onClick={() => handleTriggerDrill('LOCAL_FRICTION')}
+            className="px-1 py-1 bg-[#1c1204] border border-[#f5a623]/30 text-[#f5a623] hover:bg-[#2b1b06] rounded transition-all text-[7px] font-black uppercase cursor-pointer"
+            title="Drill: Moderate government stability and economic reserves decay"
+          >
+            Friction
+          </button>
+          <button
+            onClick={() => handleTriggerDrill('COLLAPSE_CRISIS')}
+            className="px-1 py-1 bg-[#ff0033]/15 border border-red-500 text-[#ff2244] hover:bg-red-950 rounded transition-all text-[7px] font-black uppercase cursor-pointer animate-pulse"
+            title="Drill: Force Stability, Economy, and Military simultaneously into Critical"
+          >
+            Hyper Crisis
+          </button>
+          <button
+            onClick={() => handleTriggerDrill('STAND_DOWN')}
+            className="px-1 py-1 bg-[#091509] border border-green-900 text-green-500 hover:bg-[#122812] rounded transition-all text-[7px] font-black uppercase cursor-pointer"
+            title="Cease crisis drill: Restore starting Sovereign parameters"
+          >
+            Stand Down
+          </button>
+        </div>
       </div>
     </div>
   );

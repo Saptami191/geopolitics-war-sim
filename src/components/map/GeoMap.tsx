@@ -125,6 +125,11 @@ export function GeoMap({ mode: initialMode, layers: initialLayers, theme = 'dark
       attributionControl: false,
     });
 
+    // Gracefully handle basemap tile fetch errors or network disconnects
+    map.on('error', (e) => {
+      console.warn('[GEOMAP] MapLibre asset or tile load failure caught gracefully:', e.error || e.message || e);
+    });
+
     mapRef.current = map;
 
     map.on('load', () => {

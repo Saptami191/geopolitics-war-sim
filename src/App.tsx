@@ -44,6 +44,10 @@ import { useCommsStore } from './store/commsStore';
 
 import { useOnboardingStore } from './store/onboardingStore';
 import OnboardingHints from './components/hud/OnboardingHints';
+import AnimatedValue from './components/shared/AnimatedValue';
+import BlinkingDot from './components/shared/BlinkingDot';
+import { usePanelAlertState } from './hooks/usePanelAlertState';
+import { getPanelAlertSeverity } from './utils/panelAlerts';
 
 // New features Phase 5 - 10
 import CinematicIntro from './components/intro/CinematicIntro';
@@ -74,6 +78,77 @@ const getTabClassification = (tabId: number): string => {
     default: return "CONFIDENTIAL";
   }
 };
+
+interface TabButtonProps {
+  id: number;
+  label: string;
+  isActive: boolean;
+  getTabKPI: (tabId: number) => string;
+  onClick: () => void;
+  key?: React.Key;
+}
+
+function TabButton({ id, label, isActive, getTabKPI, onClick }: TabButtonProps) {
+  const { severity, isAlertActive } = usePanelAlertState((worldState, country) => {
+    return getPanelAlertSeverity(id, worldState, country);
+  });
+
+  const getAlertClass = () => {
+    if (severity === 'critical') return 'state-critical';
+    if (severity === 'warning') return 'state-warning';
+    return '';
+  };
+
+  const alertClass = getAlertClass();
+
+  return (
+    <button
+      onClick={onClick}
+      className={`btn-sovereign text-[8px] tracking-wider py-1.5 px-3.5 whitespace-nowrap flex flex-col justify-center items-center min-w-[110px] border rounded transition-all select-none cursor-pointer ${alertClass} ${
+        isActive 
+          ? 'border-[#00ff44] text-[#00ff44] bg-[#0c1f0d] shadow-[0_0_8px_rgba(0,255,68,0.15)] active' 
+          : 'border-[#1a5c1a]/35 bg-[#020502] text-gray-400 hover:border-green-800 hover:text-white'
+      }`}
+    >
+      <div className="flex items-center gap-1.5">
+        {isAlertActive && <BlinkingDot severity={severity} />}
+        <span className="font-bold tracking-widest">{label}</span>
+      </div>
+      <span className="text-[7.5px] text-[#00e5ff] font-medium mt-0.5 tracking-normal opacity-90 select-none">{getTabKPI(id)}</span>
+    </button>
+  );
+}
+
+function ActivePanelWrapper({ activeTab, getTabClassification }: { activeTab: number, getTabClassification: (tab: number) => string }) {
+  const { severity } = usePanelAlertState((worldState, country) => {
+    return getPanelAlertSeverity(activeTab, worldState, country);
+  });
+
+  const getAlertClass = () => {
+    if (severity === 'critical') return 'state-critical';
+    if (severity === 'warning') return 'state-warning';
+    return '';
+  };
+
+  const alertClass = getAlertClass();
+
+  return (
+    <div 
+      className={`gotham-panel gotham-panel--primary mb-3.5 ${alertClass}`} 
+      data-classification={getTabClassification(activeTab)}
+      style={{ minHeight: '340px' }}
+    >
+      {activeTab === 1 && <GovernmentPanel />}
+      {activeTab === 2 && <CentralBankPanel />}
+      {activeTab === 3 && <ArsenalPanel />}
+      {activeTab === 4 && <DiplomacyPanel />}
+      {activeTab === 5 && <ResearchPanel />}
+      {activeTab === 6 && <IntelPanel />}
+      {activeTab === 7 && <SpacePanel />}
+      {activeTab === 8 && <PopulationPanel />}
+    </div>
+  );
+}
 
 export default function App() {
   const currentTick = useWorldStore((s) => s.currentTick);
@@ -640,7 +715,7 @@ export default function App() {
           <div className="hidden lg:flex items-center gap-3 border-l border-[#1a3a1a] pl-4 text-[10px] opacity-80 uppercase text-gray-500">
             <span>PLAYER BASE: {playerCountryId} {playerCountryData?.flagEmoji}</span>
             <span>TICK CLOCK: {currentTick}</span>
-            <span>TREASURY RES: ${playerState.cashB.toFixed(1)}B</span>
+            <span>TREASURY RES: $<AnimatedValue target={playerState.cashB} formatter={(v) => v.toFixed(1)} />B</span>
             <span>GLOBAL STATUS: ACTIVE</span>
           </div>
         </div>
@@ -800,38 +875,24 @@ export default function App() {
                 ].map((tab) => {
                   const isActive = playerState.activeTab === tab.id;
                   return (
-                    <button
+                    <TabButton
                       key={tab.id}
+                      id={tab.id}
+                      label={tab.label}
+                      isActive={isActive}
+                      getTabKPI={getTabKPI}
                       onClick={() => { audio.sfxKeyClick(); playerState.setActiveTab(tab.id); }}
-                      className={`btn-sovereign text-[8px] tracking-wider py-1.5 px-3.5 whitespace-nowrap flex flex-col justify-center items-center min-w-[110px] border rounded transition-all select-none cursor-pointer ${
-                        isActive 
-                          ? 'border-[#00ff44] text-[#00ff44] bg-[#0c1f0d] shadow-[0_0_8px_rgba(0,255,68,0.15)] active' 
-                          : 'border-[#1a5c1a]/35 bg-[#020502] text-gray-400 hover:border-green-800 hover:text-white'
-                      }`}
-                    >
-                      <span className="font-bold tracking-widest">{tab.label}</span>
-                      <span className="text-[7.5px] text-[#00e5ff] font-medium mt-0.5 tracking-normal opacity-90 select-none">{getTabKPI(tab.id)}</span>
-                    </button>
+                    />
                   );
                 })}
               </div>
             </div>
 
             {/* Active panel — customized with .gotham-panel and .gotham-panel--primary system */}
-            <div 
-              className="gotham-panel gotham-panel--primary mb-3.5" 
-              data-classification={getTabClassification(playerState.activeTab)}
-              style={{ minHeight: '340px' }}
-            >
-              {playerState.activeTab === 1 && <GovernmentPanel />}
-              {playerState.activeTab === 2 && <CentralBankPanel />}
-              {playerState.activeTab === 3 && <ArsenalPanel />}
-              {playerState.activeTab === 4 && <DiplomacyPanel />}
-              {playerState.activeTab === 5 && <ResearchPanel />}
-              {playerState.activeTab === 6 && <IntelPanel />}
-              {playerState.activeTab === 7 && <SpacePanel />}
-              {playerState.activeTab === 8 && <PopulationPanel />}
-            </div>
+            <ActivePanelWrapper
+              activeTab={playerState.activeTab}
+              getTabClassification={getTabClassification}
+            />
 
             {/* PERSISTENT OPERATIONS LOG CHANNEL */}
             <CommandLogPanel />
