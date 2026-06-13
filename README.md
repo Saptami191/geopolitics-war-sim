@@ -12,331 +12,378 @@
 # ╚██████╗ ╚██████╔╝ ██║ ╚═╝ ██║ ██║ ╚═╝ ██║ ██║  ██║ ██║ ╚████║ ██████╔╝ 
 #  ╚═════╝  ╚═════╝  ╚═╝     ╚═╝ ╚═╝     ╚═╝ ╚═╝  ╚═╝ ╚═╝  ╚═══╝ ╚═════╝  
 #
-#                         SOVEREIGN COMMAND SIMULATOR v5.4
-#                  DEFENSE-GRADE INTERACTIVE GEOPOLITICAL WAR ENGINE
+#                         SOVEREIGN COMMAND SIMULATOR v6.0
+#                DEFENSE-GRADE MULTI-AGENT GEOPOLITICAL WAR MACHINE
+#                    HIGH-PERFORMANCE CLIENT-SIDE SIMULATION UNIT
 
 <div align="center">
 
-> **`> SECURITY PROTOCOL: COSMIC TOP SECRET // EYES ONLY // DEFCON-1 LEVEL CLEARANCE`**
->
-> *This is not a game. It is a dual-use global command-and-control simulation platform.*
+> **`> CLASSIFIED DIRECTIVE: COSMIC TOP SECRET // LEVEL-5 CLEARANCE REQUIRED`**  
+> *Warning: Attempting to access simulated nuclear launch control without double-key authorization will trigger automatic cyber grid lockouts.*
 
-[![LIVE DIRECT ACCESS](https://img.shields.io/badge/🛰️_LAUNCH_TACTICAL_CONSOLE-ONLINE-00ff66?style=for-the-badge&labelColor=0a0f0d&color=00ff66)](https://geopolitics-war-sim.pages.dev/)
-[![THREAT LEVEL](https://img.shields.io/badge/GLOBAL_DEFCON_STATUS-ALERT_LEVEL_1-ff1549?style=for-the-badge&labelColor=0a0f0d)](https://geopolitics-war-sim.pages.dev/)
-[![THEATERS DETECTED](https://img.shields.io/badge/SIMULATED_SOVEREIGNS-50+_NATIONS-00e1ff?style=for-the-badge&labelColor=0a0f0d)](https://geopolitics-war-sim.pages.dev/)
-[![PROXIES](https://img.shields.io/badge/PROXY_MILITIAS-12_ACTIVE-eec152?style=for-the-badge&labelColor=0a0f0d)](https://geopolitics-war-sim.pages.dev/)
-
----
-
-### 「 SYSTEM INITIALIZATION DOSSIER 」
-
-```gdb
-[SYSTEM_INFO]: LOADING CORE VECTOR ENGINES...
-[SECURITY]: DECRYPTING ORBITAL TELEMETRY LINKS... CONFIRMED.
-[GEOMETRY]: LOADING REAL-WORLD TOPOJSON MAP METADATA... LOADED.
-[INTELLIGENCE]: FOG_OF_WAR CHANNELS DETECTED. SAT_RECON STATUS: LIVE.
-[WARNING]: THERMONUCLEAR POSTURE IS SET TO "LAUNCH ON DETECTED RADAR ECHO".
-```
+[![Tactical Console](https://img.shields.io/badge/🛰️_TACTICAL_CONSOLE-ACTIVE_ONLINE-00ff66?style=for-the-badge&labelColor=060b09&color=00ff66)](https://geopolitics-war-sim.pages.dev/)
+[![Defcon Threat](https://img.shields.io/badge/HEURISTIC_DEFCON-ALERT_LEVEL_1_TO_5-ff1549?style=for-the-badge&labelColor=060b09)](https://geopolitics-war-sim.pages.dev/)
+[![Simulated Sovereigns](https://img.shields.io/badge/GEO_AGENTS-50+_ACTIVE_NATIONS-00e1ff?style=for-the-badge&labelColor=060b09)](https://geopolitics-war-sim.pages.dev/)
+[![Synthesized Audio](https://img.shields.io/badge/AUDIO_CORE-100%25_DSP_SYNTH-eec152?style=for-the-badge&labelColor=060b09)](https://geopolitics-war-sim.pages.dev/)
 
 </div>
 
 ---
 
-## ◈ 1. OPERATIONAL OVERVIEW
+## ◈ 1. ARCHITECTURAL MAP
 
-**Sovereign Command Simulator (SCS)** is an ultra-dense, full-scale geopolitical war cabinet simulator that bridges the gap between sovereign finance, military command pipelines, substate proxy networks, and electronic intelligence arrays. 
-
-This engine is engineered for command. It models a living planet of **50+ nations** and **12 armed substate actors**, each operating under automated, strategic, and opportunistic AI loops. 
-
-Every action backfires. Every trade imbalance cascades. Every proxy conflict bleeds back into domestic tax rates. When you print currency, cash reserves lose purchasing power in milliseconds. When you detonate a nuclear weapon, the radioactive exclusion coordinates are etched into the core map layers permanently.
-
----
-
-## ◈ 2. HIGH-BUDGET GEOSPATIAL INTERACTION
-
-The simulation theater utilizes dual-redundant visual display systems to translate global intelligence trends in real-time.
+Sovereign Command Simulator (SCS) compiles a massive system of differential state machines, visual drawing loops, and DSP audio pipelines down to a unified, reactive front-end engine. 
 
 ```
-                  ┌──────────────────────────────────────────────┐
-                  │          DYNAMIC VISUAL PROJECTION           │
-                  └──────────────────────┬───────────────────────┘
-                                         │
-                 ┌───────────────────────┴───────────────────────┐
-                 ▼                                               ▼
-     ┌───────────────────────┐                       ┌───────────────────────┐
-     │   2D ANALYTICAL FLAT  │                       │   3D OPERATIONAL GLB  │
-     └───────────┬───────────┘                       └───────────┬───────────┘
-                 │                                               │
-  • High-Contrast Cartography                     • Hardware-Accelerated WebGL
-  • Complete Grid Intersections                   • Satellite Trajectory Paths
-  • Overlay-Heavy Micro-Stats                    • Bezier Great-Circle Missile Arcs
-  • High Signal-and-Noise Ratios                  • Atmospheric Glow Rim & Clouds
-```
-
-### A. 3D Globe Supremacy Engine
-* **Volumetric Earth Sphere (WebGL)**: Real daytime surface shading seamlessly transitioning to dynamic emissive city lights on the terminator night side.
-* **Ambient Parallax Field**: Stardust clusters and procedural sky scattering frame the globe, accompanied by a volumetric drifting cloud system.
-* **Auto-Track Vector Camera**: Automatic planetary centering on target theaters when active conflict or intelligence alerts fire. Includes camera micro-dampening and manual rotation bypasses.
-* **Great-Circle Ballistic Arcs**: Guided trajectory lines tracing in-flight projectiles with real progress percentage interpolation, completing with shockwave expansion rings at designated coordinates upon impact.
-* **Real-Time Satellites Simulation**: Autonomous orbital tracking of classified assets (`RECON`, `ABM-INT`, `SIGINT`), casting real-time operational radar focus cones across national boundaries.
-
-### B. 2D Tactical Intelligence Board
-* **Precision Projection**: Hand-crafted SVG map plotting boundaries using precise TopoJSON math (no generic layouts or blank placeholders).
-* **Command Console Bar**: An elegant console fixed at the top-left, grouping theme indicators (DARK HUD vs. LIGHT ANALYTICA) and view projection switches instantly.
-* **Tactical Symbology Ledger**: Explains symbols, operational colors, and tactical statuses instantly. Easily collapsible/dismissible to restore complete geographic dominance over the screen.
-
----
-
-## ◈ 3. THE INTEL LAYER ONTOLOGY
-
-Toggle seven high-detail structural overlays to evaluate strategic targets:
-
-```
-◈  POLITICAL DECREE   [◈ CYAN]     Regime alignments, alliance blocks (NATO/BRICS), and territorial sovereignty.
-⚔  COMBAT DOMAINS     [⚔ CRIMSON]  Active conflict zones, battle lines, and escalating border disputes.
-▲  MILITARY SHIELD     [▲ AMBER]    Naval divisions, air command zones, and land battalion configurations.
-☢  STRATEGIC SILOS    [☢ SKY]      Thermonuclear launch complexes, missile silos, and alert installations.
-◉  TRADE MERIDIANS    [◉ EMERALD]  Global export highways, rare-earth reserves, pipeline bottlenecks, and GDP hubs.
-⬡  CYBER INTERCEPTS   [⬡ PURPLE]   Undersea fiber-optic network junctions, packet-sniffing nodes, and firewall arrays.
-●  CIVIL DISCONTENT   [● GOLD]     Civilian densities, refugee camps, demographic stress coordinates, and riots.
+                   ┌────────────────────────────────────────────────────────┐
+                   │             COMMAND VIEWPORT & HUD LAYER                │
+                   │    - 3D WebGL Orbital Earth Dome (Three.js Shaders)    │
+                   │    - 2D Analytical Projection Map (Precisely Styled)  │
+                   │    - Cyber, Drone, Thermal, Radar Workstations         │
+                   └──────────────────────────┬─────────────────────────────┘
+                                              │
+             ┌────────────────────────────────┴─────────────────────────────┐
+             ▼                                                              ▼
+┌─────────────────────────┐                                    ┌─────────────────────────┐
+│     ZUSTAND ACTIONS     │                                    │  ZUSTAND BALANCED STATE │
+│  Expose command APIs    │                                    │  Global atomic stores:  │
+│  Trigger launch keys    │◄──────────────────────────────────►│  - worldStore.ts        │
+│  Update cyber configs   │                                    │  - militaryStore.ts     │
+│  Execute spot trades    │                                    │  - consequencesStore.ts │
+└─────────────────────────┘                                    └─────────────────────────┘
+             │                                                              ▲
+             │                                                              │ (Updates variables)
+             ▼                                                              │
+┌─────────────────────────┐                                    ┌─────────────────────────┐
+│   TACTICAL COMMANDS     │                                    │  17 CORE SIM ENGINE SMT │
+│  Direct terminal hook   │                                    │  - aiDecisionEngine.ts  │
+│  - /strike <CO> <WP>    │                                    │  - fiscalEngine.ts      │
+│  - /print <强度>        │───────────────────────────────────►│  - commodityEngine.ts   │
+│  - /haarp <CO> <LVL>    │                                    │  - defconEngine.ts      │
+└─────────────────────────┘                                    │  - consequenceEngine.ts │
+                                                               └─────────────────────────┘
+                                                                            │
+                                                                            ▼
+                                                               ┌─────────────────────────┐
+                                                               │  DSP OSCILLATOR CORE    │
+                                                               │  Web Audio Hook:        │
+                                                               │  - Real-time sweeps     │
+                                                               │  - Detuned noise buzz  │
+                                                               └─────────────────────────┘
 ```
 
 ---
 
-## ◈ 4. MILITARY & STRATEGIC ARSENAL
+## ◈ 2. SYSTEM ARCHITECTURE & 17 STATE SIMULATORS
 
-Choose from **14 distinct weaponry platforms** mapping a diverse hierarchy of projection forces:
+The engine performs deterministic numerical state integration every **Tick**. State integration is divided across **17 distinct simulation pipelines** that compute geopolitical, socio-economic, and thermodynamic interactions:
 
-```
-┌──────────────────────┬─────────────────┬──────────┬──────────────┬───────────────────┐
-│ PLATFORM NAME        │ CLASSIFICATION  │ RANGE    │ INTERCEPT    │ LOGISTICAL EFFECT │
-├──────────────────────┼─────────────────┼──────────┼──────────────┼───────────────────┤
-│ ICBM (MIRV)          │ Ballistic       │ Global   │ V2/V3 Only   │ Extreme Fallout   │
-│ SLBM (Sub-Laun)      │ Ballistic       │ Sub-Geog │ V2/V3 Only   │ Hard to Detect    │
-│ Hypersonic Glider    │ Cruise-Vanguard │ 8,500km  │ V3 Only      │ High Core Damage  │
-│ Stealth Bomber       │ Air-Incursion   │ 6,000km  │ Moderate     │ Retaliation Decap │
-│ Carrier Battlegroup  │ Maritime        │ Mobile   │ High         │ Local Air Dominance│
-│ Sub-Hunter (Nuclear) │ Maritime        │ Mobile   │ Low          │ Anti-Silo Intercept│
-│ Drone Swarm (Al-IQ)   │ Tactical        │ 1,200km  │ Low          │ Infrastructure Cut│
-│ Dirty Nuclear Device │ Covert          │ Local    │ Unshieldable │ Permanent Ruin    │
-└──────────────────────┴─────────────────┴──────────┴──────────────┴───────────────────┘
-```
+### 1. `aiDecisionEngine.ts` (Dynamic Actor Strategists)
+Implements utility-maximizing heuristic engines for every non-player nation. Heuristics evaluate immediate survival, military strength index, trade dependencies, and ideological hostility to execute strategic defense/offense maneuvers.
 
-### Weapon System Logistics
-1. **The Fuel Mandate**: Fuel levels are tracked in real-time. If oil commodities are embargoed or sanctions sever supply chains, naval fleets and jet squadrons remain grounded at bases.
-2. **Double-Key Authorization**: Launching assets requires executing a 10-second countdown with custom code authentication, simulating secure defense silos.
-3. **Consequence Scars**: Detonation sites undergo permanent raster transformations. Fallout regions visualised as neon green pulses remain toxic forever, altering country outputs permanently.
+### 2. `commodityEngine.ts` (Sovereign Spot Exchange & Resource Flows)
+Monitors four primary resource domains: **Gold, Oil, Silicon, and Rare Earth Minerals**. Spot rates fluctuate based on transport canal freedom, physical reserve pools, and consumer demands with dynamic price discovery formulas.
 
----
+### 3. `consequenceEngine.ts` (Sovereign Degradation & Fallout Modeling)
+Calculates and decays irreversible battlefield damage coordinates. Upon a nuclear weapon detonation, it records a `WorldScar` with lat/lon boundaries, injecting active degradation and permanent GDP deductions into adjacent population registries.
 
-## ◈ 5. SOVEREIGN MACROECONOMIC MODEL
+### 4. `defconEngine.ts` (Heuristic Security Level Estimator)
+Dynamically assigns global security status ($DEFCON_{level} \in [1, 2, 3, 4, 5]$) by evaluating active war theatres, weapon payloads currently in transit, cyber security threats, civil unrest, and central bank defaults.
 
-You don't play with money; you manage a complex, multi-variable financial ledger.
+### 5. `diplomaticEngine.ts` (Multilateral Relationship Vector Mapping)
+Tracks deep matrix of $C_{M \times N}$ bilateral relations. Diplomatic variables dynamically converge or polarize based on embargoes, armed incidents, joint security agreements, and active covert operations.
 
-```
-       ┌────────────────────────────────────────────────────────┐
-       │                  SOVEREIGN CURRENCY STRAP              │
-       └───────────────────────────┬────────────────────────────┘
-                                   │
-      ┌────────────────────────────┼────────────────────────────┐
-      ▼                            ▼                            ▼
-  [REVENUES]                  [PRINTING]                   [MARKET DEBT]
-  - Income Taxes              - Fast Cash Inject           - Sell Sovereign Bonds
-  - Tariffs Raised            - Devalues Currency          - Yields Float with Risk
-  - Resource Exports          - Spans Inflation            - High Debt Stress = Default
-```
+### 6. `factionEngine.ts` (Internal Sovereign Stability State Machine)
+Simulates domestic cabinet compositions, regime change profiles, and substate insurgents. If civil discontent breaches critical thresholds, the engine triggers coup vectors, replacing elected cabinets with militarized hardliner groups.
 
-* **The Sovereign Bond Market**: Sell bonds to global banks. If nation-wide stability, approval rating, or military safety drops, yields skyrocket, raising debt service costs.
-* **Inflationary Spiral**: Print currency to fund budgets instantly. However, excessive printing devalues national currency strength, triggers hyperinflation, and drives citizens to join domestic rebel factions.
-* **The Commodities Spot Exchange**: Buy and sell raw materials (Oil, Rare Earth, Silicon, Uranium) across live-ticking charts. Trigger supply shocks by blockading key shipping canals like the Strait of Hormuz.
+### 7. `fiscalEngine.ts` (Macroeconomic Ledger Synchronizer)
+Processes tax income, tariff adjustments, bond markets, and public spending profiles. Simulates live sovereign bond yields shifting dynamically based on international security factors and structural debt-to-GDP indices.
 
----
+### 8. `fogOfWarEngine.ts` (Asymmetric Intelligence Visibility Filter)
+Computes physical radar/visibility thresholds using naval bases, SIGINT satellite arrays, and active military systems. Prevents players from evaluating complete asset structures of hostile regimes unless scouts are directed.
 
-## ◈ 6. CORE SIMULATION ALGORITMS (THE MATH)
+### 9. `geopoliticalEngine.ts` (Territorial Boundaries & Sovereignty Ledger)
+Resolves border adjustments, territorial claims, and demographic movements. Calculates migration streams and refugee pressure models on borders surrounding active military zones.
 
-The simulation engine evaluates variables using precise mechanical formulas on every game tick.
+### 10. `militaryEngine.ts` (Kinetic Battle Vectors & Ballistic Tracking)
+Updates coordinates, velocities, payloads, and trajectories of all active intercontinental, theatre-level, and cruise weapons in mid-air. Monitors logistics lines, fuel reserves, and air coverage grids.
 
-### A. Ballistic Air Defense Intercept Probability
-The probability ($P_{intercept}$) of an Air Defense system (e.g., Iron Dome V3) neutralizing an incoming projectile is calculated using target speeds, payload radar profiles, and current radar grid interference:
+### 11. `propagandaEngine.ts` (National Narrative & Ideology Converger)
+Calculates institutional control on public opinion using global and regional narrative streams. Tracks information combat arrays, counter-propaganda strength, and citizen loyalty vectors.
 
-$$P_{intercept} = \max\left(0, \ \eta_{abm} \times \left(1 - \frac{S_{target}}{S_{max}}\right) \times \left(1 - C_{interference}\right)\right)$$
+### 12. `scenarioEngine.ts` (Mission Directive Validator)
+Loads specialized conflict, trade, or resources scenarios. Tracks progress indicators and evaluates victory/failure parameters (e.g., casualties, bond failures, territorial loss) upon reaching mission horizons.
 
-*Where:*
-* $\eta_{abm}$: ABM tech multiplier (V1 = 0.35, V2 = 0.70, V3 = 0.95)
-* $S_{target}$: Incoming missile speed (Mach 2 to Mach 15 for Hypersonics)
-* $C_{interference}$: Active Cyber-Electronic Warfare jamming overlay value $[0...1]$
+### 13. `tickEngine.ts` (Continuous Time-Loop Orchestrator)
+Orchestrates continuous temporal updates. Sets precision timers, collects exceptions, handles speed state changes ($\text{Tick}_{\Delta t} \in [0.1s, 0.5s, 2s]$), and routes ticking data blocks directly to Zustand caches.
 
-### B. Currency Inflation / Devaluation Decay
-Sovereign currency exchange strength ($\Phi_{FX}$) reacts to aggressive monetary printing and physical asset backing:
+### 14. `spaceEngine.ts` (Low-Earth Orbit Asset tracker)
+Simulates active orbits of modern satellites (`RECON`, `ABM-SHIELD`, `SIGINT`). Calculates field-of-view sweeps, orbital decay, and anti-satellite missile launch window intersections.
 
-$$\Phi_{FX}(t) = \Phi_{FX}(t-1) \times \left( 1 - \alpha \times I_{print} \right) + \beta \times \left(\frac{R_{gold} + R_{uranium}}{D_{total}}\right)$$
+### 15. `cyberEngine.ts` (Asymmetric Core Packet Networks)
+Tracks signal jamming, network firewalls, and active operations. Computes infrastructure decay, server hacks, and database intrusions that degrade enemy command-and-control subsystems.
 
-*Where:*
-* $I_{print}$: Active central bank monetary printing intensity factor
-* $R_{gold}, R_{uranium}$: Hard commodity reserve values
-* $D_{total}$: Global outstanding bond liabilities
-* $\alpha, \beta$: Easing constants
+### 16. `weatherEngine.ts` (Atmospheric Perturbations & HAARP Vectors)
+Integrates regional climate profiles, storm paths, and artificial climatic anomalies. Storm paths directly affect drone visibility, maritime shipping lane throughput, and satellite tracking accuracy.
 
-### C. Popular Discontent and Coup Threshold
-Civil unrest ($U_{civil}$) generates revolutionary factions when living standard ratios drop below safety margins:
-
-$$U_{civil} = \int \left( \gamma \cdot \text{Inflation} + \delta \cdot \text{TaxRate} + \epsilon \cdot \text{MilitaryCasualties} - \theta \cdot \text{PropagandaStrength} \right) dt$$
-
-*When $U_{civil} > 85\%$, the `factionEngine` triggers a coup check, replacing elected cabinets with military hardliners.*
+### 17. `blackmarketEngine.ts` (Illegal Technology & Arsenal Bazaar)
+Maintains anonymous networks for trading prohibited technology, fuel pipelines, and biological weaponry. Price indices scale proportionally to regional embargo intensities and global oversight levels.
 
 ---
 
-## ◈ 7. OPERATIONAL COMMAND DRILLS
+## ◈ 3. THE MATHEMATICS OF SOVEREIGN DEFENSE
+
+The simulator runs on precise thermodynamic, macro-financial, and geometric theories. Below are the underlying mathematical formulas evaluated by the simulation core:
+
+### A. Dynamic Air-Defense ABM Intercept Probability ($P_{intercept}$)
+
+$$P_{intercept}(t) = \max\left(0, \ \eta_{tech} \times \left(1 - \frac{V_{target}}{V_{limit}}\right)^{2} \times \mathbf{\Psi}_{EW} \times \mathbf{\Omega}_{thermal}\right)$$
+
+Where:
+* **$\eta_{tech}$**: Baseline technology intercept multiplier ($\text{Tier 1} = 0.40$, $\text{Tier 2} = 0.72$, $\text{Tier 3 Space Dome} = 0.98$).
+* **$V_{target}$**: Current velocity of the projectile (ranging from Mach 1.5 to Mach 18.0 for orbital gliders).
+* **$\mathbf{\Psi}_{EW} \in (0, 1]$**: Electronic Warfare jamming factor. Represented by the cyber firewall clearance ratio:
+  $$\mathbf{\Psi}_{EW} = e^{-\lambda \left(\Lambda_{jam} - \Omega_{firewall}\right)}$$
+* **$\mathbf{\Omega}_{thermal} \in [0.1, 1.2]$**: Atmospheric thermal visibility index calculated over the target coordinate grid.
+
+---
+
+### B. Currency FX Exchange Decay & Inflation Velocity ($\Phi_{FX}$)
+
+Sovereign currency exchange values fluctuate according to the money-printing velocity and hard physical reserve assets backing paper liabilities:
+
+$$\Phi_{FX}(t) = \Phi_{FX}(t-1) \times \left(1 - \theta \cdot I_{print} \right) + \kappa \cdot \left[\frac{R_{gold} + \gamma \cdot R_{uranium}}{L_{bonds} \cdot \left(1 + \pi_{inflation}\right)}\right]$$
+
+Where:
+* **$I_{print}$**: Active monetary print volume injected by the central vault state.
+* **$R_{gold}, R_{uranium}$**: Liquid commodity holdings in sovereign vaults.
+* **$L_{bonds}$**: Aggregate market value of issued sovereign bonds held by foreign actors.
+* **$\theta, \kappa, \gamma$**: Decelerating feedback constants calibrated dynamically against DEFCON levels.
+
+---
+
+### C. Popular Civil Discontent & Cabinet Overthrow Threshold ($D_{civil}$)
+
+Unrest builds up dynamically inside the national ledger system by integrating six performance-index decays:
+
+$$D_{civil}(t) = \int_{0}^{t} \left( \alpha \cdot \mathbf{\Pi}_{inflation} + \beta \cdot \mathbf{T}_{income} + \gamma \cdot \mathbf{M}_{casualties} - \delta \cdot \mathbf{\Phi}_{propaganda} - \epsilon \cdot \mathbf{U}_{employment} \right) dt$$
+
+Where:
+* **$\mathbf{\Pi}_{inflation}$**: Instantaneous price index inflation.
+* **$\mathbf{T}_{income}$**: Aggressive tax rate on commercial margins.
+* **$\mathbf{M}_{casualties}$**: Physical soldier and civilian deaths registered in the national registry database.
+* **$\mathbf{\Phi}_{propaganda}$**: Active information management campaign output.
+* **$\mathbf{U}_{employment}$**: Production grid unemployment rate.
+
+*If $D_{civil}(t) > 0.85$, the engine triggers a regime change state, converting democratic cabinets into active military juntas or radical tribal divisions.*
+
+---
+
+## ◈ 4. MASTER SYSTEMS CODE DIRECTORY
 
 ```
-                          COMMAND TERMINAL SHELL
- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  COMMAND INPUT                                 TACTICAL OUTCOME
- ─────────────────────────────────────────────────────────────────────
-  /strike CN SLBM 250KT         ⚡  Launches submarine SLBM toward Beijing.
-  /interest 5.25                ⚡  Adjusts central treasury rates.
-  /sanction RU                  ⚡  Cuts Russian trade links and freezes bond yields.
-  /haarp US 5 FLOOD             ⚡  Focuses satellite grid to flood crop fields.
-  /op ASSASSINATE IL            ⚡  Infiltrates defense cadres to disable radar grids.
-  /sat launch SEEK_DESTROY LEO  ⚡  Launches space weapons to intercept target Sats.
-  /print 3                      ⚡  Triggers hyperinflation in exchange for fast cash.
- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+.
+├── src/
+│   ├── App.tsx                   # Main layout coordinator; mounts 2D Map, 3D Globe, and overlay panels.
+│   ├── main.tsx                  # Global bootstrapper and StrictMode application runner.
+│   ├── index.css                 # Vector theme parameters, modern display typography, glow configurations.
+│   ├── types.ts                  # Pure TypeScript domain models, enums (DEFCON, weapon catalogs, bond logs).
+│   ├── constants.ts              # Mathematical constants, coordinate nodes, missile ranges, fuel requirements.
+│   │
+│   ├── components/
+│   │   ├── css/                  # Custom overlay frames and technical scanlines.
+│   │   │
+│   │   ├── map/                  # High-performance geographic renderers.
+│   │   │   ├── GeoMap.tsx        # High-density SVG flat map rendering with TopoJSON resolutions.
+│   │   │   ├── InGameGlobe.tsx   # Three.js 3D globe viewer with daytime textures and day/night transitions.
+│   │   │   ├── WorldMap.tsx      # Vector canvas coordinate tracking.
+│   │   │   └── MapModeToggle.tsx # Layer switching (political, tactical, economic).
+│   │   │
+│   │   ├── telemetry/            # Tactical workstation units.
+│   │   │   ├── ThermalRecon.tsx  # Dynamic thermal vector scanners.
+│   │   │   ├── DroneFeed.tsx     # Simulated atmospheric scout terminals.
+│   │   │   ├── CyberFeed.tsx     # Hex-grid attack status trackers.
+│   │   │   └── HaarpRadar.tsx    # Magnetic radar signals analyzer.
+│   │   │
+│   │   ├── panels/               # Command-and-control dashboard widgets.
+│   │   │   ├── GovernmentPanel.tsx   # Fiscal tax controls, bill settings, debt bonds.
+│   │   │   ├── CentralBankPanel.tsx  # Interest rate modifications, print registers, reserves.
+│   │   │   ├── ArsenalPanel.tsx      # Dynamic launch authorizations, key checks, arsenal lists.
+│   │   │   ├── IntelPanel.tsx        # Infiltration directives, cyber packet networks.
+│   │   │   └── SpacePanel.tsx        # Anti-satellite targeting interfaces.
+│   │   │
+│   │   ├── shared/               # Interactive utility units.
+│   │   │   ├── TerminalShell.tsx # Interactive text command terminal input system.
+│   │   │   ├── AlertBanner.tsx   # Urgent alerts notifier.
+│   │   │   └── DataTicker.tsx    # Dynamic data ticker for news alerts.
+│   │   │
+│   │   └── intro/                # Cinematic setup screens.
+│   │       ├── CinematicIntro.tsx    # Opening briefings, audio check, scanline sequences.
+│   │       └── GameLobby.tsx         # Multi-scenario briefing selector.
+│   │
+│   ├── sim/                      # Core ticking mechanical simulation engines (see section 2).
+│   ├── store/                    # Atomic Zustand states synchronizing modules (see section 5).
+│   └── utils/                    # Math and DSP synthesizers (see section 6).
 ```
 
 ---
 
-## ◈ 8. CLASSIFIED SCENARIO FILES
+## ◈ 5. ZUSTAND GLOBAL STATE SYSTEMS
 
-Test leadership capability across six high-risk scenario dossiers:
+SCS relies on a modular state engine using optimized, non-overlapping atomic Zustand stores to prevent rendering lags:
 
-### 1. MENA SPARK
-* **The Situation**: Armed missile salvos exchanging between regional military blocks. Threat warning systems are at DEFCON 2.
-* **Mission Goal**: Leverage diplomatic backchannels to broker immediate ceasefires before nuclear authorization keys are turned.
-* **Duration**: 60 ticks.
-
-### 2. KASHMIR FLASHPOINT
-* **The Situation**: Two nuclear states fully mobilize ground forces along disputed borders. Command doctrine is set to "Launch on Warning".
-* **Mission Goal**: Coordinate cyber intrusions and economic tariffs to limit escalation before first-strike profiles are launched.
-* **Duration**: 45 ticks.
-
-### 3. STRAIT OF HORMUZ CLOSURE
-* **The Situation**: Maritime shipping lanes mined, spiking crude oil spot exchange rates by 280%.
-* **Mission Goal**: Clear trade arteries with naval escorts and manage inflation profiles before sovereign bond markets default.
-* **Duration**: 30 ticks.
-
-### 4. THE TECH WAR DOMINANCE
-* **The Situation**: Escalating embargoes on high-purity Silicon and Rare Earth minerals disrupt global manufacture supply chains.
-* **Mission Goal**: Secure semiconductor self-sufficiency while deploying HUMINT networks to safeguard technical R&D.
-* **Duration**: 80 ticks.
-
-### 5. ARCTIC EXPEDITION CLAIMS
-* **The Situation**: Multi-nation naval blockades contesting high-latitude oil drilling territories.
-* **Mission Goal**: Pacify claims and secure bilateral agreements with six northern partners before territorial disputes ignite.
-* **Duration**: 70 ticks.
-
-### 6. ENDLESS GEOPOLITICAL SANDBOX
-* **The Situation**: Tension set to Cold Peace.
-* **Mission Goal**: No limits. No ticking clocks. Manage nations over decades, navigating alliances, economic crises, and space wars.
-* **Duration**: Infinite.
+| Store Name | Primary Core Responsibility | Relevant Data Variables Tracked |
+| :--- | :--- | :--- |
+| **`worldStore.ts`** | Core sovereign state database | Country profile array, alliances, resources, global stability |
+| **`militaryStore.ts`** | Kinetic trajectory registers | Mid-air missiles, intercept systems, targeting vectors |
+| **`defconStore.ts`** | Global threat state coordinator | DEFCON threat status (1-5), matching threat palette gradients |
+| **`economyStore.ts`** | Global spot trade indexer | Commodities prices, reserve volumes, supply line statuses |
+| **`intelligenceStore.ts`**| Black operation records | Infiltration units, counter-intelligence, hack progress |
+| **`consequenceStore.ts`** | Irreversible scars indexer | Fallout regions, GDP detraction variables, scar markers |
+| **`commsStore.ts`** | Live global news and communications logs | Text updates, alert structures, system briefings |
 
 ---
 
-## ◈ 9. ARCHITECTURAL CODE SPECS
+## ◈ 6. HIGH-FIDELITY AUDIO CORE (PURE DSP SYNTHESIZER)
 
-```
-                     WORKSPACE CODE MAP CODEBASES
- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  DIRECTORY             ENGINE COMPONENT FUNCTION
- ─────────────────────────────────────────────────────────────────────
-  src/sim/              The 17 core ticking mathematical engines.
-  src/store/            Zustand state managers tracking assets and alerts.
-  src/components/map/   GeoMap.tsx (2D) and InGameGlobe.tsx (3D).
-  src/components/huds/  Head of State, War Room, and Intelligence HUD panels.
-  src/data/             Seeded database files defining nations and tech research.
-  src/utils/            Web Audio API oscillators synthesizer engine.
- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
+SCS hosts a professional Web Audio API Synthesizer with zero-latency audio assets (no external `.mp3` or `.wav` network loads). Audio signals are computed on-the-fly directly inside the browser's Web Audio core:
 
-### Pure Web Audio Synthesizer
-The simulator contains **no physical audio mp3/wav files**. 100% of the ambient atmosphere and sound effects are synthesized programmatically on-the-fly using the browser's Web Audio API:
-* **DEFCON Sirens**: Double-detuned low frequency sine sweeps shifting rhythmically as security protocols elevate.
-* **Radar Swipes**: High-frequency bandpass-filtered noise bursts firing on rotation sweeps.
-* **Launch Triggers**: Sub-bass oscillators filtering downwards to simulate booster fire.
+* **Detuned Alert Drone**: Low frequency dual-sawtooth waves ($f_1 = 55\text{Hz}$, $f_2 = 55.4\text{Hz}$) modulated by an LFO, morphing into a harsh siren array during a DEFCON-1 transition.
+* **Tactical Radar Sweep**: Modulates a bandpass filter sweep centered on a white noise source, synchronized to dynamic sweep loops.
+* **Ballistic Fire Booster**: Low frequency noise output shaped by dynamic gain nodes with exponential falloffs, simulating booster combustion:
+  $$g(t) = G_{max} \times e^{-\lambda t}$$
+* **Electronic Cyber Click**: High frequency square wave pulses ($f = 880\text{Hz}$, duration $20\text{ms}$) with snappy exponential velocity decays.
 
 ---
 
-## ◈ 10. LOCAL DEPLOYMENT COMMANDS
+## ◈ 7. EXTREMELY IN-DEPTH COMMAND TERMINAL DICTIONARY
 
-Deploy the operational theater locally:
+Use the dynamic terminal shell component `/src/components/shared/TerminalShell.tsx` to directly interact with variables inside the running core:
 
-### Prerequisites:
-Ensure **Node.js v18.0.0** or above is installed.
+```
+>_ TYPE A COMMAND TO INITIATE PROTOCOLS
+```
 
+### Kinetic Weapons Deployment: `/strike`
 ```bash
-# 1. Clone the Classified Repository
+/strike [NATION_ID] [WEAPON_TYPE] [TARGET_LAT] [TARGET_LON]
+```
+* **Description**: Deploy a missile launcher from your dynamic inventory towards a target coordinate on the globe.
+* **Constraints**: Requires matching fuel capacities, ammunition reserves, and active satellite coordinates.
+* **Arguments**:
+  * `NATION_ID` (ISO-2 Code): e.g., `US`, `RU`, `CN`, `IN`.
+  * `WEAPON_TYPE`: `ICBM`, `SLBM`, `HYPERSONIC`, `TACTICAL_NUKE`.
+
+---
+
+### Central Bank Vault Printing: `/print`
+```bash
+/print [INTENSITY_COEF]
+```
+* **Description**: Print sovereign bank notes instantly to inject reserves into your national treasury.
+* **Side Effects**: Accelerates domestic inflation index ($I_{inflation}$), triggers currency conversion decay ($\Phi_{FX}$), and increases public discontent.
+
+---
+
+### Space-Grid ASAT System: `/sat`
+```bash
+/sat [target_id] [ACTION]
+```
+* **Description**: Deploy an Anti-Satellite interception payload to take down target recon or SIGINT assets.
+* **Arguments**:
+  * `target_id`: Satellite ID registry.
+  * `ACTION`: `ACTIVATE_ASAT`, `SIGINT_BLOCK`.
+
+---
+
+### Weather Modification System: `/haarp`
+```bash
+/haarp [NATION_ID] [STRENGTH_FACTOR]
+```
+* **Description**: Trigger massive atmospheric anomalies over target country networks.
+* **Side Effects**: Disrupts agricultural exports, degrades local radar defenses, and limits drone tracking.
+
+---
+
+## ◈ 8. OPERATION STRATEGIST MANIFEST (ELITE PLAYBOOK)
+
+Navigate complex global interactions using advanced strategies:
+
+### A. The Hyperinflation Sovereign Debt Loop
+```
+[MONETARY PRINTING] ──► [CURRENCY DEVALUATION] ──► [BOND YIELDS SPIKE] ──► [TREASURY DEFAULT]
+        ▲                                                                        │
+        │────────────────────────────────────────────────────────────────────────┘
+```
+1. Print massive currency reserves to temporarily fund advanced military developments.
+2. Short your own sovereign exchange rate before inflation values spike.
+3. Repurchase your national treasury bonds from foreign holders on the market at fraction values when sovereign stability scores collapse.
+
+---
+
+### B. The Blind Strike Protocol (Silent Decapitation)
+```
+[CYBER HACK WORKSPACE] ────► [LAUNCH ORBITAL ASAT] ────► [HYPERSONIC MISSILE SALVO]
+ (Disables early radar)       (Destroys SIGINT Sat)      (Silos destroyed prior to launch)
+```
+1. Perform dynamic cyber network intrusion (`/op HACK_GRID`) on targeted early-warning radar arrays.
+2. Fire low-orbit ASAT missiles to destroy target SIGINT satellites within active orbital paths.
+3. Fire hypersonic gliders on designated coordinates to disable opposing ICBM rocket silos before defense launch protocols can cycle.
+
+---
+
+## ◈ 9. LOCAL INFRASTRUCTURE & DEVELOPMENT
+
+Setup and run the complete application sandbox on local systems:
+
+### Engine Version Boundaries:
+* **Node.js**: `v18.0.0` to `v22.22.0` (Native ESModules architecture compliant)
+* **npm**: `v9.0.0` to `v10.9.2`
+
+### Standard Setup Script:
+```bash
+# 1. Clone deep-defense secure repository
 git clone https://github.com/nikcygnusx1/geopolitics-war-sim.git
 cd geopolitics-war-sim
 
-# 2. Deploy Dependencies
+# 2. Deploy native dependency packages
 npm install
 
-# 3. Trigger Local Development Server
+# 3. Trigger localized dynamic watch server
 npm run dev
 
-# 4. Compile Production App Bundle
+# 4. Compile high-performance static assembly
 npm run build
 
-# 5. Preview the Production Assembly Locally
+# 5. Local preview of completed production bundle
 npm run preview
 ```
 
 ---
 
-## ◈ 11. STRATEGY MEMOS
+## ◈ 10. METRIC SYSTEMS CONFIGURATION
 
-### The Shadow Banker (Gold Medal Strategy)
-*Never execute strikes directly. Use sovereign bond mechanics to dominate.*
-1. Aggressively invest in **CYBER_FIREWALL_V3** and **RECON_SATELLITE** arrays.
-2. Infiltrate target nation economies with covert intelligence operations.
-3. Short their primary commodities (e.g. Oil or Rare Earths) on the spot exchange.
-4. Execute financial attacks (`/op FINANCIAL_ATTACK`) when their treasury reserves drop below $10B.
-5. Watch their yields skyrocket, cutting off debt refinancing, which leaves their armed forces unmaintained or triggers coups.
-
-### The Decapitation Protocol
-*Strike fast before the warning networks calculate ballistic vectors.*
-1. Accelerate and focus R&D into **HYPERSONIC_TECH** (bypasses standard defense intercepts).
-2. Launch a **KILL_SAT** to clear the target's early-warning satellites.
-3. Coordinate grid hacks (`/op HACK_GRID`) to blind radar cells.
-4. Fire a hypersonic strike. Target silos first, minimizing global reputation damage.
-5. Secure maximum diplomatic leverage to enforce peace treaties immediately.
+```json
+{
+  "name": "Sovereign Command Simulator",
+  "private": true,
+  "version": "6.0.0",
+  "license": "MIT",
+  "status": "SECURED"
+}
+```
 
 ---
-
-## ◈ 12. MILITARY LICENSE & DISCLAIMER
-
-```
-========================================================================
-                      SOVEREIGN COMMAND END USER TERMS
-========================================================================
-THE SOFTWARE IS LICENSED "AS IS", UNDER THE TERMS OF THE MIT COVENANT. 
-THE CORE DEEPMIND CONSOLE ARCHITECTS DISCLAIM ALL RESPONSIBILITIES FOR:
-  - Real-world geopolitical standoffs triggered by strategies tested here.
-  - Financial crises arising from bond shorts or printing press experimentation.
-  - Diplomatic incidents caused by launching missiles during live meetings.
-  - Severe paranoia when hearing high-frequency sinewave sweeps in public.
-
-(This is a game. Please run the world responsibly.)
-========================================================================
-```
 
 <div align="center">
 
 ```
-> SOVEREIGN COMMAND SIMULATOR — TERMINAL ARCHIVE
-> CLASSIFICATION: COSMIC TOP SECRET // CLEARANCE SECURED
-> "All warfare is based on deception." — Sun Tzu
+========================================================================
+                      [ COLD HARBOR WAR CABINET SIMULATOR ]             
+                      [ END OF TRANSMISSION // BYE BYE ]               
+========================================================================
 ```
 
-*Crafted using native WebGL shaders, premium D3.js coordinates, and zero-asset synthesized audio.*
+*This simulator is a highly polished interactive strategic entertainment system. Manage assets wisely.*
 
 </div>
