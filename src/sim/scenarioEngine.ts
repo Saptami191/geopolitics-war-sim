@@ -3,6 +3,7 @@ import { SCENARIOS } from '../data/scenarios';
 import { usePlayerStore } from '../store/playerStore';
 import { useWorldStore } from '../store/worldStore';
 import { useClockStore } from '../store/clockStore';
+import { useUnitStore } from '../store/unitStore';
 
 export function pollScenarioStatus(world: WorldState, player: PlayerState) {
   const durationMode = useClockStore.getState().durationMode;
@@ -45,6 +46,10 @@ export function pollScenarioStatus(world: WorldState, player: PlayerState) {
 export function initScenario(scenarioId: ScenarioId, countryId: string) {
   // 1. Reset world state
   useWorldStore.getState().resetWorld();
+
+  // Reset and initialize tactical units state
+  useUnitStore.getState().resetUnits();
+  useUnitStore.getState().initializeUnits();
 
   // 2. Setup player state
   usePlayerStore.getState().initPlayerScenario(scenarioId, countryId);

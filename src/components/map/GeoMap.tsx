@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { Deck } from '@deck.gl/core';
-import { ScatterplotLayer, ArcLayer, IconLayer } from '@deck.gl/layers';
+import { ScatterplotLayer, ArcLayer, IconLayer, LineLayer } from '@deck.gl/layers';
 
 // Zustand stores
 import { useWorldStore } from '../../store/worldStore';
@@ -10,10 +10,13 @@ import { usePlayerStore } from '../../store/playerStore';
 import { useUIStore } from '../../store/uiStore';
 import { useLinkedAnalysisStore } from '../../store/linkedAnalysisStore';
 import { useCanonicalMapState } from './mapSelectors';
+import { useUnitStore } from '../../store/unitStore';
 
 // Types and helper files
 import { LayerKey, LayerToggleState } from './mapTypes';
+import { CarrierGroupUnit } from '../../types';
 import { getCentroid } from './countryCentroids';
+import { audio } from '../../utils/audio';
 import { MapCoordinateReadout } from './MapCoordinateReadout';
 import MapLayerPanel from './MapLayerPanel';
 import MapModeToggle from './MapModeToggle';
@@ -87,6 +90,8 @@ export function GeoMap({ mode: initialMode, layers: initialLayers, theme = 'dark
   // Synchronized stores variables
   const countries = useWorldStore((s) => s.countries);
   const activeStrikes = useWorldStore((s) => s.activeStrikes);
+  const units = useUnitStore((s) => s.units);
+  const selectedUnitId = useUnitStore((s) => s.selectedUnitId);
   
   // Use map canonical selectors
   const mapState = useCanonicalMapState(localLayers, theme);
@@ -433,8 +438,95 @@ export function GeoMap({ mode: initialMode, layers: initialLayers, theme = 'dark
       })
     );
 
+    // --- TACTICAL CARRIER WAKE TRAILS ---
+    const wakeSegments: any[] = [];
+    units.forEach((u) => {
+      if (u.type === 'CarrierGroup') {
+        const cg = u as CarrierGroupUnit;
+        if (cg.wakeTrail && cg.wakeTrail.length > 1) {
+          for (let i = 0; i < cg.wakeTrail.length - 1; i++) {
+            wakeSegments.push({
+              source: cg.wakeTrail[i],
+              target: cg.wakeTrail[i + 1],
+              agePct: (i + 1) / cg.wakeTrail.length,
+              owner: u.owner
+            });
+          }
+        }
+      }
+    });
+
+    if (wakeSegments.length > 0) {
+      activeDeckLayers.push(
+        new LineLayer({
+          id: 'tactical-carrier-wakes',
+          data: wakeSegments,
+          getSourcePosition: (d: any) => d.source,
+          getTargetPosition: (d: any) => d.target,
+          getColor: (d: any) => d.owner === playerCountryId ? [0, 191, 255, Math.round(d.agePct * 160)] : [100, 116, 139, Math.round(d.agePct * 80)],
+          getWidth: 2.5,
+          pickable: false,
+        })
+      );
+    }
+
+    // --- MOVING CARRIERS / UNITS TRANSIT PATHS ---
+    const activeRoutes = units.filter((u) => u.status === 'MOVING' && u.route);
+    activeDeckLayers.push(
+      new ArcLayer({
+        id: 'tactical-unit-routes',
+        data: activeRoutes,
+        getSourcePosition: (d: any) => [d.route!.source.lon, d.route!.source.lat],
+        getTargetPosition: (d: any) => [d.route!.destination.lon, d.route!.destination.lat],
+        getSourceColor: (d: any) => d.owner === playerCountryId ? [0, 255, 230, 200] : [148, 163, 184, 100],
+        getTargetColor: (d: any) => d.owner === playerCountryId ? [0, 191, 255, 100] : [148, 163, 184, 50],
+        getWidth: 1.8,
+        greatCircle: true,
+        pickable: false,
+      })
+    );
+
+    // --- TACTICAL UNITS SCALE AND POSITION MARKERS ---
+    activeDeckLayers.push(
+      new ScatterplotLayer({
+        id: 'tactical-units',
+        data: units,
+        getPosition: (d: any) => [d.position.lon, d.position.lat],
+        getRadius: (d: any) => {
+          let base = d.type === 'CarrierGroup' ? 140000 : d.type === 'Submarine' ? 90000 : d.type === 'ICBMSilo' ? 100000 : d.type === 'AirWing' ? 80000 : 70000;
+          if (d.id === selectedUnitId) base *= 1.4;
+          return base;
+        },
+        getFillColor: (d: any) => {
+          // If stealth submarine not owned, render very low detection trace
+          if (d.type === 'Submarine' && d.owner !== playerCountryId) {
+            return [168, 85, 247, 15]; // low opacity purple
+          }
+
+          switch (d.type) {
+            case 'CarrierGroup': return [0, 191, 255, 255];  // Cyber cyan
+            case 'Submarine': return [168, 85, 247, 245];     // Violet
+            case 'ICBMSilo': return [239, 68, 68, 255];       // Nuclear red
+            case 'AirWing': return [245, 158, 11, 255];       // Tactical amber
+            case 'SpecForce': return [34, 197, 94, 255];      // Operative emerald green
+            default: return [255, 255, 255, 200];
+          }
+        },
+        getLineColor: (d: any) => d.id === selectedUnitId ? [255, 255, 255, 255] : [0, 0, 0, 180],
+        getLineWidth: 22000,
+        stroked: true,
+        pickable: true,
+        onClick: (info: any) => {
+          if (info.object) {
+            useUnitStore.getState().selectUnit(info.object.id);
+            audio.sfxKeyClick();
+          }
+        }
+      })
+    );
+
     deckRef.current.setProps({ layers: activeDeckLayers });
-  }, [activeMode, countries, activeStrikes, localLayers, playerCountryId, targetCountryId, animationTick]);
+  }, [activeMode, countries, activeStrikes, localLayers, playerCountryId, targetCountryId, animationTick, units, selectedUnitId]);
 
   const handleToggleLayer = (key: LayerKey) => {
     setLocalLayers((prev) => ({

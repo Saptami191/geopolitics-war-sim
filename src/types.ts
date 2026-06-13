@@ -431,3 +431,79 @@ export interface DurationConfig {
   tickBudget?: number;
 }
 
+// ==========================================
+// T3.1 - UNIT MANAGEMENT SYSTEM SHAPES
+// ==========================================
+export type UnitType = 'CarrierGroup' | 'Submarine' | 'ICBMSilo' | 'AirWing' | 'SpecForce';
+export type UnitStatus = 'IDLE' | 'MOVING' | 'DEPLOYED' | 'ON_MISSION' | 'RECON' | 'COMBAT' | 'PATROL' | 'DESTROYED';
+export type UnitMissionType = 'NONE' | 'PATROL' | 'STRIKE' | 'AIR_SUPPORT' | 'INFILTRATING';
+
+export interface MissionTarget {
+  name: string;
+  lat: number;
+  lon: number;
+  countryId?: string;
+}
+
+export interface UnitRoute {
+  source: { lat: number; lon: number };
+  destination: { lat: number; lon: number };
+  startTick: number;
+  endTick: number;
+  totalTicks: number;
+  path: [number, number][]; // Great-circle interpolated points as [lon, lat] for rendering trails/current positions
+}
+
+export interface BaseUnit {
+  id: string;
+  name: string;
+  type: UnitType;
+  owner: string; // CountryId e.g. 'US', 'CN', 'RU'
+  position: { lat: number; lon: number };
+  status: UnitStatus;
+  missionTarget: MissionTarget | null;
+  missionType: UnitMissionType;
+  eta: number | null;
+  route: UnitRoute | null;
+  health: number; // 0-100%
+  fuel: number; // 0-100%
+  recentActivity?: string[];
+}
+
+export interface CarrierGroupUnit extends BaseUnit {
+  type: 'CarrierGroup';
+  embarkedAirWings: number;
+  strikeCapacity: number;
+  wakeTrail: [number, number][]; // Historical [lon, lat] trace
+}
+
+export interface SubmarineUnit extends BaseUnit {
+  type: 'Submarine';
+  stealthProfile: number; // 0-100
+  missileCapacity: number;
+}
+
+export interface ICBMSiloUnit extends BaseUnit {
+  type: 'ICBMSilo';
+  missileReadiness: number; // 0-100
+  warheadType: string;
+  hardened: boolean;
+}
+
+export interface AirWingUnit extends BaseUnit {
+  type: 'AirWing';
+  aircraftCount: number;
+  rangeKm: number;
+  homeBase: string;
+}
+
+export interface SpecForceUnit extends BaseUnit {
+  type: 'SpecForce';
+  squadSize: number;
+  infiltrationState: 'STAGED' | 'INFILTRATED' | 'COMPROMISED' | 'EXTRACTED';
+  stagingArea: string;
+}
+
+export type Unit = CarrierGroupUnit | SubmarineUnit | ICBMSiloUnit | AirWingUnit | SpecForceUnit;
+
+

@@ -4,6 +4,7 @@ import { useWorldStore } from '../../store/worldStore';
 import { useIntelligenceStore } from '../../store/intelligenceStore';
 import { usePlayerStore } from '../../store/playerStore';
 import { audio } from '../../utils/audio';
+import { globalNoise, IRONBOW_LUT } from '../../utils/noise';
 
 // Coordinates mapping for major command regions for satellite scan centering
 const COUNTRY_PIXEL_COORDS: Record<string, { feedX: number; feedY: number }> = {
@@ -81,6 +82,10 @@ export default function ThermalRecon() {
   const crosshairPos = useRef({ x: 96, y: 74 });
   const targetPos = useRef({ x: 96, y: 74 });
   const rafRef = useRef<number | null>(null);
+  const noiseOffsetX = useRef(0);
+  const detectionBoxes = useRef<{ x: number; y: number; w: number; h: number; expiresAt: number; id: string }[]>([]);
+  const frameCount = useRef(0);
+  const offscreenCanvas = useRef<HTMLCanvasElement | null>(null);
 
   // Active States
   const [activeSatIndex, setActiveSatIndex] = useState(0);
@@ -163,10 +168,15 @@ export default function ThermalRecon() {
 
     const W = baseW;
     const H = baseH;
+
+    // Buffer dimensions for high-speed high-tech pixelated rendering
+    const W_buffer = 120;
+    const H_buffer = 90;
+
     const COLS = 16;
     const ROWS = 12;
-    const cellW = W / COLS;
-    const cellH = H / ROWS;
+    const cellW_buffer = W_buffer / COLS;
+    const cellH_buffer = H_buffer / ROWS;
 
     // Static structures overlays
     const structures = [
@@ -176,118 +186,220 @@ export default function ThermalRecon() {
       { ix: 13, iy: 9, signature: 0.9 },
     ];
 
+    if (!offscreenCanvas.current) {
+      offscreenCanvas.current = document.createElement('canvas');
+    }
+    offscreenCanvas.current.width = W_buffer;
+    offscreenCanvas.current.height = H_buffer;
+    const offscreenCtx = offscreenCanvas.current.getContext('2d');
+
     function renderLoop() {
+      // 1. Crosshair targeting damping
       const speed = queueStatus === 'PROCESSING' || queueStatus === 'COLLECTING' ? 0.15 : 0.06;
       crosshairPos.current.x += (targetPos.current.x - crosshairPos.current.x) * speed;
       crosshairPos.current.y += (targetPos.current.y - crosshairPos.current.y) * speed;
 
-      for (let i = 0; i < heat.current.length; i++) {
-        heat.current[i] += (Math.random() - 0.5) * 0.015;
-        heat.current[i] = Math.max(0.1, Math.min(0.9, heat.current[i]));
+      // 2. Camera motion / Terrain slide (X motion += 0.003 is strictly required)
+      noiseOffsetX.current += 0.003;
+
+      // 3. Spawning tactical acquisition boxes (80 frames interval, 3 seconds lifespan)
+      frameCount.current++;
+      if (frameCount.current % 80 === 0) {
+        const boxW = 20 + Math.random() * 35;
+        const boxH = 20 + Math.random() * 30;
+        const boxX = 10 + Math.random() * (W - boxW - 20);
+        const boxY = 10 + Math.random() * (H - boxH - 20);
+        detectionBoxes.current.push({
+          x: boxX,
+          y: boxY,
+          w: boxW,
+          h: boxH,
+          expiresAt: Date.now() + 3000,
+          id: `box-${Date.now()}-${Math.random()}`
+        });
       }
+      // Filter out expired boxes
+      detectionBoxes.current = detectionBoxes.current.filter((b) => Date.now() < b.expiresAt);
 
-      structures.forEach((struct) => {
-        const idx = struct.iy * COLS + struct.ix;
-        heat.current[idx] = heat.current[idx] * 0.4 + struct.signature * 0.6;
-      });
+      // 4. Fill buffer ImageData using Simplex Noise and the IRONBOW LUT
+      if (offscreenCtx) {
+        const imgData = offscreenCtx.createImageData(W_buffer, H_buffer);
+        const data = imgData.data;
 
-      const sweepY = (Date.now() / 25) % H;
+        for (let y = 0; y < H_buffer; y++) {
+          for (let x = 0; x < W_buffer; x++) {
+            // Normalize coordinates and sample FBM terrain coordinates
+            // Slide terrain under active targeting coordinate to pan geographically
+            const nx = (x / W_buffer) * 2.5 + noiseOffsetX.current + (crosshairPos.current.x * 0.015);
+            const ny = (y / H_buffer) * 2.5 + (crosshairPos.current.y * 0.015);
 
-      for (let r = 0; r < ROWS; r++) {
-        for (let c = 0; c < COLS; c++) {
-          const h = heat.current[r * COLS + c];
-          let color = '';
+            // Fetch procedural multi-octave simplex terrain value (-1..1)
+            const terrainVal = globalNoise.fbm2D(nx, ny, 3);
+            let intensity = (terrainVal + 1.0) / 2.0; // scale to 0..1
 
-          switch (sensorMode) {
-            case 'IR': {
-              const [rCol, gCol, bCol] = ironbow(h);
-              color = `rgb(${rCol}, ${gCol}, ${bCol})`;
-              break;
-            }
-            case 'SAR': {
-              const distToSweep = Math.abs(r * cellH - sweepY);
-              const sweepGlow = distToSweep < 8 ? (1 - distToSweep / 8) * 0.5 : 0;
-              const brightness = Math.floor((h * 0.6 + sweepGlow) * 255);
-              color = `rgb(${Math.max(10, Math.min(255, brightness - 30))}, ${Math.max(10, Math.min(255, brightness + 10))}, ${Math.max(20, Math.min(255, brightness + 40))})`;
-              break;
-            }
-            case 'VIS': {
-              const landFactor = h;
-              const red = Math.floor(25 + landFactor * 45);
-              const green = Math.floor(40 + landFactor * 75);
-              const blue = Math.floor(55 + (1 - landFactor) * 85);
-              color = `rgb(${red}, ${green}, ${blue})`;
-              break;
-            }
-            case 'CHANGE': {
-              const diff = Math.abs(h - 0.5) * 2;
-              if (diff > 0.4) {
-                color = `rgb(${Math.floor(diff * 220 + 35)}, 12, 50)`;
-              } else {
-                color = `rgb(10, ${Math.floor((1 - diff) * 65 + 15)}, ${Math.floor((1 - diff) * 85 + 20)})`;
+            // Propose structures heat bloom signatures
+            structures.forEach((struct) => {
+              const sx = struct.ix * cellW_buffer + cellW_buffer / 2;
+              const sy = struct.iy * cellH_buffer + cellH_buffer / 2;
+              const dist = Math.hypot(x - sx, y - sy);
+              if (dist < 10) {
+                const addHeat = (1.0 - dist / 10) * struct.signature * 0.45;
+                intensity += addHeat;
               }
-              break;
-            }
-            case 'INDICATORS': {
-              const band = Math.floor(h * 8);
-              if (band % 2 === 0) {
-                color = '#020d04';
-              } else {
-                color = `rgb(${Math.floor(h * 32)}, ${Math.floor(128 + h * 90)}, ${Math.floor(h * 48)})`;
+            });
+
+            // Simulated sensor static noise (high frequency)
+            const staticGrain = (Math.random() - 0.5) * 0.05;
+            intensity = Math.max(0.0, Math.min(1.0, intensity + staticGrain));
+
+            let rCol = 0;
+            let gCol = 0;
+            let bCol = 0;
+
+            switch (sensorMode) {
+              case 'IR': {
+                // Fetch RGB from 256 entry IRONBOW_LUT
+                const lutIdx = Math.min(255, Math.max(0, Math.floor(intensity * 255)));
+                const colorTriplet = IRONBOW_LUT[lutIdx];
+                rCol = colorTriplet[0];
+                gCol = colorTriplet[1];
+                bCol = colorTriplet[2];
+                break;
               }
-              break;
+              case 'SAR': {
+                // Monochrome synthetic aperture blue/cyan with high-intensity highlights
+                const br = intensity;
+                rCol = Math.floor(br * 15);
+                gCol = Math.floor(br * 170 + (br > 0.72 ? (br - 0.72) * 260 : 0));
+                bCol = Math.min(255, Math.floor(br * 250 + 20));
+                break;
+              }
+              case 'VIS': {
+                // Earth orbital range visual color bands
+                if (intensity < 0.38) {
+                  rCol = Math.floor(8 + intensity * 35);
+                  gCol = Math.floor(18 + intensity * 62);
+                  bCol = Math.floor(85 + intensity * 150);
+                } else if (intensity < 0.72) {
+                  const t = (intensity - 0.38) / 0.34;
+                  rCol = Math.floor(12 + t * 45);
+                  gCol = Math.floor(48 + t * 75);
+                  bCol = Math.floor(22 + t * 20);
+                } else {
+                  const t = (intensity - 0.72) / 0.28;
+                  rCol = Math.floor(45 + t * 210);
+                  gCol = Math.floor(122 + t * 133);
+                  bCol = Math.floor(38 + t * 217);
+                }
+                break;
+              }
+              case 'CHANGE': {
+                // Coherent Change Detection - highlighting hot difference shifts in flaming blood-red
+                const diff = Math.abs(intensity - 0.5) * 2;
+                if (diff > 0.44) {
+                  rCol = Math.floor(diff * 225 + 30);
+                  gCol = 11;
+                  bCol = 42;
+                } else {
+                  rCol = 9;
+                  gCol = Math.floor((1 - diff) * 58 + 12);
+                  bCol = Math.floor((1 - diff) * 85 + 18);
+                }
+                break;
+              }
+              case 'INDICATORS': {
+                const bands = Math.floor(intensity * 10);
+                if (bands % 2 === 0) {
+                  rCol = 5;
+                  gCol = 14;
+                  bCol = 6;
+                } else {
+                  rCol = Math.floor(intensity * 40);
+                  gCol = Math.floor(135 + intensity * 115);
+                  bCol = Math.floor(intensity * 55);
+                }
+                break;
+              }
             }
-          }
 
-          ctx.fillStyle = color;
-          ctx.fillRect(c * cellW, r * cellH, cellW + 0.5, cellH + 0.5);
-
-          if (sensorMode === 'IR' && h > 0.72) {
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-            ctx.beginPath();
-            ctx.arc(c * cellW + cellW / 2, r * cellH + cellH / 2, 1.8, 0, Math.PI * 2);
-            ctx.fill();
-          }
-
-          if (sensorMode === 'SAR' && h > 0.65) {
-            ctx.strokeStyle = '#00ffff';
-            ctx.lineWidth = 0.5;
-            ctx.strokeRect(c * cellW + 1, r * cellH + 1, cellW - 2, cellH - 2);
+            const pixelIdx = (y * W_buffer + x) * 4;
+            data[pixelIdx] = Math.min(255, Math.max(0, rCol));
+            data[pixelIdx + 1] = Math.min(255, Math.max(0, gCol));
+            data[pixelIdx + 2] = Math.min(255, Math.max(0, bCol));
+            data[pixelIdx + 3] = 255;
           }
         }
+        offscreenCtx.putImageData(imgData, 0, 0);
+
+        // Blit to target viewport canvas stretching to crisp pixel dimensions
+        ctx.imageSmoothingEnabled = false;
+        ctx.clearRect(0, 0, W, H);
+        ctx.drawImage(offscreenCanvas.current, 0, 0, W, H);
       }
 
-      if (sensorMode === 'SAR') {
-        ctx.strokeStyle = 'rgba(0, 242, 254, 0.75)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(0, sweepY);
-        ctx.lineTo(W, sweepY);
-        ctx.stroke();
-      }
+      // 5. Render Scan line (3-second cycle sweeping top-to-bottom)
+      const scanY = ((Date.now() / 3000) % 1.0) * H;
+      const scanPulse = Math.sin(Date.now() / 180) * 0.25 + 0.75; // 0.5 to 1.0
+      ctx.fillStyle = `rgba(0, 242, 254, ${scanPulse * 0.45})`;
+      ctx.fillRect(0, scanY, W, 2);
 
+      // 6. Draw Spawning Target Acquisition Amber Boxes
+      detectionBoxes.current.forEach((box) => {
+        const timeLeft = box.expiresAt - Date.now();
+        if (timeLeft <= 0) return;
+
+        const isBlinking = Math.floor(timeLeft / 150) % 2 === 0;
+        const colorAlpha = timeLeft < 400 ? timeLeft / 400 : 0.85;
+
+        ctx.strokeStyle = `rgba(255, 162, 0, ${colorAlpha})`;
+        ctx.lineWidth = 0.8;
+        ctx.strokeRect(box.x, box.y, box.w, box.h);
+
+        // Frame corners details
+        const cSz = 4;
+        ctx.fillStyle = `rgba(255, 162, 0, ${colorAlpha})`;
+        // top left
+        ctx.fillRect(box.x - 0.5, box.y - 0.5, cSz, 0.8);
+        ctx.fillRect(box.x - 0.5, box.y - 0.5, 0.8, cSz);
+        // top right
+        ctx.fillRect(box.x + box.w - cSz + 0.5, box.y - 0.5, cSz, 0.8);
+        ctx.fillRect(box.x + box.w, box.y - 0.5, 0.8, cSz);
+        // bottom left
+        ctx.fillRect(box.x - 0.5, box.y + box.h - 0.3, cSz, 0.8);
+        ctx.fillRect(box.x - 0.5, box.y + box.h - cSz + 0.5, 0.8, cSz);
+        // bottom right
+        ctx.fillRect(box.x + box.w - cSz + 0.5, box.y + box.h - 0.3, cSz, 0.8);
+        ctx.fillRect(box.x + box.w, box.y + box.h - cSz + 0.5, 0.8, cSz);
+
+        if (isBlinking) {
+          ctx.font = 'bold 4.5px "JetBrains Mono", monospace';
+          ctx.fillText('LOCK', box.x + 2.5, box.y + 7.5);
+        }
+      });
+
+      // 7. Render Target Crosshairs & Overlay text in High-Tech Amber (Instead of Green)
       const rx = crosshairPos.current.x;
       const ry = crosshairPos.current.y;
 
-      ctx.strokeStyle = isAoiLocked ? 'rgba(0, 255, 68, 0.65)' : 'rgba(100, 100, 100, 0.4)';
-      ctx.lineWidth = 0.5;
-      
+      ctx.strokeStyle = isAoiLocked ? 'rgba(255, 162, 0, 0.8)' : 'rgba(255, 162, 0, 0.35)';
+      ctx.lineWidth = 0.4;
       ctx.beginPath();
       ctx.moveTo(rx, 0); ctx.lineTo(rx, H);
       ctx.moveTo(0, ry); ctx.lineTo(W, ry);
       ctx.stroke();
 
-      ctx.strokeStyle = isAoiLocked ? '#00ff44' : '#ffb300';
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = isAoiLocked ? '#ff9d00' : '#ffa600';
+      ctx.lineWidth = 0.8;
       const bracketSize = 14;
       ctx.strokeRect(rx - bracketSize / 2, ry - bracketSize / 2, bracketSize, bracketSize);
 
-      ctx.fillStyle = isAoiLocked ? '#00ff44' : '#ffb300';
-      ctx.fillRect(rx - 1.5, ry - 1.5, 3, 3);
+      ctx.fillStyle = isAoiLocked ? '#ff9d00' : '#ffa600';
+      ctx.fillRect(rx - 1, ry - 1, 2, 2);
 
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+      // Target information telemetry card
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
       ctx.fillRect(4, 4, 110, 13);
-      ctx.strokeStyle = isAoiLocked ? '#00ff44' : '#ff9900';
+      ctx.strokeStyle = '#ff9d00';
       ctx.lineWidth = 0.5;
       ctx.strokeRect(4, 4, 110, 13);
 
@@ -299,15 +411,16 @@ export default function ThermalRecon() {
         12
       );
 
+      // Status indicator panel
       if (queueStatus !== 'IDLE') {
-        const pulse = Math.sin(Date.now() / 150) > 0;
-        ctx.fillStyle = 'rgba(2, 6, 2, 0.9)';
+        const pulseState = Math.sin(Date.now() / 150) > 0;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
         ctx.fillRect(W - 85, 4, 81, 13);
         ctx.strokeStyle = '#00e5ff';
         ctx.lineWidth = 0.5;
         ctx.strokeRect(W - 85, 4, 81, 13);
 
-        ctx.fillStyle = pulse ? '#00e5ff' : '#007799';
+        ctx.fillStyle = pulseState ? '#00e5ff' : '#006680';
         ctx.font = '5px "JetBrains Mono", monospace';
         ctx.fillText(
           `${queueStatus} ${countdown !== null ? `(${countdown}s)` : ''}`,
@@ -316,12 +429,10 @@ export default function ThermalRecon() {
         );
       }
 
+      // Add signal glitches during active capture processing
       if ((queueStatus === 'COLLECTING' || queueStatus === 'PROCESSING') && Math.random() < 0.08) {
-        ctx.fillStyle = '#00ffff';
-        ctx.shadowColor = '#00ffff';
-        ctx.shadowBlur = 4;
+        ctx.fillStyle = 'rgba(0, 242, 254, 0.6)';
         ctx.fillRect(Math.random() * W, Math.random() * H, 10, 0.8);
-        ctx.shadowBlur = 0;
       }
 
       rafRef.current = requestAnimationFrame(renderLoop);
@@ -485,6 +596,10 @@ export function SatelliteWorkstation({ onClose }: { onClose: () => void }) {
   const crosshairPos = useRef({ x: 200, y: 150 });
   const targetPos = useRef({ x: 200, y: 150 });
   const rafRef = useRef<number | null>(null);
+  const noiseOffsetX = useRef(0);
+  const detectionBoxes = useRef<{ x: number; y: number; w: number; h: number; expiresAt: number; id: string }[]>([]);
+  const frameCount = useRef(0);
+  const offscreenCanvas = useRef<HTMLCanvasElement | null>(null);
 
   const [activeSatIndex, setActiveSatIndex] = useState(0);
   const [sensorMode, setSensorMode] = useState<'SAR' | 'IR' | 'VIS' | 'CHANGE' | 'INDICATORS'>('IR');
@@ -590,10 +705,14 @@ export function SatelliteWorkstation({ onClose }: { onClose: () => void }) {
     const W = baseW;
     const H = baseH;
 
+    // Buffer dimensions for high-resolution thermal terrain mapping
+    const W_buffer = 200;
+    const H_buffer = 140;
+
     const COLS = 32;
     const ROWS = 24;
-    const cellW = W / COLS;
-    const cellH = H / ROWS;
+    const cellW_buffer = W_buffer / COLS;
+    const cellH_buffer = H_buffer / ROWS;
 
     // Structural coordinates
     const militaryHangarOverlay = [
@@ -604,98 +723,199 @@ export function SatelliteWorkstation({ onClose }: { onClose: () => void }) {
       { ix: 14, iy: 10, sig: 0.6, label: 'RADAR_ARRAY_04' },
     ];
 
+    if (!offscreenCanvas.current) {
+      offscreenCanvas.current = document.createElement('canvas');
+    }
+    offscreenCanvas.current.width = W_buffer;
+    offscreenCanvas.current.height = H_buffer;
+    const offscreenCtx = offscreenCanvas.current.getContext('2d');
+
     function renderLoop() {
-      // Smooth targeting crosshair track
+      // 1. Target crosshair tracking with damping and joystick/slew inputs
       const speed = queueStatus === 'PROCESSING' || queueStatus === 'COLLECTING' ? 0.2 : 0.08;
       crosshairPos.current.x += (targetPos.current.x - crosshairPos.current.x) * speed + slewX * 3;
       crosshairPos.current.y += (targetPos.current.y - crosshairPos.current.y) * speed + slewY * 3;
 
-      // Restrain boundaries
       crosshairPos.current.x = Math.max(10, Math.min(W - 10, crosshairPos.current.x));
       crosshairPos.current.y = Math.max(10, Math.min(H - 10, crosshairPos.current.y));
 
-      // Thermal field ripple updates
-      for (let i = 0; i < heat.current.length; i++) {
-        heat.current[i] += (Math.random() - 0.5) * 0.012;
-        heat.current[i] = Math.max(0.15, Math.min(0.95, heat.current[i]));
+      // 2. Camera motion / Terrain slide (X motion += 0.003 is strictly required)
+      noiseOffsetX.current += 0.003;
+
+      // 3. Spawning tactical acquisition boxes (80 frames interval, 3 seconds lifespan)
+      frameCount.current++;
+      if (frameCount.current % 80 === 0) {
+        const boxW = 25 + Math.random() * 40;
+        const boxH = 25 + Math.random() * 35;
+        const boxX = 20 + Math.random() * (W - boxW - 40);
+        const boxY = 20 + Math.random() * (H - boxH - 40);
+        detectionBoxes.current.push({
+          x: boxX,
+          y: boxY,
+          w: boxW,
+          h: boxH,
+          expiresAt: Date.now() + 3000,
+          id: `box-${Date.now()}-${Math.random()}`
+        });
       }
+      detectionBoxes.current = detectionBoxes.current.filter((b) => Date.now() < b.expiresAt);
 
-      // Heat footprints
-      militaryHangarOverlay.forEach((m) => {
-        const idx = m.iy * COLS + m.ix;
-        heat.current[idx] = heat.current[idx] * 0.3 + m.sig * 0.7;
-      });
+      // 4. Fill buffer ImageData using Simplex Noise and the IRONBOW LUT
+      if (offscreenCtx) {
+        const imgData = offscreenCtx.createImageData(W_buffer, H_buffer);
+        const data = imgData.data;
 
-      const sweepY = (Date.now() / 32) % H;
+        for (let y = 0; y < H_buffer; y++) {
+          for (let x = 0; x < W_buffer; x++) {
+            // Normalize coordinates and sample FBM terrain coordinates
+            const nx = (x / W_buffer) * 3.0 + noiseOffsetX.current + (crosshairPos.current.x * 0.01);
+            const ny = (y / H_buffer) * 3.0 + (crosshairPos.current.y * 0.01);
 
-      // Draw sensor grid values
-      for (let r = 0; r < ROWS; r++) {
-        for (let c = 0; c < COLS; c++) {
-          const h = heat.current[r * COLS + c];
-          let fillStyle = '';
+            // Fetch procedural multi-octave simplex terrain value
+            const terrainVal = globalNoise.fbm2D(nx, ny, 3);
+            let intensity = (terrainVal + 1.0) / 2.0; // scale to 0..1
 
-          switch (sensorMode) {
-            case 'IR': {
-              const [rCol, gCol, bCol] = ironbow(h);
-              fillStyle = `rgb(${rCol}, ${gCol}, ${bCol})`;
-              break;
-            }
-            case 'SAR': {
-              const dY = Math.abs(r * cellH - sweepY);
-              const sweepGlow = dY < 12 ? (1 - dY / 12) * 0.65 : 0;
-              const b = Math.floor((h * 0.55 + sweepGlow) * 255);
-              fillStyle = `rgb(${Math.max(10, Math.min(255, b - 20))}, ${Math.max(20, Math.min(255, b + 15))}, ${Math.max(40, Math.min(255, b + 55))})`;
-              break;
-            }
-            case 'VIS': {
-              const LF = h;
-              fillStyle = `rgb(${Math.floor(20 + LF * 40)}, ${Math.floor(35 + LF * 80)}, ${Math.floor(50 + (1 - LF) * 90)})`;
-              break;
-            }
-            case 'CHANGE': {
-              const df = Math.abs(h - 0.45) * 2;
-              if (df > 0.42) {
-                fillStyle = `rgb(${Math.floor(df * 230 + 25)}, 10, 40)`;
-              } else {
-                fillStyle = `rgb(5, ${Math.floor((1 - df) * 55 + 10)}, ${Math.floor((1 - df) * 80 + 15)})`;
+            // Propose hangar structures signatures
+            militaryHangarOverlay.forEach((m) => {
+              const sx = m.ix * cellW_buffer + cellW_buffer / 2;
+              const sy = m.iy * cellH_buffer + cellH_buffer / 2;
+              const dist = Math.hypot(x - sx, y - sy);
+              if (dist < 12) {
+                const addHeat = (1.0 - dist / 12) * m.sig * 0.5;
+                intensity += addHeat;
               }
-              break;
-            }
-            case 'INDICATORS': {
-              const group = Math.floor(h * 10);
-              fillStyle = group % 2 === 0 ? '#011003' : `rgb(${Math.floor(h * 45)}, ${Math.floor(140 + h * 80)}, ${Math.floor(h * 60)})`;
-              break;
-            }
-          }
+            });
 
-          ctx.fillStyle = fillStyle;
-          ctx.fillRect(c * cellW, r * cellH, cellW + 0.5, cellH + 0.5);
+            // Simulated sensor static noise (high frequency)
+            const staticGrain = (Math.random() - 0.5) * 0.06;
+            intensity = Math.max(0.0, Math.min(1.0, intensity + staticGrain));
 
-          // Hotspots highlights
-          if (sensorMode === 'IR' && h > 0.74) {
-            ctx.fillStyle = 'rgba(255,255,255,0.85)';
-            ctx.beginPath();
-            ctx.arc(c * cellW + cellW / 2, r * cellH + cellH / 2, 2, 0, Math.PI * 2);
-            ctx.fill();
+            let rCol = 0;
+            let gCol = 0;
+            let bCol = 0;
+
+            switch (sensorMode) {
+              case 'IR': {
+                const lutIdx = Math.min(255, Math.max(0, Math.floor(intensity * 255)));
+                const colorTriplet = IRONBOW_LUT[lutIdx];
+                rCol = colorTriplet[0];
+                gCol = colorTriplet[1];
+                bCol = colorTriplet[2];
+                break;
+              }
+              case 'SAR': {
+                const br = intensity;
+                rCol = Math.floor(br * 15);
+                gCol = Math.floor(br * 170 + (br > 0.72 ? (br - 0.72) * 260 : 0));
+                bCol = Math.min(255, Math.floor(br * 250 + 20));
+                break;
+              }
+              case 'VIS': {
+                if (intensity < 0.38) {
+                  rCol = Math.floor(8 + intensity * 35);
+                  gCol = Math.floor(18 + intensity * 62);
+                  bCol = Math.floor(85 + intensity * 150);
+                } else if (intensity < 0.72) {
+                  const t = (intensity - 0.38) / 0.34;
+                  rCol = Math.floor(12 + t * 45);
+                  gCol = Math.floor(48 + t * 75);
+                  bCol = Math.floor(22 + t * 20);
+                } else {
+                  const t = (intensity - 0.72) / 0.28;
+                  rCol = Math.floor(45 + t * 210);
+                  gCol = Math.floor(122 + t * 133);
+                  bCol = Math.floor(38 + t * 217);
+                }
+                break;
+              }
+              case 'CHANGE': {
+                const diff = Math.abs(intensity - 0.5) * 2;
+                if (diff > 0.44) {
+                  rCol = Math.floor(diff * 225 + 30);
+                  gCol = 11;
+                  bCol = 42;
+                } else {
+                  rCol = 9;
+                  gCol = Math.floor((1 - diff) * 58 + 12);
+                  bCol = Math.floor((1 - diff) * 85 + 18);
+                }
+                break;
+              }
+              case 'INDICATORS': {
+                const bands = Math.floor(intensity * 10);
+                if (bands % 2 === 0) {
+                  rCol = 5;
+                  gCol = 14;
+                  bCol = 6;
+                } else {
+                  rCol = Math.floor(intensity * 40);
+                  gCol = Math.floor(135 + intensity * 115);
+                  bCol = Math.floor(intensity * 55);
+                }
+                break;
+              }
+            }
+
+            const pixelIdx = (y * W_buffer + x) * 4;
+            data[pixelIdx] = Math.min(255, Math.max(0, rCol));
+            data[pixelIdx + 1] = Math.min(255, Math.max(0, gCol));
+            data[pixelIdx + 2] = Math.min(255, Math.max(0, bCol));
+            data[pixelIdx + 3] = 255;
           }
         }
+        offscreenCtx.putImageData(imgData, 0, 0);
+
+        // Blit to target viewport canvas stretching to crisp pixel dimensions
+        ctx.imageSmoothingEnabled = false;
+        ctx.clearRect(0, 0, W, H);
+        ctx.drawImage(offscreenCanvas.current, 0, 0, W, H);
       }
 
-      // Draw SAR emitter line
-      if (sensorMode === 'SAR') {
-        ctx.strokeStyle = '#00ffff';
-        ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        ctx.moveTo(0, sweepY);
-        ctx.lineTo(W, sweepY);
-        ctx.stroke();
-      }
+      // 5. Render Scan line (3-second cycle sweeping top-to-bottom)
+      const scanY = ((Date.now() / 3000) % 1.0) * H;
+      const scanPulse = Math.sin(Date.now() / 180) * 0.25 + 0.75;
+      ctx.fillStyle = `rgba(0, 242, 254, ${scanPulse * 0.45})`;
+      ctx.fillRect(0, scanY, W, 2);
 
-      // Radar Crosshair overlays
+      // 6. Draw Spawning Target Acquisition Amber Boxes
+      detectionBoxes.current.forEach((box) => {
+        const timeLeft = box.expiresAt - Date.now();
+        if (timeLeft <= 0) return;
+
+        const isBlinking = Math.floor(timeLeft / 150) % 2 === 0;
+        const colorAlpha = timeLeft < 400 ? timeLeft / 400 : 0.85;
+
+        ctx.strokeStyle = `rgba(255, 162, 0, ${colorAlpha})`;
+        ctx.lineWidth = 1.0;
+        ctx.strokeRect(box.x, box.y, box.w, box.h);
+
+        // Frame corners details
+        const cSz = 6;
+        ctx.fillStyle = `rgba(255, 162, 0, ${colorAlpha})`;
+        // top left
+        ctx.fillRect(box.x - 0.5, box.y - 0.5, cSz, 1.0);
+        ctx.fillRect(box.x - 0.5, box.y - 0.5, 1.0, cSz);
+        // top right
+        ctx.fillRect(box.x + box.w - cSz + 0.5, box.y - 0.5, cSz, 1.0);
+        ctx.fillRect(box.x + box.w, box.y - 0.5, 1.0, cSz);
+        // bottom left
+        ctx.fillRect(box.x - 0.5, box.y + box.h - 0.5, cSz, 1.0);
+        ctx.fillRect(box.x - 0.5, box.y + box.h - cSz + 0.5, 1.0, cSz);
+        // bottom right
+        ctx.fillRect(box.x + box.w - cSz + 0.5, box.y + box.h - 0.5, cSz, 1.0);
+        ctx.fillRect(box.x + box.w, box.y + box.h - cSz + 0.5, 1.0, cSz);
+
+        if (isBlinking) {
+          ctx.font = 'bold 5.5px "JetBrains Mono", monospace';
+          ctx.fillText('LOCK', box.x + 3.0, box.y + 9.5);
+        }
+      });
+
+      // 7. Render Tactical Crosshair overlays
       const rx = crosshairPos.current.x;
       const ry = crosshairPos.current.y;
 
-      ctx.strokeStyle = isAoiLocked ? '#00ff44' : '#ff9900';
+      ctx.strokeStyle = isAoiLocked ? 'rgba(255, 162, 0, 0.8)' : 'rgba(255, 162, 0, 0.35)';
       ctx.lineWidth = 0.5;
       ctx.beginPath();
       ctx.moveTo(rx, 0); ctx.lineTo(rx, H);
@@ -704,50 +924,55 @@ export function SatelliteWorkstation({ onClose }: { onClose: () => void }) {
 
       // Outer focus bracket
       const bSz = 22;
+      ctx.strokeStyle = '#ff9d00';
+      ctx.lineWidth = 1;
       ctx.strokeRect(rx - bSz / 2, ry - bSz / 2, bSz, bSz);
       ctx.beginPath();
       ctx.arc(rx, ry, bSz * 1.3, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(0, 255, 68, 0.15)';
+      ctx.strokeStyle = 'rgba(255, 162, 0, 0.15)';
       ctx.stroke();
 
-      // Label pinpoint indicators
+      // Label pinpoint indicators for structure tracking when within 40px of crosshair
       militaryHangarOverlay.forEach((m) => {
+        const cellW = W / COLS;
+        const cellH = H / ROWS;
         const mx = m.ix * cellW + cellW / 2;
         const my = m.iy * cellH + cellH / 2;
         const dist = Math.hypot(rx - mx, ry - my);
 
-        // Highlight structure tags when close to crosshair focus
         if (dist < 40) {
           ctx.strokeStyle = '#00ffff';
+          ctx.lineWidth = 0.8;
           ctx.beginPath();
           ctx.arc(mx, my, 6, 0, Math.PI * 2);
           ctx.stroke();
 
           ctx.fillStyle = '#ffffff';
-          ctx.font = 'bold 5px "JetBrains Mono", monospace';
+          ctx.font = 'bold 5.5px "JetBrains Mono", monospace';
           ctx.fillText(m.label, mx + 8, my + 2);
         }
       });
 
-      // Target banner metadata
-      ctx.fillStyle = 'rgba(1, 4, 1, 0.9)';
+      // Target banner metadata card (Upper Left)
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
       ctx.fillRect(8, 8, 200, 32);
-      ctx.strokeStyle = isAoiLocked ? '#00ff44' : '#ff2244';
+      ctx.strokeStyle = '#ff9d00';
       ctx.lineWidth = 1;
       ctx.strokeRect(8, 8, 200, 32);
 
-      ctx.fillStyle = '#00ff44';
+      ctx.fillStyle = '#ff9d00';
       ctx.font = 'bold 8px "JetBrains Mono", monospace';
       ctx.fillText(`TARGET ZONE: ${targetCountryId || 'AOI_COORD_LOCK'}`, 14, 21);
-      ctx.fillStyle = '#999999';
+      ctx.fillStyle = '#cccccc';
       ctx.font = '7px "JetBrains Mono", monospace';
       ctx.fillText(`LAT/LON: ${(45.2 + rx / 10).toFixed(4)}°N / ${(12.8 + ry / 10).toFixed(4)}°E`, 14, 32);
 
-      // Status notifications
+      // Status notifications (Upper Right)
       if (queueStatus !== 'IDLE') {
-        ctx.fillStyle = 'rgba(2, 6, 2, 0.9)';
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
         ctx.fillRect(W - 140, 8, 132, 22);
         ctx.strokeStyle = '#00ffff';
+        ctx.lineWidth = 0.8;
         ctx.strokeRect(W - 140, 8, 132, 22);
         
         ctx.fillStyle = '#00ffff';
@@ -758,7 +983,8 @@ export function SatelliteWorkstation({ onClose }: { onClose: () => void }) {
       }
 
       // Orbital azimuth pointer
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx.strokeStyle = 'rgba(255, 162, 0, 0.35)';
+      ctx.lineWidth = 0.8;
       ctx.beginPath();
       ctx.arc(W - 30, H - 30, 20, 0, Math.PI * 2);
       ctx.stroke();
@@ -770,7 +996,7 @@ export function SatelliteWorkstation({ onClose }: { onClose: () => void }) {
       ctx.lineTo(W - 30 + 18 * Math.cos(arrowRad), H - 30 + 18 * Math.sin(arrowRad));
       ctx.stroke();
 
-      ctx.fillStyle = '#888888';
+      ctx.fillStyle = '#cccccc';
       ctx.font = '5px "JetBrains Mono", monospace';
       ctx.fillText(`N_TILT: ${tiltLimit}°`, W - 52, H - 6);
 

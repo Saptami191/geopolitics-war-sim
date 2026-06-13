@@ -1,6 +1,7 @@
 import { useWorldStore } from '../store/worldStore';
 import { usePlayerStore } from '../store/playerStore';
 import { useClockStore } from '../store/clockStore';
+import { useUnitStore } from '../store/unitStore';
 import { pollScenarioStatus } from './scenarioEngine';
 import { processFactions } from './factionEngine';
 import { processFiscal } from './fiscalEngine';
@@ -93,6 +94,9 @@ export function executeSimulationStep() {
 
     // 10. Process Phase 2 evolved Geopolitical, Population, Cabinet, Sectors, and Provinces systems
     processComplexPhase2Geopolitics(draft, player.countryId);
+
+    // 11. Advance deployable tactical units position state
+    useUnitStore.getState().updateUnitPositions(draft.currentTick);
   });
 
   // 10. Sync player's cash levels with their nation's real treasury reserves
