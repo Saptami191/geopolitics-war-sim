@@ -4,6 +4,7 @@ import { useWorldStore } from '../../store/worldStore';
 import { useNuclearStore } from '../../store/nuclearStore';
 import { usePlayerStore } from '../../store/playerStore';
 import { useUIStore } from '../../store/uiStore';
+import { SEEDED_HOTSPOTS } from '../../data/hotspots';
 import { getCentroid } from './countryCentroids';
 import { MAP_THEME } from './mapStyles';
 import { LayerToggleState } from './MapLayerPanel';
@@ -128,6 +129,7 @@ export function InGameGlobe({ theme = 'dark', layers }: InGameGlobeProps) {
   // Unpack synchronized states
   const countries = useWorldStore((s) => s.countries);
   const activeStrikes = useWorldStore((s) => s.activeStrikes);
+  const selectedHotspotId = useUIStore((s) => s.selectedHotspotId);
   const playerCountryId = mapState.playerCountryId;
   const hudMode = mapState.activeHudMode;
   const targetCountryId = mapState.targetCountryId;
@@ -135,6 +137,7 @@ export function InGameGlobe({ theme = 'dark', layers }: InGameGlobeProps) {
   // Track actions
   const setTargetCountry = usePlayerStore((s) => s.setTargetCountry);
   const setCountryInspector = useUIStore((s) => s.setCountryInspector);
+  const isDossierOpen = useUIStore((s) => s.countryInspectorId !== null);
 
   // Interactive control and diagnostic parameters
   const [autoLock, setAutoLock] = useState(true);
@@ -148,6 +151,12 @@ export function InGameGlobe({ theme = 'dark', layers }: InGameGlobeProps) {
   const sparksGroupRef = useRef<THREE.Group | null>(null);
   const satellitesGroupRef = useRef<THREE.Group | null>(null);
   const militaryGroupRef = useRef<THREE.Group | null>(null);
+  
+  // Shared WebGL resources cache for major 3D hotspot graphics performance
+  const sharedOctahedronGeoRef = useRef<THREE.OctahedronGeometry | null>(null);
+  const sharedSelRingGeoRef = useRef<THREE.RingGeometry | null>(null);
+  const sharedUnselRingGeoRef = useRef<THREE.RingGeometry | null>(null);
+  const sharedMatsRef = useRef<Record<string, THREE.Material>>({});
 
   // Live trackers for luxury military presentations
   const loaderRef = useRef<MilitaryLoader | null>(null);
@@ -613,11 +622,18 @@ export function InGameGlobe({ theme = 'dark', layers }: InGameGlobeProps) {
 
       const intersects = raycaster.intersectObjects(pins.children, true);
       if (intersects.length > 0) {
-        // Hit detected on country tactical pin
+        // Hit detected on country tactical pin or hotspot
         const hit = intersects[0].object;
         const mappedId = hit.userData?.countryId;
-        if (mappedId) {
+        const hotspotId = hit.userData?.hotspotId;
+        const isHotspot = hit.userData?.isHotspot;
+
+        if (isHotspot && hotspotId) {
           useLinkedAnalysisStore.getState().selectCountry(mappedId);
+          useUIStore.getState().setSelectedHotspot(hotspotId, mappedId);
+        } else if (mappedId) {
+          useLinkedAnalysisStore.getState().selectCountry(mappedId);
+          useUIStore.getState().setSelectedHotspot(null);
         }
       }
     };
@@ -1112,6 +1128,24 @@ export function InGameGlobe({ theme = 'dark', layers }: InGameGlobeProps) {
         }
       }
 
+      // Dispose of shared hotspot resources cache to prevent GPU leaks on route shift
+      if (sharedOctahedronGeoRef.current) {
+        sharedOctahedronGeoRef.current.dispose();
+        sharedOctahedronGeoRef.current = null;
+      }
+      if (sharedSelRingGeoRef.current) {
+        sharedSelRingGeoRef.current.dispose();
+        sharedSelRingGeoRef.current = null;
+      }
+      if (sharedUnselRingGeoRef.current) {
+        sharedUnselRingGeoRef.current.dispose();
+        sharedUnselRingGeoRef.current = null;
+      }
+      Object.values(sharedMatsRef.current).forEach((material: any) => {
+        material.dispose();
+      });
+      sharedMatsRef.current = {};
+
       try {
         mountRef.current?.removeChild(dom);
       } catch (err) {}
@@ -1204,11 +1238,15 @@ export function InGameGlobe({ theme = 'dark', layers }: InGameGlobeProps) {
         const c = g.children[0];
         g.remove(c);
         if (c instanceof THREE.Mesh || c instanceof THREE.Line) {
-          c.geometry.dispose();
-          if (c.material instanceof Array) {
-            c.material.forEach((m) => m.dispose());
-          } else {
-            c.material.dispose();
+          if (!c.userData.sharedGeom) {
+            c.geometry.dispose();
+          }
+          if (!c.userData.sharedMat) {
+            if (c.material instanceof Array) {
+              c.material.forEach((m) => m.dispose());
+            } else {
+              c.material.dispose();
+            }
           }
         }
       }
@@ -1335,6 +1373,112 @@ export function InGameGlobe({ theme = 'dark', layers }: InGameGlobeProps) {
           pMesh.userData = { countryId: id };
           pins.add(pMesh);
         }
+      }
+    });
+
+    // --- T4.5 GEOGRAPHIC HOTSPOTS RENDERING ---
+    // Ensure shared geometries are initialized
+    if (!sharedOctahedronGeoRef.current) {
+      sharedOctahedronGeoRef.current = new THREE.OctahedronGeometry(1.0);
+    }
+    if (!sharedSelRingGeoRef.current) {
+      sharedSelRingGeoRef.current = new THREE.RingGeometry(1.0, 1.46, 16);
+    }
+    if (!sharedUnselRingGeoRef.current) {
+      sharedUnselRingGeoRef.current = new THREE.RingGeometry(1.0, 1.23, 12);
+    }
+
+    SEEDED_HOTSPOTS.forEach((hotspot) => {
+      const hVec = latLngToVector3(hotspot.lat, hotspot.lon, 1.0);
+
+      // Establish visual language type specific color:
+      let color = 0x90a4ae;
+      if (hotspot.type === 'NAVAL_BASE') color = 0x00b0ff;
+      else if (hotspot.type === 'AIR_BASE') color = 0x00e5ff;
+      else if (hotspot.type === 'NUCLEAR_FACILITY') color = 0xff2a4a;
+      else if (hotspot.type === 'MISSILE_SITE') color = 0xffa100;
+      else if (hotspot.type === 'DIPLOMATIC_COMPOUND') color = 0xffea00;
+      else if (hotspot.type === 'COVERT_SITE') color = 0xd500f9;
+      else if (hotspot.type === 'CYBER_FACILITY') color = 0x00e676;
+      else if (hotspot.type === 'INDUSTRIAL_SITE') color = 0xb0bec5;
+
+      const isSelected = selectedHotspotId === hotspot.id;
+      const markerSize = isSelected ? 0.016 : 0.009;
+
+      // Leverage cached reusable material or instantiate once
+      const matKey = `${color}_${isSelected ? 'sel' : 'unsel'}`;
+      let octMat = sharedMatsRef.current[matKey] as THREE.MeshPhongMaterial;
+      if (!octMat) {
+        octMat = new THREE.MeshPhongMaterial({
+          color: color,
+          emissive: color,
+          emissiveIntensity: isSelected ? 0.95 : 0.45,
+          shininess: 90,
+          transparent: true,
+          opacity: 0.95,
+        });
+        sharedMatsRef.current[matKey] = octMat;
+      }
+
+      // Instantiate octahedron with shared unit geometry and scale appropriately
+      const octMesh = new THREE.Mesh(sharedOctahedronGeoRef.current!, octMat);
+      octMesh.scale.setScalar(markerSize);
+      octMesh.position.copy(hVec);
+      octMesh.userData = { 
+        isHotspot: true, 
+        hotspotId: hotspot.id, 
+        countryId: hotspot.countryId,
+        sharedGeom: true,
+        sharedMat: true
+      };
+      pins.add(octMesh);
+
+      // Draw active target locking scanner ring around the selected hotspot (using shared selection geometry)
+      if (isSelected) {
+        const ringMatKey = `ring_${color}_sel`;
+        let ringMat = sharedMatsRef.current[ringMatKey] as THREE.MeshBasicMaterial;
+        if (!ringMat) {
+          ringMat = new THREE.MeshBasicMaterial({
+            color: color,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.85,
+          });
+          sharedMatsRef.current[ringMatKey] = ringMat;
+        }
+
+        const ringMesh = new THREE.Mesh(sharedSelRingGeoRef.current!, ringMat);
+        ringMesh.scale.setScalar(markerSize * 1.5);
+        ringMesh.position.copy(hVec);
+        ringMesh.lookAt(new THREE.Vector3(0, 0, 0));
+        ringMesh.userData = {
+          sharedGeom: true,
+          sharedMat: true
+        };
+        pins.add(ringMesh);
+      } else if (hotspot.importance >= 4) {
+        // Draw subtle radar warning orbit rings for critical unselected hotspots (using shared warning geometry)
+        const ringMatKey = `ring_${color}_unsel`;
+        let ringMat = sharedMatsRef.current[ringMatKey] as THREE.MeshBasicMaterial;
+        if (!ringMat) {
+          ringMat = new THREE.MeshBasicMaterial({
+            color: color,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.22,
+          });
+          sharedMatsRef.current[ringMatKey] = ringMat;
+        }
+
+        const ringMesh = new THREE.Mesh(sharedUnselRingGeoRef.current!, ringMat);
+        ringMesh.scale.setScalar(markerSize * 1.3);
+        ringMesh.position.copy(hVec);
+        ringMesh.lookAt(new THREE.Vector3(0, 0, 0));
+        ringMesh.userData = {
+          sharedGeom: true,
+          sharedMat: true
+        };
+        pins.add(ringMesh);
       }
     });
 
@@ -1687,7 +1831,7 @@ export function InGameGlobe({ theme = 'dark', layers }: InGameGlobeProps) {
       });
     }
 
-  }, [activeStrikes, countries, playerCountryId, targetCountryId, theme, layers, units]);
+  }, [activeStrikes, countries, playerCountryId, targetCountryId, theme, layers, units, selectedHotspotId]);
 
   return (
     <div className="relative w-full h-full" id="tactical-3d-sphere-monitor">
@@ -1703,140 +1847,146 @@ export function InGameGlobe({ theme = 'dark', layers }: InGameGlobeProps) {
       />
 
       {/* FLOATING TACTICAL INSTRUCTIONAL DIAGNOSTIC OVERLAY PANEL */}
-      <div className={`absolute top-16 left-3 z-[115] w-[180px] p-2.5 border backdrop-blur-md rounded-[1px] flex flex-col gap-2 font-mono text-[8px] transition-all duration-200 select-none
-        ${isDark
-          ? 'bg-slate-950/85 border-cyan-950/60 text-cyan-400'
-          : 'bg-white/95 border-zinc-300 text-zinc-800 shadow-md'
-        }
-      `}>
-        <div className={`border-b pb-1 flex justify-between items-center ${isDark ? 'border-cyan-950/50' : 'border-zinc-200'}`}>
-          <span className="font-bold tracking-wider uppercase">SATELLITE INTEL FEED</span>
-          <span className={`w-1.5 h-1.5 rounded-full ${isDark ? 'bg-cyan-400 animate-pulse' : 'bg-cyan-700'}`} />
-        </div>
+      {!isDossierOpen && (
+        <div className={`absolute top-16 left-3 z-[115] w-[180px] p-2.5 border backdrop-blur-md rounded-[1px] flex flex-col gap-2 font-mono text-[8px] transition-all duration-200 select-none
+          ${isDark
+            ? 'bg-slate-950/85 border-cyan-950/60 text-cyan-400'
+            : 'bg-white/95 border-zinc-300 text-zinc-800 shadow-md'
+          }
+        `}>
+          <div className={`border-b pb-1 flex justify-between items-center ${isDark ? 'border-cyan-950/50' : 'border-zinc-200'}`}>
+            <span className="font-bold tracking-wider uppercase">SATELLITE INTEL FEED</span>
+            <span className={`w-1.5 h-1.5 rounded-full ${isDark ? 'bg-cyan-400 animate-pulse' : 'bg-cyan-700'}`} />
+          </div>
 
-        {/* Orbit Tracks Diagnostic Control */}
-        <div className="flex items-center justify-between">
-          <span>SHOW ORBIT TRACKS:</span>
-          <button
-            onClick={() => setShowOrbitTracks(!showOrbitTracks)}
-            className={`px-1.5 py-0.5 rounded-[1px] font-bold border transition-colors
-              ${showOrbitTracks
-                ? (isDark ? 'bg-cyan-950/30 border-cyan-400/80 text-cyan-400' : 'bg-cyan-100 border-cyan-600 text-cyan-800')
-                : (isDark ? 'bg-slate-900 border-slate-700 text-slate-500' : 'bg-zinc-200 border-zinc-300 text-zinc-400')
-              }
-            `}
-          >
-            {showOrbitTracks ? 'ACTIVE' : 'OFF'}
-          </button>
-        </div>
+          {/* Orbit Tracks Diagnostic Control */}
+          <div className="flex items-center justify-between">
+            <span>SHOW ORBIT TRACKS:</span>
+            <button
+              onClick={() => setShowOrbitTracks(!showOrbitTracks)}
+              className={`px-1.5 py-0.5 rounded-[1px] font-bold border transition-colors
+                ${showOrbitTracks
+                  ? (isDark ? 'bg-cyan-950/30 border-cyan-400/80 text-cyan-400' : 'bg-cyan-100 border-cyan-600 text-cyan-800')
+                  : (isDark ? 'bg-slate-900 border-slate-700 text-slate-500' : 'bg-zinc-200 border-zinc-300 text-zinc-400')
+                }
+              `}
+            >
+              {showOrbitTracks ? 'ACTIVE' : 'OFF'}
+            </button>
+          </div>
 
-        {/* Diagnostic satellite tracking list */}
-        <div className="flex flex-col gap-1 mt-1">
-          <span className={`font-bold ${isDark ? 'text-slate-500' : 'text-zinc-500'} text-[7px] uppercase`}>Active Constellation</span>
-          {satellitesRef.current.map((sat) => {
-            const isDiagnosed = activeDiagnosticSat === sat.name;
-            return (
-              <button
-                key={sat.name}
-                onClick={() => {
-                  setActiveDiagnosticSat(isDiagnosed ? null : sat.name);
-                  // Glow selected line
-                  if (sat.orbitLine && sat.orbitLine.material instanceof THREE.LineBasicMaterial) {
-                    sat.orbitLine.material.opacity = isDiagnosed ? (isDark ? 0.18 : 0.08) : 0.75;
-                  }
-                }}
-                className={`text-left text-[7px] font-sans px-1 py-0.5 rounded-[1px] transition-colors border border-transparent hover:border-current/10 flex justify-between items-center
-                  ${isDiagnosed 
-                    ? (isDark ? 'bg-cyan-500/10 text-cyan-300 font-bold' : 'bg-cyan-100 text-cyan-800 font-bold') 
-                    : (isDark ? 'text-slate-400' : 'text-zinc-650')
-                  }
-                `}
-              >
-                <span>{sat.name}</span>
-                <span className="w-1 h-1 rounded-full" style={{ backgroundColor: '#' + sat.color.toString(16) }} />
-              </button>
-            );
-          })}
+          {/* Diagnostic satellite tracking list */}
+          <div className="flex flex-col gap-1 mt-1">
+            <span className={`font-bold ${isDark ? 'text-slate-500' : 'text-zinc-500'} text-[7px] uppercase`}>Active Constellation</span>
+            {satellitesRef.current.map((sat) => {
+              const isDiagnosed = activeDiagnosticSat === sat.name;
+              return (
+                <button
+                  key={sat.name}
+                  onClick={() => {
+                    setActiveDiagnosticSat(isDiagnosed ? null : sat.name);
+                    // Glow selected line
+                    if (sat.orbitLine && sat.orbitLine.material instanceof THREE.LineBasicMaterial) {
+                      sat.orbitLine.material.opacity = isDiagnosed ? (isDark ? 0.18 : 0.08) : 0.75;
+                    }
+                  }}
+                  className={`text-left text-[7px] font-sans px-1 py-0.5 rounded-[1px] transition-colors border border-transparent hover:border-current/10 flex justify-between items-center
+                    ${isDiagnosed 
+                      ? (isDark ? 'bg-cyan-500/10 text-cyan-300 font-bold' : 'bg-cyan-100 text-cyan-800 font-bold') 
+                      : (isDark ? 'text-slate-400' : 'text-zinc-650')
+                    }
+                  `}
+                >
+                  <span>{sat.name}</span>
+                  <span className="w-1 h-1 rounded-full" style={{ backgroundColor: '#' + sat.color.toString(16) }} />
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* BOTTOM CENTER DYNAMIC INTERACTION CONSOLE KEYS */}
-      <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-[115] flex gap-1 bg-current/5 p-1 backdrop-blur-md rounded-[2px] select-none border border-current/10">
-        <button
-          onClick={() => setAutoLock(!autoLock)}
-          className={`font-mono text-[9px] font-bold px-2 py-1 rounded-[1px] transition-all border
-            ${autoLock
-              ? (isDark ? 'bg-cyan-500/25 text-cyan-300 border-cyan-400/80 shadow-[0_0_8px_rgba(34,211,238,0.2)]' : 'bg-cyan-700 text-white border-cyan-800')
-              : (isDark ? 'bg-slate-900 border-slate-800 text-slate-500 hover:text-slate-300' : 'bg-zinc-200 border-zinc-300 text-zinc-500')
-            }
-          `}
-          title="Toggles centering cameras over selected theaters automatically"
-        >
-          🛰 AUTO-TRACK: {autoLock ? 'ON' : 'OFF'}
-        </button>
+      {!isDossierOpen && (
+        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-[115] flex gap-1 bg-current/5 p-1 backdrop-blur-md rounded-[2px] select-none border border-current/10">
+          <button
+            onClick={() => setAutoLock(!autoLock)}
+            className={`font-mono text-[9px] font-bold px-2 py-1 rounded-[1px] transition-all border
+              ${autoLock
+                ? (isDark ? 'bg-cyan-500/25 text-cyan-300 border-cyan-400/80 shadow-[0_0_8px_rgba(34,211,238,0.2)]' : 'bg-cyan-700 text-white border-cyan-800')
+                : (isDark ? 'bg-slate-900 border-slate-800 text-slate-500 hover:text-slate-300' : 'bg-zinc-200 border-zinc-300 text-zinc-500')
+              }
+            `}
+            title="Toggles centering cameras over selected theaters automatically"
+          >
+            🛰 AUTO-TRACK: {autoLock ? 'ON' : 'OFF'}
+          </button>
 
-        <button
-          onClick={() => triggerZoom(-0.25)}
-          className={`font-mono text-[9px] font-bold px-2 py-1 rounded-[1px] transition-all border
-            ${isDark ? 'bg-slate-900 border-slate-800 text-slate-300 hover:text-white' : 'bg-zinc-200 border-zinc-300 text-zinc-700 hover:bg-zinc-300'}
-          `}
-        >
-          🔍 ZOOM IN
-        </button>
+          <button
+            onClick={() => triggerZoom(-0.25)}
+            className={`font-mono text-[9px] font-bold px-2 py-1 rounded-[1px] transition-all border
+              ${isDark ? 'bg-slate-900 border-slate-800 text-slate-300 hover:text-white' : 'bg-zinc-200 border-zinc-300 text-zinc-700 hover:bg-zinc-300'}
+            `}
+          >
+            🔍 ZOOM IN
+          </button>
 
-        <button
-          onClick={() => triggerZoom(0.25)}
-          className={`font-mono text-[9px] font-bold px-2 py-1 rounded-[1px] transition-all border
-            ${isDark ? 'bg-slate-900 border-slate-800 text-slate-300 hover:text-white' : 'bg-zinc-200 border-zinc-300 text-zinc-700 hover:bg-zinc-300'}
-          `}
-        >
-          🔍 ZOOM OUT
-        </button>
+          <button
+            onClick={() => triggerZoom(0.25)}
+            className={`font-mono text-[9px] font-bold px-2 py-1 rounded-[1px] transition-all border
+              ${isDark ? 'bg-slate-900 border-slate-800 text-slate-300 hover:text-white' : 'bg-zinc-200 border-zinc-300 text-zinc-700 hover:bg-zinc-300'}
+            `}
+          >
+            🔍 ZOOM OUT
+          </button>
 
-        <button
-          onClick={triggerReset}
-          className={`font-mono text-[9px] font-bold px-2 py-1 rounded-[1px] transition-all border
-            ${isDark ? 'bg-slate-900 border-slate-800 text-slate-300 hover:text-white' : 'bg-zinc-200 border-zinc-300 text-zinc-700 hover:bg-zinc-300'}
-          `}
-        >
-          🔄 RESET VIEW
-        </button>
-      </div>
+          <button
+            onClick={triggerReset}
+            className={`font-mono text-[9px] font-bold px-2 py-1 rounded-[1px] transition-all border
+              ${isDark ? 'bg-slate-900 border-slate-800 text-slate-300 hover:text-white' : 'bg-zinc-200 border-zinc-300 text-zinc-700 hover:bg-zinc-300'}
+            `}
+          >
+            🔄 RESET VIEW
+          </button>
+        </div>
+      )}
 
       {/* SATELLITE HUD WATERMARKS & GRATICULE LAYOUT */}
-      <div className={`absolute inset-0 pointer-events-none z-[10] border flex flex-col justify-between p-4 select-none transition-colors duration-200
-        ${isDark ? 'border-cyan-950/25 mix-blend-screen' : 'border-zinc-300/40 mix-blend-multiply'}
-      `}>
-        <div className={`flex justify-between items-start font-mono text-[8.5px] ${isDark ? 'text-cyan-600/70' : 'text-zinc-500/80'}`}>
-          <div className="flex flex-col gap-0.5">
-            <span>ORBIT RANGE: DEEP GEO-SYNCHRONOUS APEX</span>
-            <span>ALTITUDE DETECTOR: 35,786 KM STATS</span>
-          </div>
-          <div className="text-right">
-            <span>BEARING ORIENTATION: AUTO-ROTATION LOCK</span>
-            <span>SWEEP DETECTORS: ACTIVE / G-55 SCAN</span>
-          </div>
-        </div>
-
-        {/* Circular Graticule overlay */}
-        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center items-center">
-          <div className={`w-[360px] h-[360px] border rounded-full flex justify-center items-center relative animate-pulse
-            ${isDark ? 'border-cyan-500/5' : 'border-zinc-300/20'}
-          `}>
-            <div className={`w-[200px] h-[200px] border rounded-full flex justify-center items-center relative
-              ${isDark ? 'border-cyan-500/10' : 'border-zinc-300/40'}
-            `}>
-              <span className={`absolute w-5 h-[1.5px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ${isDark ? 'bg-cyan-400/35' : 'bg-zinc-400/50'}`} />
-              <span className={`absolute w-[1.5px] h-5 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ${isDark ? 'bg-cyan-400/35' : 'bg-zinc-400/50'}`} />
+      {!isDossierOpen && (
+        <div className={`absolute inset-0 pointer-events-none z-[10] border flex flex-col justify-between p-4 select-none transition-colors duration-200
+          ${isDark ? 'border-cyan-950/25 mix-blend-screen' : 'border-zinc-300/40 mix-blend-multiply'}
+        `}>
+          <div className={`flex justify-between items-start font-mono text-[8.5px] ${isDark ? 'text-cyan-600/70' : 'text-zinc-500/80'}`}>
+            <div className="flex flex-col gap-0.5">
+              <span>ORBIT RANGE: DEEP GEO-SYNCHRONOUS APEX</span>
+              <span>ALTITUDE DETECTOR: 35,786 KM STATS</span>
+            </div>
+            <div className="text-right">
+              <span>BEARING ORIENTATION: AUTO-ROTATION LOCK</span>
+              <span>SWEEP DETECTORS: ACTIVE / G-55 SCAN</span>
             </div>
           </div>
-        </div>
 
-        <div className={`flex justify-between items-end font-mono text-[8.5px] ${isDark ? 'text-cyan-600/70' : 'text-zinc-500/80'}`}>
-          <span>VECTOR STATUS: OPERATIVE 3D SPATIAL MAP</span>
-          <span>INTELLIGENCE CONSOLE FEED // v5.4 INTEL SURFACE</span>
+          {/* Circular Graticule overlay */}
+          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center items-center">
+            <div className={`w-[360px] h-[360px] border rounded-full flex justify-center items-center relative animate-pulse
+              ${isDark ? 'border-cyan-500/5' : 'border-zinc-300/20'}
+            `}>
+              <div className={`w-[200px] h-[200px] border rounded-full flex justify-center items-center relative
+                ${isDark ? 'border-cyan-500/10' : 'border-zinc-300/40'}
+              `}>
+                <span className={`absolute w-5 h-[1.5px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ${isDark ? 'bg-cyan-400/35' : 'bg-zinc-400/50'}`} />
+                <span className={`absolute w-[1.5px] h-5 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ${isDark ? 'bg-cyan-400/35' : 'bg-zinc-400/50'}`} />
+              </div>
+            </div>
+          </div>
+
+          <div className={`flex justify-between items-end font-mono text-[8.5px] ${isDark ? 'text-cyan-600/70' : 'text-zinc-500/80'}`}>
+            <span>VECTOR STATUS: OPERATIVE 3D SPATIAL MAP</span>
+            <span>INTELLIGENCE CONSOLE FEED // v5.4 INTEL SURFACE</span>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

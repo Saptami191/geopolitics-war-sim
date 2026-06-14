@@ -620,4 +620,49 @@ export interface ScheduledConsequence {
 
 
 
+// ==========================================
+// T4.5 - COUNTRY HOTSPOT TYPES
+// ==========================================
+export type HotspotType =
+  | 'NAVAL_BASE'
+  | 'AIR_BASE'
+  | 'NUCLEAR_FACILITY'
+  | 'MISSILE_SITE'
+  | 'DIPLOMATIC_COMPOUND'
+  | 'COVERT_SITE'
+  | 'INDUSTRIAL_SITE'
+  | 'CYBER_FACILITY'
+  | 'OTHER';
 
+export interface HotspotImageAsset {
+  id: string;
+  hotspotId: string;
+  kind: 'HERO' | 'DETAIL' | 'SATELLITE' | 'DOSSIER' | 'RENDER';
+  src: string;
+  thumbSrc?: string;
+  alt: string;
+  caption?: string;
+  width?: number;
+  height?: number;
+}
+
+export interface CountryHotspot {
+  id: string;
+  countryId: string;
+  name: string;
+  type: HotspotType;
+  lat: number;
+  lon: number;
+  importance: number; // e.g. 1-5 scale or similar
+  status?: string;
+  summary?: string;
+  imageUrls?: string[];
+  description?: string;
+  classification?: string;
+  tags?: string[];
+  imageAssets?: HotspotImageAsset[];
+  lastUpdatedTick?: number;
+  threatLevel?: string;
+  confidenceScore?: number;
+  strategicValue?: number;
+}

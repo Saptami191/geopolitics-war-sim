@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { produce } from 'immer';
+import { CountryHotspot } from '../types';
+import { getHotspotsForCountry, SEEDED_HOTSPOTS } from '../data/hotspots';
 
 export interface TerminalLine {
   id: string;
@@ -16,6 +18,8 @@ export interface UIAlert {
 
 interface UIState {
   countryInspectorId: string | null;
+  selectedCountryId: string | null;
+  selectedHotspotId: string | null;
   strikeConfirmModalOpen: boolean;
   terminalLines: TerminalLine[];
   alerts: UIAlert[];
@@ -24,6 +28,10 @@ interface UIState {
 
 interface UIStoreActions {
   setCountryInspector: (id: string | null) => void;
+  setSelectedCountry: (id: string | null) => void;
+  setSelectedHotspot: (id: string | null, countryId?: string | null) => void;
+  clearSelectedHotspot: () => void;
+  getHotspotsForCountry: (countryId: string) => CountryHotspot[];
   setStrikeConfirmModalOpen: (open: boolean) => void;
   pushTerminalLine: (text: string, type?: TerminalLine['type']) => void;
   clearTerminal: () => void;
@@ -33,8 +41,10 @@ interface UIStoreActions {
   setExpandedWorkstation: (workstation: 'SATELLITE' | 'DRONE' | 'CYBER' | 'HAARP' | null) => void;
 }
 
-export const useUIStore = create<UIState & UIStoreActions>((set) => ({
+export const useUIStore = create<UIState & UIStoreActions>((set, get) => ({
   countryInspectorId: null,
+  selectedCountryId: null,
+  selectedHotspotId: null,
   strikeConfirmModalOpen: false,
   expandedWorkstation: null,
   terminalLines: [
@@ -43,7 +53,36 @@ export const useUIStore = create<UIState & UIStoreActions>((set) => ({
   ],
   alerts: [],
 
-  setCountryInspector: (id) => set({ countryInspectorId: id }),
+  setCountryInspector: (id) => set({ 
+    countryInspectorId: id, 
+    selectedCountryId: id,
+    selectedHotspotId: id === get().selectedCountryId ? get().selectedHotspotId : null 
+  }),
+  
+  setSelectedCountry: (id) => set({ 
+    selectedCountryId: id, 
+    countryInspectorId: id,
+    selectedHotspotId: id === get().selectedCountryId ? get().selectedHotspotId : null
+  }),
+  
+  setSelectedHotspot: (id, countryId) => {
+    if (id) {
+      const hs = SEEDED_HOTSPOTS.find(h => h.id === id);
+      const computedCountryId = countryId || hs?.countryId || null;
+      set({
+        selectedHotspotId: id,
+        selectedCountryId: computedCountryId,
+        countryInspectorId: computedCountryId
+      });
+    } else {
+      set({ selectedHotspotId: null });
+    }
+  },
+  
+  clearSelectedHotspot: () => set({ selectedHotspotId: null }),
+  
+  getHotspotsForCountry: (countryId) => getHotspotsForCountry(countryId),
+
   setStrikeConfirmModalOpen: (open) => set({ strikeConfirmModalOpen: open }),
   setExpandedWorkstation: (workstation) => set({ expandedWorkstation: workstation }),
 

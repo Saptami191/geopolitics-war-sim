@@ -1374,5 +1374,27 @@ input[type='range'].sovereign-slider::-webkit-slider-thumb:active {
   animation-duration: 0.5s;
 }
 
+/* --- T4.3 DOSSIER CARD CSS CONTRACT --- */
+.card-perspective {
+  perspective: 1000px;
+}
+.card {
+  transform-style: preserve-3d;
+  transition: transform 300ms cubic-bezier(0.4,0,0.2,1);
+}
+.card.flipped {
+  transform: rotateY(180deg);
+}
+.card-front,
+.card-back {
+  backface-visibility: hidden;
+  position: absolute;
+  inset: 0;
+}
+.card-back {
+  transform: rotateY(180deg);
+}
+
+
 
 

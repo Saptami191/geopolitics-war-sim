@@ -134,6 +134,7 @@ export default function DiplomacyPanel() {
                     audio.sfxKeyClick();
                     setTargetCountry(id);
                     setTarValue(playerCountry.tariffs?.[id] ?? 0);
+                    useUIStore.getState().setCountryInspector(id);
                   }}
                   className={`border p-2 rounded flex justify-between items-center cursor-pointer transition-all ${
                     isSelected

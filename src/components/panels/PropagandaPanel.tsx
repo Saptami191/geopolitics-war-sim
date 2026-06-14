@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useWorldStore } from '../../store/worldStore';
 import { usePlayerStore } from '../../store/playerStore';
 import { usePropagandaStore, MediaOperation } from '../../store/propagandaStore';
+import { useUIStore } from '../../store/uiStore';
 
 export default function PropagandaPanel() {
   const countries = useWorldStore((s) => s.countries);
@@ -222,9 +223,16 @@ export default function PropagandaPanel() {
           {/* Top Panel: Selected Country Live Intelligence Profile */}
           <div className="p-3.5 border-b border-[#1e3540]/40 bg-[#0d1418]/20 flex flex-col gap-2.5">
             <div className="flex items-center justify-between border-b border-[#1e3540]/30 pb-1.5">
-              <div className="flex items-center gap-1.5">
+              <div 
+                className={`flex items-center gap-1.5 ${targetCountry ? 'cursor-pointer hover:underline hover:opacity-85' : ''}`}
+                onClick={() => {
+                  if (targetCountry) {
+                    useUIStore.getState().setCountryInspector(targetCountry.id);
+                  }
+                }}
+              >
                 <span className="text-sm">{targetCountry?.flagEmoji || '🌍'}</span>
-                <span className="text-[11px] font-bold tracking-widest text-slate-100 uppercase">{targetCountry?.name || 'DOMESTIC COMMAND'} SPEC-SHEET</span>
+                <span className="text-[11px] font-bold tracking-widest text-slate-100 uppercase hover:text-[#00e5ff] transition-colors">{targetCountry?.name || 'DOMESTIC COMMAND'} SPEC-SHEET</span>
               </div>
               <span className="text-[9px] text-[#8aa4ad] font-bold">INFO BLOCK SECURITY: UNRESTRICTED</span>
             </div>

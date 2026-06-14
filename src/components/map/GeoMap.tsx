@@ -11,6 +11,7 @@ import { useUIStore } from '../../store/uiStore';
 import { useLinkedAnalysisStore } from '../../store/linkedAnalysisStore';
 import { useCanonicalMapState } from './mapSelectors';
 import { useUnitStore } from '../../store/unitStore';
+import { SEEDED_HOTSPOTS } from '../../data/hotspots';
 
 // Types and helper files
 import { LayerKey, LayerToggleState } from './mapTypes';
@@ -87,12 +88,14 @@ export function GeoMap({ mode: initialMode, layers: initialLayers, theme = 'dark
 
   const [isLayerPanelOpen, setIsLayerPanelOpen] = useState(true);
   const [animationTick, setAnimationTick] = useState(0);
+  const [mapZoom, setMapZoom] = useState(1.8);
 
   // Synchronized stores variables
   const countries = useWorldStore((s) => s.countries);
   const activeStrikes = useWorldStore((s) => s.activeStrikes);
   const units = useUnitStore((s) => s.units);
   const selectedUnitId = useUnitStore((s) => s.selectedUnitId);
+  const selectedHotspotId = useUIStore((s) => s.selectedHotspotId);
   
   // Use map canonical selectors
   const mapState = useCanonicalMapState(localLayers, theme);
@@ -150,6 +153,7 @@ export function GeoMap({ mode: initialMode, layers: initialLayers, theme = 'dark
         } as any,
         controller: true,
         onViewStateChange: ({ viewState }: any) => {
+          setMapZoom(viewState.zoom);
           map.jumpTo({
             center: [viewState.longitude, viewState.latitude],
             zoom: viewState.zoom,
@@ -166,11 +170,13 @@ export function GeoMap({ mode: initialMode, layers: initialLayers, theme = 'dark
       // MapLibre input interaction camera events updates deck.gl state
       map.on('move', () => {
         const center = map.getCenter();
+        const currentZoom = map.getZoom();
+        setMapZoom(currentZoom);
         deck.setProps({
           viewState: {
             longitude: center.lng,
             latitude: center.lat,
-            zoom: map.getZoom(),
+            zoom: currentZoom,
             bearing: map.getBearing(),
             pitch: map.getPitch(),
           } as any
@@ -194,8 +200,16 @@ export function GeoMap({ mode: initialMode, layers: initialLayers, theme = 'dark
 
     // --- Interactive overlay handler helper ---
     const handleItemClick = (info: any) => {
-      if (info.object && info.object.id) {
-        useLinkedAnalysisStore.getState().selectCountry(info.object.id);
+      if (info.object) {
+        if (info.object.isHotspot && info.object.id) {
+          useLinkedAnalysisStore.getState().selectCountry(info.object.countryId);
+          useUIStore.getState().setSelectedHotspot(info.object.id, info.object.countryId);
+          audio.sfxKeyClick();
+        } else if (info.object.id) {
+          useLinkedAnalysisStore.getState().selectCountry(info.object.id);
+          useUIStore.getState().setSelectedHotspot(null);
+          audio.sfxKeyClick();
+        }
       }
     };
 
@@ -616,8 +630,87 @@ export function GeoMap({ mode: initialMode, layers: initialLayers, theme = 'dark
       })
     );
 
+    // --- T4.5 GEOGRAPHIC INTEL HOTSPOTS LAYER ---
+    // Section 10: Zoom-aware density filtering to prevent overlap
+    const filteredHotspots = SEEDED_HOTSPOTS.filter((hotspot) => {
+      // Always show selected hotspot!
+      if (selectedHotspotId === hotspot.id) return true;
+      
+      // Filter based on map zoom levels
+      if (mapZoom < 2.2) {
+        // Zoomed out maximum: show major global hubs only (importance >= 4)
+        return hotspot.importance >= 4;
+      } else if (mapZoom < 3.5) {
+        // Medium zoom: show strategic level ports & complexes (importance >= 3)
+        return hotspot.importance >= 3;
+      }
+      // Zoomed in: show all directory nodes
+      return true;
+    });
+
+    const hotspotPoints = filteredHotspots.map((hotspot) => {
+      const isSelected = selectedHotspotId === hotspot.id;
+      let rgbColor = [144, 164, 174]; // blue grey
+      if (hotspot.type === 'NAVAL_BASE') rgbColor = [0, 176, 255];
+      else if (hotspot.type === 'AIR_BASE') rgbColor = [0, 229, 255];
+      else if (hotspot.type === 'NUCLEAR_FACILITY') rgbColor = [255, 42, 74];
+      else if (hotspot.type === 'MISSILE_SITE') rgbColor = [255, 161, 0];
+      else if (hotspot.type === 'DIPLOMATIC_COMPOUND') rgbColor = [255, 234, 0];
+      else if (hotspot.type === 'COVERT_SITE') rgbColor = [213, 0, 249];
+      else if (hotspot.type === 'CYBER_FACILITY') rgbColor = [0, 230, 118];
+      else if (hotspot.type === 'INDUSTRIAL_SITE') rgbColor = [176, 190, 197];
+
+      return {
+        id: hotspot.id,
+        countryId: hotspot.countryId,
+        name: hotspot.name,
+        coordinates: [hotspot.lon, hotspot.lat],
+        isHotspot: true,
+        isSelected,
+        color: rgbColor,
+        importance: hotspot.importance
+      };
+    });
+
+    activeDeckLayers.push(
+      new ScatterplotLayer({
+        id: 'country-hotspots-outer',
+        data: hotspotPoints,
+        getPosition: (d: any) => d.coordinates,
+        // Make radius size responsive to map zoom to avoid clumping
+        getRadius: (d: any) => d.isSelected ? (240000 / (mapZoom * 0.45)) : ((d.importance >= 4 ? 130000 : 90000) / (mapZoom * 0.45)),
+        getFillColor: (d: any) => [...d.color, d.isSelected ? 85 : 25] as any,
+        getLineColor: (d: any) => [...d.color, d.isSelected ? 255 : 45] as any,
+        lineWidthMinPixels: 1.5,
+        stroked: true,
+        pickable: true,
+        onClick: handleItemClick,
+        updateTriggers: {
+          getRadius: [selectedHotspotId, mapZoom],
+          getFillColor: [selectedHotspotId, mapZoom],
+          getLineColor: [selectedHotspotId, mapZoom]
+        }
+      }),
+      new ScatterplotLayer({
+        id: 'country-hotspots-core',
+        data: hotspotPoints,
+        getPosition: (d: any) => d.coordinates,
+        getRadius: (d: any) => (d.isSelected ? 110000 : 65000) / (mapZoom * 0.45),
+        getFillColor: (d: any) => [...d.color, d.isSelected ? 255 : 210] as any,
+        getLineColor: [0, 0, 0, 185],
+        lineWidthMinPixels: 1,
+        stroked: true,
+        pickable: true,
+        onClick: handleItemClick,
+        updateTriggers: {
+          getRadius: [selectedHotspotId, mapZoom],
+          getFillColor: [selectedHotspotId, mapZoom]
+        }
+      })
+    );
+
     deckRef.current.setProps({ layers: activeDeckLayers });
-  }, [activeMode, countries, activeStrikes, localLayers, playerCountryId, targetCountryId, animationTick, units, selectedUnitId]);
+  }, [activeMode, countries, activeStrikes, localLayers, playerCountryId, targetCountryId, animationTick, units, selectedUnitId, selectedHotspotId, mapZoom]);
 
   const handleToggleLayer = (key: LayerKey) => {
     setLocalLayers((prev) => ({

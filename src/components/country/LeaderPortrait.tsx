@@ -3,15 +3,41 @@ import { useLeaderStore } from '../../store/leaderStore';
 
 interface LeaderPortraitProps {
   countryId: string;
+  size?: number;
 }
 
-export const LeaderPortrait: React.FC<LeaderPortraitProps> = ({ countryId }) => {
+export const LeaderPortrait: React.FC<LeaderPortraitProps> = ({ countryId, size }) => {
   const leader = useLeaderStore((state) => state.leadersByCountryId[countryId]);
 
   if (!leader || !leader.portraitDataUrl) {
+    const defaultW = size ? `${size}px` : '124px';
+    const defaultH = size ? `${size}px` : '154px';
     return (
-      <div className="w-[124px] h-[154px] border border-[#1a5c1a] bg-[#071307] rounded flex items-center justify-center text-[9px] text-[#00ff44] font-mono tracking-widest uppercase animate-pulse">
-        [SCANNING...]
+      <div 
+        style={{ width: defaultW, height: defaultH }}
+        className="border border-[#1a5c1a] bg-[#071307] rounded flex items-center justify-center text-[8px] text-[#00ff44] font-mono tracking-widest uppercase animate-pulse"
+      >
+        [SCANNING]
+      </div>
+    );
+  }
+
+  if (size) {
+    // Exact requested size rendering (like 80x80)
+    return (
+      <div 
+        style={{ width: `${size + 10}px`, height: `${size + 10}px` }} 
+        className="relative border border-[#1a5c1a] bg-black p-1 rounded shadow-lg overflow-hidden flex flex-col items-center justify-center shrink-0"
+      >
+        <img 
+          src={leader.portraitDataUrl} 
+          alt={leader.name}
+          style={{ width: `${size}px`, height: `${size}px`, imageRendering: 'pixelated' }}
+          className="object-cover border border-[#1a5c1a]/55 rounded bg-[#050a05]"
+          referrerPolicy="no-referrer"
+        />
+        {/* Retro CRT Phosphor Line overlay wrapper */}
+        <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(0,255,0,0.02)_50%,rgba(0,0,0,0.08)_50%)] bg-[length:100%_3px]" />
       </div>
     );
   }
