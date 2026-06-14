@@ -1,4 +1,5 @@
 import { BallisticStrike } from '../../types';
+import { dispatchNuclearImpact } from '../../utils/nuclearVfx';
 
 export type MapTransientEventType = 
   | 'STRIKE_LAUNCHED' 
@@ -97,6 +98,14 @@ class MapEventPipeline {
           label: isNuke ? `☢ THERMONUCLEAR EXPLOSION IN BARRIER ZONE` : `⚔ CONVENTIONAL ROCKET IMPACT VERIFIED`,
           durationMs: 7000,
         });
+
+        if (isNuke) {
+          try {
+            dispatchNuclearImpact(lat, lng, next.warheadYieldMT || 1.2);
+          } catch (e) {
+            console.error('[MAP-EVENT-PIPELINE] Error dispatching nuclear impact:', e);
+          }
+        }
       } else if (prev.status === 'IN_FLIGHT' && next.status === 'INTERCEPTED') {
         // Intercept occurred -> emitting shield success sparkles
         this.emit({

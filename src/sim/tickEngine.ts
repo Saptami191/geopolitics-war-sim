@@ -58,7 +58,7 @@ export function executeSimulationStep() {
   const world = useWorldStore.getState();
   const player = usePlayerStore.getState();
 
-  if (player.gameOver || player.victoryAchieved) {
+  if (player.gameOver || player.victoryAchieved || player.aftermathActive) {
     stopTickTimer();
     return;
   }
@@ -107,9 +107,19 @@ export function executeSimulationStep() {
     ConsequenceEngine.tick(draft.currentTick, draft);
   });
 
+  // Keep clock store in lock-step with simulation ticks
+  useClockStore.getState().advanceTick();
+
   // 10. Sync player's cash levels with their nation's real treasury reserves
   usePlayerStore.getState().syncCashFromCountry();
   usePlayerStore.setState((state) => ({ totalTicks: state.totalTicks + 1 }));
+
+  // Regularly save a checkpoint if there is no ongoing nuclear exchange or active aftermath
+  const currentWorld = useWorldStore.getState();
+  const currentPlayer = usePlayerStore.getState();
+  if (!currentWorld.nuclearExchangeOccurred && !currentPlayer.aftermathActive) {
+    currentPlayer.saveCheckpoint();
+  }
 }
 
 function advanceCovertIntelligenceOps(draft: WorldState, playerCountryId: string) {

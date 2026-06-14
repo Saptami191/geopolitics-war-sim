@@ -65,6 +65,7 @@ import BlackMarketBazaar from './components/blackmarket/BlackMarketBazaar';
 import { useBlackMarketStore } from './store/blackMarketStore';
 import CommandLogPanel from './components/hud/CommandLogPanel';
 import DefconBar from './components/hud/DefconBar';
+import WhiteFlashOverlay from './components/hud/WhiteFlashOverlay';
 import { useDefconStore, applyDefconPalette } from './store/defconStore';
 import { GEO_COORDS } from './data/geoCoords';
 import { getTickIncrement } from './sim/militaryEngine';
@@ -177,6 +178,11 @@ export default function App() {
     // Synchronize DEFCON variables and classes on initial mount
     const level = useDefconStore.getState().currentDefconLevel;
     applyDefconPalette(level);
+
+    // Stop tick timer only on true app unmount
+    return () => {
+      stopTickTimer();
+    };
   }, []);
 
   // Intro and game states
@@ -193,6 +199,37 @@ export default function App() {
   const [showBazaar, setShowBazaar] = useState(false);
   const [commsOpen, setCommsOpen] = useState(false);
   const unreadCommsCount = useCommsStore((s) => s.unreadCount);
+
+  // Aftermath states
+  const [aftermathCountdown, setAftermathCountdown] = useState<number | null>(null);
+  const [showChoices, setShowChoices] = useState(false);
+  const [spectatingAftermath, setSpectatingAftermath] = useState(false);
+
+  useEffect(() => {
+    if (playerState.aftermathActive) {
+      setAftermathCountdown(6); // 6-second dramatic pause for nuclear fallout/impact VFX
+      setShowChoices(false);
+      setSpectatingAftermath(false);
+      
+      const interval = setInterval(() => {
+        setAftermathCountdown((prev) => {
+          if (prev === null) return null;
+          if (prev <= 1) {
+            clearInterval(interval);
+            setShowChoices(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(interval);
+    } else {
+      setAftermathCountdown(null);
+      setShowChoices(false);
+      setSpectatingAftermath(false);
+    }
+  }, [playerState.aftermathActive]);
 
   const playerCountryData = countries[playerCountryId];
 
@@ -669,7 +706,6 @@ export default function App() {
     window.addEventListener('keydown', handleKeyDown);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      stopTickTimer();
     };
   }, [countries, playerCountryId, currentTick]);
 
@@ -708,6 +744,7 @@ export default function App() {
   return (
     <div className="h-screen w-screen flex flex-col bg-[#030503] relative text-xs font-mono overflow-hidden">
       {/* Popups, Alerts & Bazaar overlays */}
+      <WhiteFlashOverlay />
       <CountryInspector />
       <AlertBanner />
       <OnboardingHints />
@@ -949,28 +986,85 @@ export default function App() {
         <HaarpWorkstation onClose={() => setExpandedWorkstation(null)} />
       )}
 
-      {/* Game loss or win overlay modals */}
-      {resolution !== 'ONGOING' && (
+      {/* Flashing nuclear aftermath warning overlay (bottom status bar) */}
+      {playerState.aftermathActive && aftermathCountdown !== null && aftermathCountdown > 0 && (
+        <div className="fixed bottom-14 left-1/2 transform -translate-x-1/2 z-40 bg-black/95 border border-red-500/50 text-red-500 px-6 py-3 rounded shadow-2xl flex items-center gap-3 animate-pulse font-mono tracking-wider max-w-xl text-center">
+          <span className="w-2 h-2 rounded-full bg-red-600 animate-ping shrink-0" />
+          <span className="text-xs uppercase font-bold text-shadow">
+            [ DIRECT DIRECTIVE RESOLUTION: SECURING TRANS-ATMOSPHERIC SIGNALS... COUNTDOWN ({aftermathCountdown}S) ]
+          </span>
+        </div>
+      )}
+
+      {/* Floating button when spectating aftermath */}
+      {spectatingAftermath && (
+        <button
+          onClick={() => setSpectatingAftermath(false)}
+          className={`fixed top-14 left-1/2 -translate-x-1/2 z-40 px-4 py-2 bg-black/95 border rounded-md text-shadow font-black uppercase tracking-widest text-[10px] cursor-pointer animate-pulse shadow-lg ${
+            playerState.aftermathType === 'VICTORY' 
+              ? 'border-[#00ff44] text-[#00ff44] hover:bg-[#00ff44]/15' 
+              : 'border-[#ff2244] text-[#ff2244] hover:bg-[#ff2244]/15'
+          }`}
+        >
+          [ RE-OPEN SIMULATION RESOLUTION MODULE ]
+        </button>
+      )}
+
+      {/* Unified Campaign Resolution Modals with Checkpoint Rollback */}
+      {((resolution !== 'ONGOING') || (playerState.aftermathActive && showChoices && !spectatingAftermath)) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-md">
-          <div className={`w-full max-w-lg border-2 p-6 rounded text-center font-mono ${resolution === 'VICTORY' ? 'border-[#00ff44] text-[#00ff44] bg-[#021c02]' : 'border-[#ff2244] text-[#ff2244] bg-[#1a0004]'}`}>
-            <h2 className="text-2xl font-bold tracking-widest text-shadow mb-3">
-              {resolution === 'VICTORY' ? '🏆 CAMPAIGN ACCOMPLISHED' : '💀 SYSTEM DEFEATED'}
+          <div className={`w-full max-w-lg border-2 p-6 rounded text-center font-mono ${
+            (resolution === 'VICTORY' || playerState.aftermathType === 'VICTORY') 
+              ? 'border-[#00ff44] text-[#00ff44] bg-[#021c02]' 
+              : 'border-[#ff2244] text-[#ff2244] bg-[#1a0004]'
+          }`}>
+            <h2 className="text-2xl font-bold tracking-widest text-shadow mb-3 uppercase">
+              {(resolution === 'VICTORY' || playerState.aftermathType === 'VICTORY') 
+                ? '🏆 CAMPAIGN ACCOMPLISHED' 
+                : '💀 SYSTEM DEFEATED'}
             </h2>
             <p className="text-xs mb-6 normal-case leading-relaxed">
-              {resolution === 'VICTORY'
-                ? `Your sovereign command decisions have achieved victory: ${playerState.victoryReason}`
-                : `Sovereign command has collapsed: ${playerState.gameOverReason}`}
+              {(resolution === 'VICTORY' || playerState.aftermathType === 'VICTORY')
+                ? `Your sovereign command decisions have achieved victory: ${playerState.victoryReason || playerState.aftermathReason}`
+                : `Sovereign command has collapsed: ${playerState.gameOverReason || playerState.aftermathReason}`}
             </p>
 
-            <button
-              onClick={() => {
-                stopTickTimer();
-                window.location.reload();
-              }}
-              className="px-6 py-2 bg-transparent border border-current hover:bg-[#00ff44]/15 rounded font-bold uppercase tracking-wider text-xs cursor-pointer"
-            >
-              Restart Campaign Simulation
-            </button>
+            <div className="flex flex-col gap-3 max-w-xs mx-auto">
+              {playerState.checkpointState && (
+                <button
+                  onClick={() => {
+                    setSpectatingAftermath(false);
+                    playerState.rollbackToCheckpoint();
+                  }}
+                  className={`px-4 py-2.5 border rounded font-bold uppercase tracking-wider text-xs cursor-pointer transition-all ${
+                    (resolution === 'VICTORY' || playerState.aftermathType === 'VICTORY')
+                      ? 'border-[#00ff44] text-[#00ff44] hover:bg-[#00ff44]/15 bg-[#00ff44]/5'
+                      : 'border-[#ff2244] text-[#ff2244] hover:bg-[#ff2244]/15 bg-[#ff2244]/5'
+                  }`}
+                >
+                  Roll Back to Last Checkpoint (Tick {playerState.checkpointState.world.currentTick})
+                </button>
+              )}
+
+              <button
+                onClick={() => {
+                  stopTickTimer();
+                  window.location.reload();
+                }}
+                className="px-4 py-2.5 bg-transparent border border-gray-600 hover:border-current text-gray-300 hover:text-white rounded font-bold uppercase tracking-wider text-xs cursor-pointer transition-all"
+              >
+                Restart Fresh Simulation
+              </button>
+
+              {playerState.aftermathActive && (
+                <button
+                  onClick={() => setSpectatingAftermath(true)}
+                  className="px-4 py-2 bg-transparent border border-dashed border-gray-700 hover:border-gray-500 text-gray-500 hover:text-gray-400 rounded font-semibold uppercase tracking-wider text-[10px] cursor-pointer transition-all"
+                >
+                  Spectate Ruined Aftermath
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}

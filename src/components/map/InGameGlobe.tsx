@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { useWorldStore } from '../../store/worldStore';
+import { useNuclearStore } from '../../store/nuclearStore';
 import { usePlayerStore } from '../../store/playerStore';
 import { useUIStore } from '../../store/uiStore';
 import { getCentroid } from './countryCentroids';
@@ -32,6 +33,72 @@ function latLngToVector3(lat: number, lng: number, radius: number): THREE.Vector
     radius * Math.cos(phi),
     radius * Math.sin(phi) * Math.sin(theta)
   );
+}
+
+/**
+ * Procedurally generates a glowing, smoky high-fidelity mushroom cloud canvas texture
+ */
+function createMushroomTexture(): THREE.Texture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 128;
+  const ctx = canvas.getContext('2d')!;
+
+  ctx.clearRect(0, 0, 128, 128);
+
+  // Flame glow effect configuration
+  ctx.shadowColor = 'rgba(255, 69, 0, 0.45)';
+  ctx.shadowBlur = 8;
+
+  // Render smoke-and-fire core column stem
+  const stemGrad = ctx.createLinearGradient(64, 40, 64, 120);
+  stemGrad.addColorStop(0.0, '#555555');
+  stemGrad.addColorStop(0.3, '#333333');
+  stemGrad.addColorStop(0.65, '#ff3b21'); // boiling thermal core
+  stemGrad.addColorStop(0.85, '#ff7711'); // burning ignition flare
+  stemGrad.addColorStop(1.0, '#111111');
+  ctx.fillStyle = stemGrad;
+
+  ctx.beginPath();
+  ctx.moveTo(58, 120);
+  ctx.quadraticCurveTo(60, 65, 54, 40);
+  ctx.lineTo(74, 40);
+  ctx.quadraticCurveTo(68, 65, 70, 120);
+  ctx.closePath();
+  ctx.fill();
+
+  // Draw mushroom-shaped billow caps (layered smoky circles)
+  ctx.shadowBlur = 12;
+  const capGrad = ctx.createRadialGradient(64, 32, 5, 64, 32, 40);
+  capGrad.addColorStop(0.0, '#ffcca8'); // intense explosion white-hot light
+  capGrad.addColorStop(0.2, '#de4a1d'); // hot expansion ring
+  capGrad.addColorStop(0.5, '#404040'); // dark condensing ash
+  capGrad.addColorStop(1.0, '#1a1a1a'); // cooled external soot
+  ctx.fillStyle = capGrad;
+
+  // Main high-altitude expansion bubble
+  ctx.beginPath();
+  ctx.arc(64, 32, 25, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Secondary cloud cushions
+  ctx.fillStyle = '#222222';
+  ctx.beginPath();
+  ctx.arc(44, 36, 15, 0, Math.PI * 2);
+  ctx.arc(84, 36, 15, 0, Math.PI * 2);
+  ctx.arc(54, 20, 17, 0, Math.PI * 2);
+  ctx.arc(74, 20, 17, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Ambient flame overlay highlights
+  ctx.fillStyle = 'rgba(255, 80, 20, 0.32)';
+  ctx.beginPath();
+  ctx.arc(64, 32, 16, 0, Math.PI * 2);
+  ctx.fill();
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+  return texture;
 }
 
 interface InGameGlobeProps {
@@ -260,6 +327,73 @@ export function InGameGlobe({ theme = 'dark', layers }: InGameGlobeProps) {
       specular: new THREE.Color(isDark ? 0x0d283c : 0x111111),
       shininess: isDark ? 28 : 6,
     });
+
+    earthMat.userData = {
+      uScarCenters: { value: [] },
+      uScarRadii: { value: [] },
+      uScarCount: { value: 0 }
+    };
+
+    earthMat.onBeforeCompile = (shader) => {
+      shader.uniforms.uScarCenters = earthMat.userData.uScarCenters;
+      shader.uniforms.uScarRadii = earthMat.userData.uScarRadii;
+      shader.uniforms.uScarCount = earthMat.userData.uScarCount;
+
+      shader.vertexShader = shader.vertexShader.replace(
+        '#include <common>',
+        `#include <common>
+        varying vec3 vModelPosition;`
+      );
+
+      shader.vertexShader = shader.vertexShader.replace(
+        '#include <begin_vertex>',
+        `#include <begin_vertex>
+        vModelPosition = vec3(position);`
+      );
+
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <common>',
+        `#include <common>
+        varying vec3 vModelPosition;
+        uniform vec3 uScarCenters[15];
+        uniform float uScarRadii[15];
+        uniform int uScarCount;`
+      );
+
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <dithering_fragment>',
+        `#include <dithering_fragment>
+        float darkFactor = 1.0;
+        vec3 normPos = normalize(vModelPosition);
+        for(int i = 0; i < 15; i++) {
+          if (i >= uScarCount) break;
+          float d = distance(normPos, uScarCenters[i]);
+          float r = uScarRadii[i];
+          if (d < r) {
+            float t = smoothstep(r, r * 0.4, d);
+            darkFactor *= mix(1.0, 0.12, t);
+          }
+        }
+        gl_FragColor.rgb *= darkFactor;`
+      );
+    };
+
+    // Load initial scars synchronously
+    const initialScars = useNuclearStore.getState().nuclearScars || [];
+    const initCenters: THREE.Vector3[] = [];
+    const initRadii: number[] = [];
+    initialScars.forEach((scar) => {
+      initCenters.push(latLngToVector3(scar.lat, scar.lon, 1.0));
+      initRadii.push(scar.radius);
+    });
+    while (initCenters.length < 15) {
+      initCenters.push(new THREE.Vector3(0, 0, 0));
+      initRadii.push(0.0);
+    }
+    earthMat.userData.uScarCenters.value = initCenters;
+    earthMat.userData.uScarRadii.value = initRadii;
+    earthMat.userData.uScarCount.value = Math.min(15, initialScars.length);
+
     const earthMesh = new THREE.Mesh(earthGeo, earthMat);
     globeGroup.add(earthMesh);
     earthMeshRef.current = earthMesh;
@@ -527,6 +661,88 @@ export function InGameGlobe({ theme = 'dark', layers }: InGameGlobeProps) {
       limit: number;
     }> = [];
 
+    // ACTIVE HIGH-FIDELITY TAC-NUCLEAR SHOCKWAVES & MUSHROOM CLOUDS
+    const activeNuclearVFX: Array<{
+      shockwave: THREE.Mesh | null;
+      mushroomSprite: THREE.Sprite | null;
+      targetVec: THREE.Vector3;
+      age: number;
+      shockwaveMaxAge: number;
+      mushroomMaxAge: number;
+      mushroomLingerAge: number;
+    }> = [];
+
+    const handleNuclearImpactEvent = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const { lat, lon, yieldMT } = customEvent.detail;
+      const targetVec = latLngToVector3(lat, lon, 1.0);
+
+      // A. SHOCKWAVE WIREFRAME SPHERE GEOMETRY
+      const shGeo = new THREE.SphereGeometry(0.001, 32, 32);
+      const shMat = new THREE.MeshBasicMaterial({
+        color: 0xff3b4e,
+        wireframe: true,
+        transparent: true,
+        opacity: 1.0,
+        depthWrite: false,
+      });
+      const shMesh = new THREE.Mesh(shGeo, shMat);
+      shMesh.position.copy(targetVec);
+      globeGroup.add(shMesh);
+
+      // B. MUSHROOM CLOUD PROCEDURAL CANVAS SPRITE
+      const spriteMat = new THREE.SpriteMaterial({
+        map: createMushroomTexture(),
+        transparent: true,
+        opacity: 1.0,
+        depthWrite: false,
+        blending: THREE.NormalBlending,
+      });
+      const sprite = new THREE.Sprite(spriteMat);
+      const spritePos = targetVec.clone().multiplyScalar(1.002);
+      sprite.position.copy(spritePos);
+      sprite.scale.set(0, 0, 0);
+      globeGroup.add(sprite);
+
+      activeNuclearVFX.push({
+        shockwave: shMesh,
+        mushroomSprite: sprite,
+        targetVec: targetVec.clone(),
+        age: 0,
+        shockwaveMaxAge: 90, // 1500ms at 60fps
+        mushroomMaxAge: 180, // 3000ms at 60fps
+        mushroomLingerAge: 240, // remains full scale until frame 240, then fades
+      });
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('nuclear-impact', handleNuclearImpactEvent);
+    }
+
+    // Subscribe to useNuclearStore to sync physical scars dynamically in our custom shader uniforms
+    const unsubscribeNuclear = useNuclearStore.subscribe((state) => {
+      const activeScars = state.nuclearScars || [];
+      const centers: THREE.Vector3[] = [];
+      const radii: number[] = [];
+
+      activeScars.forEach((scar, idx) => {
+        if (idx >= 15) return;
+        centers.push(latLngToVector3(scar.lat, scar.lon, 1.0));
+        radii.push(scar.radius);
+      });
+
+      while (centers.length < 15) {
+        centers.push(new THREE.Vector3(0, 0, 0));
+        radii.push(0.0);
+      }
+
+      if (earthMat && earthMat.userData && earthMat.userData.uScarCenters) {
+        earthMat.userData.uScarCenters.value = centers;
+        earthMat.userData.uScarRadii.value = radii;
+        earthMat.userData.uScarCount.value = Math.min(15, activeScars.length);
+      }
+    });
+
     // ANIMATED TICKING RENDERING LOOP
     let rafId: number;
     const tick = () => {
@@ -644,6 +860,64 @@ export function InGameGlobe({ theme = 'dark', layers }: InGameGlobeProps) {
         if (exp.age >= exp.limit) {
           sparks.remove(exp.ring);
           activeExplosions.splice(i, 1);
+        }
+      }
+
+      // 6.5 HIGH-FIDELITY TAC-NUCLEAR SHOCKWAVES & MUSHROOM CLOUDS ANIMS
+      for (let i = activeNuclearVFX.length - 1; i >= 0; i--) {
+        const vfx = activeNuclearVFX[i];
+        vfx.age += 1;
+
+        // Shockwave expands to 0.08, opacity lines out
+        if (vfx.shockwave) {
+          const sPct = Math.min(1.0, vfx.age / vfx.shockwaveMaxAge);
+          const currentRadius = 0.001 + 0.08 * sPct;
+          vfx.shockwave.geometry.dispose();
+          vfx.shockwave.geometry = new THREE.SphereGeometry(currentRadius, 24, 24);
+
+          if (vfx.shockwave.material instanceof THREE.Material) {
+            vfx.shockwave.material.opacity = 1.0 - sPct;
+          }
+
+          if (vfx.age >= vfx.shockwaveMaxAge) {
+            globeGroup.remove(vfx.shockwave);
+            vfx.shockwave.geometry.dispose();
+            if (vfx.shockwave.material instanceof THREE.Material) {
+              vfx.shockwave.material.dispose();
+            }
+            vfx.shockwave = null;
+          }
+        }
+
+        // Mushroom Cloud scales to 0.06
+        if (vfx.mushroomSprite) {
+          if (vfx.age <= vfx.mushroomMaxAge) {
+            const mPct = vfx.age / vfx.mushroomMaxAge;
+            const currentScale = 0.06 * mPct;
+            vfx.mushroomSprite.scale.set(currentScale, currentScale, currentScale);
+            // Rise upwards slightly as it bursts to resemble a tall updraft
+            const risePos = vfx.targetVec.clone().multiplyScalar(1.002 + currentScale * 0.45);
+            vfx.mushroomSprite.position.copy(risePos);
+          } else if (vfx.age > vfx.mushroomLingerAge) {
+            // Smooth fade out
+            const fadePct = (vfx.age - vfx.mushroomLingerAge) / 60; // 60 frames (1s) fade
+            if (vfx.mushroomSprite.material instanceof THREE.Material) {
+              vfx.mushroomSprite.material.opacity = Math.max(0, 1.0 - fadePct);
+            }
+
+            if (fadePct >= 1.0) {
+              globeGroup.remove(vfx.mushroomSprite);
+              if (vfx.mushroomSprite.material instanceof THREE.Material) {
+                if (vfx.mushroomSprite.material.map) vfx.mushroomSprite.material.map.dispose();
+                vfx.mushroomSprite.material.dispose();
+              }
+              vfx.mushroomSprite = null;
+            }
+          }
+        }
+
+        if (!vfx.shockwave && !vfx.mushroomSprite) {
+          activeNuclearVFX.splice(i, 1);
         }
       }
 
@@ -815,6 +1089,11 @@ export function InGameGlobe({ theme = 'dark', layers }: InGameGlobeProps) {
       window.removeEventListener('mouseup', onMouseUp);
       resizeObserver.disconnect();
       renderer.dispose();
+
+      unsubscribeNuclear();
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('nuclear-impact', handleNuclearImpactEvent);
+      }
 
       // Dispose of military models and particle systems to prevent GPU memory leaks
       Object.values(wakesRef.current).forEach((w: any) => w.destroy());

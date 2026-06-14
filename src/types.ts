@@ -404,6 +404,10 @@ export interface PlayerState {
   gameOverReason?: string;
   victoryAchieved: boolean;
   victoryReason?: string;
+  aftermathActive: boolean;
+  aftermathType: 'VICTORY' | 'DEFEAT' | 'NONE';
+  aftermathReason?: string;
+  checkpointState?: any;
 }
 
 export interface WorldState {

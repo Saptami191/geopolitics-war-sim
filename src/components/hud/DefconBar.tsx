@@ -3,6 +3,7 @@ import { useDefconStore, DEFCON_PALETTES } from '../../store/defconStore';
 import { useClockStore } from '../../store/clockStore';
 import { usePlayerStore } from '../../store/playerStore';
 import { fmtDate, fmtSession } from '../../utils/format';
+import { RadiationCounter } from './RadiationCounter';
 
 export const DefconBar: React.FC = () => {
   const currentDefcon = useDefconStore((state) => state.currentDefconLevel);
@@ -93,8 +94,9 @@ export const DefconBar: React.FC = () => {
         </div>
       </div>
 
-      {/* Clocks & Chronos Display */}
-      <div className="flex items-center gap-4 text-[9.5px]">
+      {/* Clocks, Radiation, and Chronos Display */}
+      <div className="flex items-center gap-3 text-[9.5px]">
+        <RadiationCounter />
         <div className="flex items-center gap-1.5 border border-white/5 bg-black/30 px-2 py-0.5 rounded">
           <span className="chrome text-gray-500 font-bold uppercase tracking-wider">📅 date:</span>
           <span className="data-inline font-black tracking-wider uppercase animate-pulse" style={{ color: 'var(--defcon-accent)' }}>{fmtDate(calendarDate)}</span>

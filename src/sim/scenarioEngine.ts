@@ -76,5 +76,8 @@ export function initScenario(scenarioId: ScenarioId, countryId: string, leaderOv
 
   // 4. Final sync of player state cash B
   usePlayerStore.getState().syncCashFromCountry();
+
+  // Save beautiful starting checkpoint for rollback
+  usePlayerStore.getState().saveCheckpoint();
 }
 
