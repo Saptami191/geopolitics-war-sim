@@ -1,3 +1,5 @@
+import { BusEvent } from './sim/eventBus/types';
+
 export type Ideology = 'DEMOCRACY' | 'AUTOCRACY' | 'MILITARY_JUNTA' | 'THEOCRACY' | 'TECHNOCRACY' | 'OLIGARCHY' | 'COMMUNISM' | 'MONARCHY';
 
 export const IDEOLOGIES: Ideology[] = [
@@ -931,4 +933,6 @@ export interface CanonicalWorld {
     globalTensionIndex: number; // 0-100
   };
   scenarioMeta: Record<string, any>;
+  busEventQueue?: BusEvent[];
+  busEventHistory?: BusEvent[];
 }

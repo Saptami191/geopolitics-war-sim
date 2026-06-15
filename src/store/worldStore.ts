@@ -182,6 +182,23 @@ export const useWorldStore = create<WorldState & WorldStoreActions>((set) => ({
     updater(draft);
     if (draft.world) {
       draft.world = advanceCanonicalWorldTick(draft.world, draft.countries, draft.currentTick);
+      
+      // Pull and synchronize all newly generated tick logs into globalEventLog
+      const newLogs = draft.world.timeline.filter(log => log.tick === draft.currentTick);
+      newLogs.forEach(log => {
+        const alreadyExists = draft.globalEventLog.some(existing => existing.tick === log.tick && existing.text === log.desc);
+        if (!alreadyExists) {
+          draft.globalEventLog.unshift({
+            tick: log.tick,
+            text: log.desc,
+            severity: log.desc.toUpperCase().includes('CRITICAL') || 
+                      log.desc.toUpperCase().includes('BREAK') || 
+                      log.desc.toUpperCase().includes('EXPOSED') ||
+                      log.desc.toUpperCase().includes('ESPIONAGE') 
+                      ? 'CRITICAL' : 'SYSTEM'
+          });
+        }
+      });
     }
   })),
 

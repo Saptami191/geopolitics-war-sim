@@ -1,4 +1,14 @@
 import { Country, Leader, CanonicalWorld, CountryState, LeaderState, WorldEvent, OperationState, IntelFact, TreatyState, Ideology } from '../types';
+import { resolveEvents } from '../sim/resolvers/eventResolver';
+import { resolveOperations } from '../sim/resolvers/operationResolver';
+import { resolveIntel } from '../sim/resolvers/intelResolver';
+import { resolveTreaties } from '../sim/resolvers/treatyResolver';
+import { resolveEconomy } from '../sim/resolvers/economyResolver';
+import { resolveMilitary } from '../sim/resolvers/militaryResolver';
+import { resolveCyber } from '../sim/resolvers/cyberResolver';
+import { resolveAI } from '../sim/resolvers/aiResolver';
+import { computeDerivedMetrics } from '../sim/derived/derivedMetrics';
+import { processBusEventQueue } from '../sim/eventBus/dispatcher';
 
 export function getCapital(countryId: string): string {
   const capitals: Record<string, string> = {
@@ -532,65 +542,76 @@ export function advanceCanonicalWorldTick(world: CanonicalWorld, updatedCountrie
     }
   });
 
-  // Calculate new derived indices
-  const unstableCountries = Object.keys(updatedCountries)
-    .filter(cid => updatedCountries[cid].regimeStability < 45)
-    .map(cid => cid);
-
-  const nuclearCountries = Object.keys(updatedCountries)
-    .filter(cid => updatedCountries[cid].military.nuclearStatus)
-    .map(cid => cid);
-
-  const sanctionedCountries = Object.keys(updatedCountriesRoster)
-    .filter(cid => updatedCountriesRoster[cid].economic.sanctionedBy.length > 0)
-    .map(cid => cid);
-
-  const totalStab = Object.values(updatedCountries).reduce((a, b) => a + b.regimeStability, 0);
-  const globalAverageStability = Math.round(totalStab / Object.keys(updatedCountries).length);
-
-  const highRiskFlashpoints = Object.keys(updatedCountries).map(cid => {
-    let score = 0;
-    let hazardReason = 'Stable Baseline';
-    
-    // Contrib from average hostile opinions
-    const opinionSum = Object.values(updatedCountries[cid].ai.hostilityByCountry).reduce((a, b) => a + b, 0);
-    const instability = 100 - updatedCountries[cid].regimeStability;
-    
-    score = Math.round((opinionSum / Object.keys(updatedCountries).length) * 0.4 + instability * 0.6);
-
-    if (cid === 'PS') {
-      hazardReason = 'Severe sectarian political friction and armed borders.';
-      score = 95;
-    } else if (cid === 'TW') {
-      hazardReason = 'Constested sovereign claim by high-aggression rival.';
-      score = 88;
-    } else if (cid === 'PK') {
-      hazardReason = 'Nuclear-armed regime stability strains and cross-border tension.';
-      score = 78;
-    } else if (score > 60) {
-      hazardReason = 'Elevated regional rivalries and internal stress index.';
-    }
-
-    return { countryId: cid, score, hazardReason };
-  }).sort((a,b) => b.score - a.score);
-
-  const totalHostility = Object.values(updatedCountries).reduce((sum, c) => {
-    return sum + Object.values(c.ai.hostilityByCountry).reduce((s, h) => s + h, 0);
-  }, 0);
-  const averageHostility = totalHostility / (Object.keys(updatedCountries).length * (Object.keys(updatedCountries).length - 1));
-  const globalTensionIndex = Math.min(100, Math.max(10, Math.round(averageHostility + 15)));
-
-  return {
+  // Base nextWorld container
+  let nextWorld: CanonicalWorld = {
     ...world,
     countriesById: updatedCountries,
     tick: currentTick,
-    derivedIndexes: {
-      unstableCountries,
-      nuclearCountries,
-      sanctionedCountries,
-      highRiskFlashpoints,
-      globalAverageStability,
-      globalTensionIndex,
-    },
+    busEventQueue: world.busEventQueue || [],
+    busEventHistory: world.busEventHistory || [],
   };
+
+  const logsCollector: string[] = [];
+
+  // Resolution 1: World Event progression
+  const eventRes = resolveEvents(nextWorld, currentTick);
+  nextWorld.eventsById = eventRes.updatedEvents;
+  logsCollector.push(...eventRes.logs);
+
+  // Resolution 2: Covert Operation progression
+  const opRes = resolveOperations(nextWorld, currentTick);
+  nextWorld.operationsById = opRes.updatedOperations;
+  logsCollector.push(...opRes.logs);
+
+  // Resolution 3: Intel Facts aging & discovery
+  const intelRes = resolveIntel(nextWorld, currentTick);
+  nextWorld.intelFactsById = intelRes.updatedIntel;
+  logsCollector.push(...intelRes.logs);
+
+  // Resolution 4: Treaty status and compliance checks
+  const treatyRes = resolveTreaties(nextWorld, currentTick);
+  nextWorld.treatiesById = treatyRes.updatedTreaties;
+  logsCollector.push(...treatyRes.logs);
+
+  // Resolution 5: Economic drift & stress propagation
+  const econRes = resolveEconomy(nextWorld, currentTick);
+  nextWorld.countriesById = econRes.updatedCountries;
+  logsCollector.push(...econRes.logs);
+
+  // Resolution 6: Military readiness & mobilization
+  const milRes = resolveMilitary(nextWorld, currentTick);
+  nextWorld.countriesById = milRes.updatedCountries;
+  logsCollector.push(...milRes.logs);
+
+  // Resolution 7: Cyber incident Containment & Health
+  const cyberRes = resolveCyber(nextWorld, currentTick);
+  nextWorld.countriesById = cyberRes.updatedCountries;
+  logsCollector.push(...cyberRes.logs);
+
+  // Resolution 8: AI priorities/focus periodic assessment
+  const aiRes = resolveAI(nextWorld, currentTick);
+  nextWorld.countriesById = aiRes.updatedCountries;
+  logsCollector.push(...aiRes.logs);
+
+  // Resolution 8.5: Shared World Event Bus processing
+  const busRes = processBusEventQueue(nextWorld, updatedCountriesRoster, currentTick);
+  logsCollector.push(...busRes.logs);
+
+  // Resolution 9: Recalculate derived indices & flashpoint heat
+  const derived = computeDerivedMetrics(nextWorld.countriesById, nextWorld.eventsById);
+  nextWorld.derivedIndexes = derived;
+
+  // Resolution 10: Timeline writebacks
+  const formattedLogs = logsCollector.map(log => ({
+    tick: currentTick,
+    desc: log,
+    category: 'SYSTEM' as const
+  }));
+
+  nextWorld.timeline = [
+    ...formattedLogs,
+    ...nextWorld.timeline
+  ].slice(0, 100);
+
+  return nextWorld;
 }

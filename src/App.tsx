@@ -4,7 +4,7 @@ import { usePlayerStore } from './store/playerStore';
 import { usePropagandaStore } from './store/propagandaStore';
 import { SCENARIOS } from './data/scenarios';
 import { initScenario } from './sim/scenarioEngine';
-import { restartTickTimer, stopTickTimer } from './sim/tickEngine';
+import { restartTickTimer, stopTickTimer, executeSimulationStep } from './sim/tickEngine';
 import { ScenarioId } from './types';
 import { playGlobeTransition } from './utils/transition';
 import { audio } from './utils/audio';
@@ -22,6 +22,7 @@ import IntelPanel from './components/panels/IntelPanel';
 import SpacePanel from './components/panels/SpacePanel';
 import PopulationPanel from './components/panels/PopulationPanel';
 import PropagandaPanel from './components/panels/PropagandaPanel';
+import CommandEventBusPanel from './components/panels/CommandEventBusPanel';
 
 import AnalysisModeSwitcher from './components/map/AnalysisModeSwitcher';
 import TimelineStrip from './components/map/TimelineStrip';
@@ -83,6 +84,7 @@ const getTabClassification = (tabId: number): string => {
     case 6: return "TOP SECRET"; // Intel
     case 7: return "SECRET"; // Space
     case 8: return "RESTRICTED"; // Population
+    case 10: return "COSMIC STRATEGY"; // Event pipeline trace (F10)
     default: return "CONFIDENTIAL";
   }
 };
@@ -155,6 +157,7 @@ function ActivePanelWrapper({ activeTab, getTabClassification }: { activeTab: nu
       {activeTab === 7 && <SpacePanel />}
       {activeTab === 8 && <PopulationPanel />}
       {activeTab === 9 && <PropagandaPanel />}
+      {activeTab === 10 && <CommandEventBusPanel />}
     </div>
   );
 }
@@ -275,6 +278,10 @@ export default function App() {
         const opsCount = usePropagandaStore.getState().activeOperations.filter(o => o.createdBy === 'PLAYER' && o.active).length;
         const score = playerCountryData.domesticNarrative ?? 55;
         return `ops:${opsCount} dms:${score.toFixed(0)}%`;
+      }
+      case 10: { // SHIFT EVENT PIPELINE
+        const busHistory = useWorldStore.getState().world?.busEventHistory?.length || 0;
+        return `signals:${busHistory} active`;
       }
       default:
         return '';
@@ -848,6 +855,52 @@ export default function App() {
           >
             🔥 HYPER
           </button>
+
+          <div className="h-4 w-[1px] bg-[#1a3a1a]" />
+
+          {/* Time & Speed Controls */}
+          <div className="flex items-center gap-1.5 bg-[#020502]/85 border border-[#1a5c1a]/55 p-1 px-1.5 rounded-sm select-none">
+            {/* Status Label */}
+            <span className={`text-[8.5px] font-extrabold tracking-widest uppercase px-1 rounded-sm border mr-1 ${
+              playerState.tickSpeed === 'PAUSED'
+                ? 'border-red-950 bg-red-950/20 text-red-500 animate-pulse'
+                : 'border-green-950 bg-green-950/20 text-[#00ff44]'
+            }`}>
+              {playerState.tickSpeed === 'PAUSED' ? '■ PAUSED' : '▶ RUNNING'}
+            </span>
+
+            {/* Precise manual stepping buttons */}
+            <button
+              onClick={() => {
+                audio.sfxKeyClick();
+                if (playerState.tickSpeed !== 'PAUSED') {
+                  setTickSpeed('PAUSED');
+                  stopTickTimer();
+                }
+                executeSimulationStep();
+              }}
+              className="px-2 py-0.5 border border-[#1a5c1a]/45 bg-[#0c180c] hover:bg-[#1a5c1a]/30 text-white hover:text-[#00ff44] text-[8.5px] uppercase font-bold cursor-pointer transition-all rounded-sm hover:border-[#00ff44]"
+              title="Manual Step +1 Tick"
+            >
+              +1 TURN
+            </button>
+            <button
+              onClick={() => {
+                audio.playPhaseReveal();
+                if (playerState.tickSpeed !== 'PAUSED') {
+                  setTickSpeed('PAUSED');
+                  stopTickTimer();
+                }
+                for (let i = 0; i < 5; i++) {
+                  executeSimulationStep();
+                }
+              }}
+              className="px-2 py-0.5 border border-[#1a5c1a]/45 bg-[#0c180c] hover:bg-[#1a5c1a]/30 text-white hover:text-[#00ff44] text-[8.5px] uppercase font-bold cursor-pointer transition-all rounded-sm hover:border-[#00ff44]"
+              title="Manual Step +5 Ticks"
+            >
+              +5 TURNS
+            </button>
+          </div>
         </div>
       </header>
 
@@ -953,6 +1006,7 @@ export default function App() {
                   { id: 7, label: 'SPACE (F7)' },
                   { id: 8, label: 'POPULATION (F8)' },
                   { id: 9, label: 'PROPAGANDA (F9)' },
+                  { id: 10, label: 'SIGNAL TRACE (F10)' },
                 ].map((tab) => {
                   const isActive = playerState.activeTab === tab.id;
                   return (
