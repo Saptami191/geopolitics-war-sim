@@ -1,11 +1,94 @@
 import { create } from 'zustand';
 import { produce } from 'immer';
-import { WorldState, Country, BallisticStrike, CommodityMarket, ArmsDeal, ThreatLevel, LeaderPersonality, MajorActionType, ScheduledConsequence } from '../types';
+import { WorldState, Country, BallisticStrike, CommodityMarket, ArmsDeal, ThreatLevel, LeaderPersonality, MajorActionType, ScheduledConsequence, WorldConfig, CountryStartConfig } from '../types';
 import { INITIAL_COUNTRIES } from '../data/countries';
 import { COMMODITY_BASELINES } from '../constants';
 import { useBlackMarketStore } from './blackMarketStore';
 import { useLeaderStore } from './leaderStore';
+import { usePlayerStore } from './playerStore';
 import { ConsequenceEngine } from '../sim/consequenceEngine';
+
+// Private utility to sync worldBuilderConfig to live countries roster for real-time map preview alignment
+const syncBuilderConfigToCountries = (draft: any) => {
+  if (!draft.worldBuilderConfig) return;
+  const playerCountryId = usePlayerStore.getState().countryId || 'US';
+  Object.keys(draft.worldBuilderConfig).forEach((id) => {
+    const custom = draft.worldBuilderConfig[id];
+    const country = draft.countries[id];
+    if (country && custom) {
+      country.political.ideology = custom.ideology;
+      country.economic.gdpB = custom.gdp;
+      
+      const basePowerMap: Record<string, number> = {
+        US: 95, CN: 88, RU: 90, IN: 72, PK: 55, IL: 78, IR: 60, GB: 70, FR: 68, DE: 62, JP: 58, KR: 60, SA: 65, BR: 48, ZA: 35, AU: 55, TR: 62, EG: 50, TW: 64, PS: 12
+      };
+      const basePower = basePowerMap[id] || 50;
+      const ratio = custom.military / basePower;
+      
+      if (country.arsenal?.units) {
+        country.arsenal.units.forEach((unit: any) => {
+          if (unit.count > 0 && unit.type !== 'ICBM' && unit.type !== 'SLBM') {
+            unit.count = Math.max(1, Math.round(unit.count * ratio));
+          }
+        });
+      }
+      
+      if (id !== playerCountryId) {
+        country.opinions[playerCountryId] = custom.opinion;
+      }
+      
+      country.allianceBlock = custom.alliance;
+      country.arsenal.nuclearCapable = custom.nuclear;
+      
+      if (!custom.nuclear) {
+        if (country.arsenal?.units) {
+          country.arsenal.units.forEach((unit: any) => {
+            if (unit.type === 'ICBM' || unit.type === 'SLBM') {
+              unit.count = 0;
+            }
+          });
+        }
+      } else {
+        if (country.arsenal?.units) {
+          let hasNukes = false;
+          country.arsenal.units.forEach((unit: any) => {
+            if ((unit.type === 'ICBM' || unit.type === 'SLBM') && unit.count > 0) {
+              hasNukes = true;
+            }
+          });
+          if (!hasNukes) {
+            country.arsenal.units.forEach((unit: any) => {
+              if (unit.type === 'ICBM') {
+                unit.count = 50;
+              }
+            });
+          }
+        }
+      }
+    }
+  });
+};
+
+export function getInitialWorldBuilderConfig(): WorldConfig {
+  const config: WorldConfig = {};
+  const basePower: Record<string, number> = {
+    US: 95, CN: 88, RU: 90, IN: 72, PK: 55, IL: 78, IR: 60, GB: 70, FR: 68, DE: 62, JP: 58, KR: 60, SA: 65, BR: 48, ZA: 35, AU: 55, TR: 62, EG: 50, TW: 64, PS: 12, UA: 45
+  };
+  Object.keys(INITIAL_COUNTRIES).forEach((id) => {
+    const country = INITIAL_COUNTRIES[id];
+    if (country) {
+      config[id] = {
+        ideology: country.political.ideology,
+        military: basePower[id] || 50,
+        gdp: country.economic.gdpB,
+        opinion: country.opinions['US'] || 0,
+        alliance: country.allianceBlock,
+        nuclear: country.arsenal.nuclearCapable,
+      };
+    }
+  });
+  return config;
+}
 
 interface WorldStoreActions {
   applyTickDelta: (updater: (draft: WorldState) => void) => void;
@@ -21,10 +104,15 @@ interface WorldStoreActions {
   resolveScheduledConsequence: (id: string) => void;
   tickConsequences: (currentTick: number) => void;
   clearExpiredHistory: () => void;
+  setWorldBuilderConfig: (config: WorldConfig) => void;
+  updateWorldBuilderCountryConfig: (countryId: string, config: Partial<CountryStartConfig>) => void;
+  resetWorldBuilderConfig: () => void;
+  applyWorldBuilderConfig: (playerCountryId: string) => void;
 }
 
 export const useWorldStore = create<WorldState & WorldStoreActions>((set) => ({
   countries: JSON.parse(JSON.stringify(INITIAL_COUNTRIES)), // Deep copy of seed
+  worldBuilderConfig: getInitialWorldBuilderConfig(),
   activeStrikes: [],
   commodityMarkets: Object.keys(COMMODITY_BASELINES).map((key) => {
     const baseline = COMMODITY_BASELINES[key as keyof typeof COMMODITY_BASELINES];
@@ -225,5 +313,33 @@ export const useWorldStore = create<WorldState & WorldStoreActions>((set) => ({
 
   clearExpiredHistory: () => set(produce((draft: WorldState & WorldStoreActions) => {
     draft.recentResolvedConsequences = [];
+  })),
+
+  setWorldBuilderConfig: (config) => set(produce((draft: WorldState & WorldStoreActions) => {
+    draft.worldBuilderConfig = config;
+    syncBuilderConfigToCountries(draft);
+  })),
+
+  updateWorldBuilderCountryConfig: (countryId, config) => set(produce((draft: WorldState & WorldStoreActions) => {
+    if (!draft.worldBuilderConfig) {
+      draft.worldBuilderConfig = getInitialWorldBuilderConfig();
+    }
+    if (draft.worldBuilderConfig[countryId]) {
+      draft.worldBuilderConfig[countryId] = {
+        ...draft.worldBuilderConfig[countryId],
+        ...config
+      };
+    }
+    syncBuilderConfigToCountries(draft);
+  })),
+
+  resetWorldBuilderConfig: () => set(produce((draft: WorldState & WorldStoreActions) => {
+    draft.worldBuilderConfig = getInitialWorldBuilderConfig();
+    syncBuilderConfigToCountries(draft);
+  })),
+
+  applyWorldBuilderConfig: (playerCountryId) => set(produce((draft: WorldState & WorldStoreActions) => {
+    if (!draft.worldBuilderConfig) return;
+    syncBuilderConfigToCountries(draft);
   })),
 }));

@@ -1,4 +1,26 @@
-export type Ideology = 'DEMOCRACY' | 'AUTOCRACY' | 'MILITARY_JUNTA' | 'THEOCRACY' | 'TECHNOCRACY' | 'OLIGARCHY';
+export type Ideology = 'DEMOCRACY' | 'AUTOCRACY' | 'MILITARY_JUNTA' | 'THEOCRACY' | 'TECHNOCRACY' | 'OLIGARCHY' | 'COMMUNISM' | 'MONARCHY';
+
+export const IDEOLOGIES: Ideology[] = [
+  'DEMOCRACY',
+  'AUTOCRACY',
+  'MILITARY_JUNTA',
+  'THEOCRACY',
+  'TECHNOCRACY',
+  'OLIGARCHY',
+  'COMMUNISM',
+  'MONARCHY'
+];
+
+export interface CountryStartConfig {
+  ideology: Ideology;
+  military: number;       // 1 - 100 power scale
+  gdp: number;            // GDP in Billions USD
+  opinion: number;        // -100 to 100 sentiment
+  alliance: AllianceBlock; // NATO, BRICS, GCC, etc.
+  nuclear: boolean;       // Nuclear status
+}
+
+export type WorldConfig = Record<string, CountryStartConfig>;
 
 export type AllianceBlock = 'NATO' | 'BRICS' | 'GCC' | 'QUAD' | 'SCO' | 'NEUTRAL';
 
@@ -436,6 +458,7 @@ export interface WorldState {
   scheduledConsequences?: ScheduledConsequence[];
   recentResolvedConsequences?: ScheduledConsequence[];
   aiOperationsLog?: AIOperationLogEntry[];
+  worldBuilderConfig?: WorldConfig;
 }
 
 export type TickDuration = "day" | "week" | "month";

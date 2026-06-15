@@ -96,6 +96,7 @@ export function GeoMap({ mode: initialMode, layers: initialLayers, theme = 'dark
   const units = useUnitStore((s) => s.units);
   const selectedUnitId = useUnitStore((s) => s.selectedUnitId);
   const selectedHotspotId = useUIStore((s) => s.selectedHotspotId);
+  const inspectedCountryId = useUIStore((s) => s.countryInspectorId);
   
   // Use map canonical selectors
   const mapState = useCanonicalMapState(localLayers, theme);
@@ -225,6 +226,7 @@ export function GeoMap({ mode: initialMode, layers: initialLayers, theme = 'dark
           coordinates: centroid,
           isPlayer,
           isTarget,
+          allianceBlock: country.allianceBlock || 'NEUTRAL',
         };
       }).filter(d => d.coordinates[0] !== 0 || d.coordinates[1] !== 0);
 
@@ -233,16 +235,47 @@ export function GeoMap({ mode: initialMode, layers: initialLayers, theme = 'dark
           id: 'political-centroids',
           data: politicalPoints,
           getPosition: (d: any) => d.coordinates,
-          getRadius: (d: any) => d.isPlayer ? 180000 : (d.isTarget ? 150000 : 70000),
-          getFillColor: (d: any) => d.isPlayer ? [0, 229, 200, 230] : (d.isTarget ? [255, 59, 78, 230] : [0, 229, 200, 75]),
-          getLineColor: (d: any) => d.isPlayer ? [0, 255, 170, 255] : [0, 229, 200, 180],
+          getRadius: (d: any) => {
+            if (d.id === inspectedCountryId) return 240000;
+            if (d.isPlayer) return 180000;
+            if (d.isTarget) return 150000;
+            return 90000;
+          },
+          getFillColor: (d: any) => {
+            if (d.id === inspectedCountryId) {
+              return [0, 255, 68, 250]; // Bright highlight green for edited/inspected country in builder
+            }
+            if (d.isPlayer) {
+              return [0, 229, 200, 230]; // Cyan for playable nation
+            }
+            if (d.isTarget) {
+              return [255, 59, 78, 230]; // Cyber red for active warfare target
+            }
+            
+            // Color code dynamically by strategic superpower alliance bloc
+            const alpha = 180;
+            switch (d.allianceBlock) {
+              case 'NATO': return [59, 130, 246, alpha];        // Royal Blue
+              case 'BRICS': return [249, 115, 22, alpha];       // Terracotta Orange
+              case 'GCC': return [234, 179, 8, alpha];          // Desert Gold/Yellow
+              case 'QUAD': return [20, 184, 166, alpha];         // Marine Teal
+              case 'SCO': return [168, 85, 247, alpha];         // Sovereign Purple
+              case 'NEUTRAL':
+              default:
+                return [100, 116, 139, 100]; // Neutral grey
+            }
+          },
+          getLineColor: (d: any) => {
+            if (d.id === inspectedCountryId) return [255, 255, 255, 255];
+            return d.isPlayer ? [0, 255, 170, 255] : [0, 229, 200, 180];
+          },
           lineWidthMinPixels: 1,
           stroked: true,
           pickable: true,
           onClick: handleItemClick,
           updateTriggers: {
-            getFillColor: [playerCountryId, targetCountryId],
-            getRadius: [playerCountryId, targetCountryId]
+            getFillColor: [playerCountryId, targetCountryId, inspectedCountryId, countries],
+            getRadius: [playerCountryId, targetCountryId, inspectedCountryId, countries]
           }
         })
       );
