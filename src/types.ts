@@ -450,7 +450,6 @@ export interface WorldState {
   commodityMarkets: CommodityMarket[];
   activeArmsDeals: ArmsDeal[];
   globalThreatLevel: ThreatLevel;
-  nuclearExchangeOccurred: boolean;
   globalEventLog: { tick: number; text: string; severity: 'INFO' | 'WARNING' | 'CRITICAL' | 'SYSTEM' }[];
   currentTick: number;
   lastWarDeclarationTick?: number;
@@ -459,6 +458,8 @@ export interface WorldState {
   recentResolvedConsequences?: ScheduledConsequence[];
   aiOperationsLog?: AIOperationLogEntry[];
   worldBuilderConfig?: WorldConfig;
+  nuclearExchangeOccurred: boolean;
+  world: CanonicalWorld;
 }
 
 export type TickDuration = "day" | "week" | "month";
@@ -701,4 +702,233 @@ export interface CountryHotspot {
   threatLevel?: string;
   confidenceScore?: number;
   strategicValue?: number;
+}
+
+// ==========================================
+// CANONICAL WORLD STATE - SIMULATION CORE MODELS
+// ==========================================
+
+export interface EconomicState {
+  gdp: number;
+  growthRate: number;
+  inflation: number;
+  unemployment: number;
+  debtRatio: number;
+  reserves: number;
+  currencyStrength: number;
+  tradeBalance: number;
+  sanctionsExposure: number;
+  importDependency: number;
+  exportDependency: number;
+  energyProfile: string;
+  sectorBreakdown: Record<string, number>;
+  supplyRisk: number;
+  fiscalSpace: number;
+  economicStress: number;
+  recoveryRate: number;
+}
+
+export interface MilitaryState {
+  manpower: number;
+  readiness: number;
+  morale: number;
+  logisticsCapacity: number;
+  mobilizationLevel: number;
+  nuclearStatus: boolean;
+  commandIntegrity: number;
+  forceProjection: number;
+  unitAbstractions: string[];
+  strategicDeterrence: number;
+  missileDefense: number;
+  a2adStrength: number;
+  activeTheaters: string[];
+  warFatigue: number;
+  equipmentHealth: number;
+}
+
+export interface CyberState {
+  offensiveCapability: number;
+  defensiveCapability: number;
+  infrastructureResilience: number;
+  activeIncidents: number;
+  intrusionLevel: number;
+  attributionExposure: number;
+  cyberDoctrine: string;
+  aptStrength: number;
+  civilianNetworkHealth: number;
+  militaryNetworkHealth: number;
+  financialNetworkHealth: number;
+  recoveryCapacity: number;
+}
+
+export interface AIState {
+  personalityVector: Record<string, number>;
+  threatPerceptions: Record<string, number>;
+  trustByCountry: Record<string, number>;
+  hostilityByCountry: Record<string, number>;
+  strategicGoals: string[];
+  activePlans: string[];
+  memoryLog: string[];
+  redLines: string[];
+  decisionStyle: string;
+  currentFocus: string;
+  escalationTolerance: number;
+  deceptionPreference: number;
+  riskTolerance: number;
+  allianceReliabilityScores: Record<string, number>;
+}
+
+export interface CountryState {
+  id: string;
+  name: string;
+  shortName: string;
+  isoCode: string; // stable identifier
+  region: string;
+  subregion: string;
+  capital: string;
+  population: number; // millions
+  territory?: any; // optional geographic metadata
+  ideology: Ideology;
+  governmentType: string;
+  regimeStability: number; // 0-100
+  publicSentiment: number; // 0-100
+  unrest: number; // 0-100
+  legitimacy: number; // 0-100
+  corruption: number; // 0-100
+  strategicResources: string[];
+  allianceIds: string[];
+  rivalIds: string[];
+  treatyIds: string[];
+  leaderId: string;
+  economy: EconomicState;
+  military: MilitaryState;
+  cyber: CyberState;
+  ai: AIState;
+  tags: string[];
+  createdFromScenarioPreset: boolean;
+  lastUpdatedTick: number;
+}
+
+export interface LeaderState {
+  id: string;
+  countryId: string;
+  fullName: string;
+  title: string;
+  ideologyAlignment: Ideology;
+  traits: string[];
+  aggression: number; // 0-100
+  caution: number; // 0-100
+  ambition: number; // 0-100
+  paranoia: number; // 0-100
+  popularity: number; // 0-100
+  health: number; // 0-100
+  legitimacyBonus: number;
+  diplomacyStyle: string;
+  militaryPosturePreference: string;
+  hiddenRedLines: string[];
+  publicPersona: string;
+  internalNotes?: string;
+  memoryHooks: string[];
+}
+
+export interface WorldEvent {
+  id: string;
+  type: 'CRISIS' | 'DIPLOMATIC' | 'MILITARY' | 'ECONOMIC' | 'CYBER' | 'COVERT';
+  title: string;
+  description: string;
+  severity: 'INFO' | 'WARNING' | 'CRITICAL' | 'CLANDESTINE';
+  status: 'emerging' | 'active' | 'resolved' | 'archived';
+  visibility: 'PUBLIC' | 'PLAYER_ONLY' | 'CLASSIFIED';
+  startTick: number;
+  endTick: number | null;
+  involvedCountryIds: string[];
+  involvedLeaderIds: string[];
+  originatingSystem: string;
+  effects: any[];
+  tags: string[];
+  linkedOperationIds: string[];
+  linkedIntelFactIds: string[];
+  escalationPotential: number; // 0-100
+  historicalLogEntries: string[];
+}
+
+export interface OperationState {
+  id: string;
+  type: string;
+  subtype: string;
+  sponsorCountryId: string;
+  targetCountryIds: string[];
+  status: 'PLANNING' | 'ACTIVE' | 'EXPOSED' | 'COMPLETED' | 'FAILED' | 'ABORTED';
+  secrecyLevel: number;
+  attributionRisk: number;
+  startTick: number;
+  projectedEndTick: number;
+  requiredAssets: string[];
+  allocatedBudget: number; // in $B
+  expectedEffects: string[];
+  actualEffects: string[];
+  exposed: boolean;
+  failureReason: string | null;
+  linkedEventIds: string[];
+  linkedIntelFactIds: string[];
+  ownerSystem: string;
+}
+
+export interface IntelFact {
+  id: string;
+  subjectType: 'EVENT' | 'OPERATION' | 'COUNTRY' | 'LEADER' | 'OTHER';
+  subjectId: string;
+  title: string;
+  summary: string;
+  sourceType: 'SIGINT' | 'HUMINT' | 'IMINT' | 'OSINT' | 'DEFAULT';
+  confidence: number; // 0-100
+  discoveredTick: number;
+  expiresTick: number | null;
+  verified: boolean;
+  disputed: boolean;
+  visibilityScope: 'PUBLIC' | 'PLAYER' | 'CLASSIFIED';
+  relatedCountryIds: string[];
+  relatedEventIds: string[];
+  relatedOperationIds: string[];
+  tags: string[];
+  metadata: Record<string, any>;
+}
+
+export interface TreatyState {
+  id: string;
+  name: string;
+  type: 'ALLIANCE' | 'NON_AGGRESSION' | 'TRADE' | 'DENUCLEARIZATION' | 'CEASE_FIRE';
+  signatoryCountryIds: string[];
+  obligations: string[];
+  enforcementStrength: number; // 0-100
+  secrecyLevel: number; // 0-100
+  startTick: number;
+  expirationTick: number | null;
+  complianceByCountry: Record<string, number>; // 0-100 compliance scores
+  violationHistory: string[];
+  status: 'ACTIVE' | 'SUSPENDED' | 'EXPIRED' | 'TERMINATED';
+  blocEffects: Record<string, any>;
+  tags: string[];
+}
+
+export interface CanonicalWorld {
+  countriesById: Record<string, CountryState>;
+  leadersById: Record<string, LeaderState>;
+  eventsById: Record<string, WorldEvent>;
+  operationsById: Record<string, OperationState>;
+  intelFactsById: Record<string, IntelFact>;
+  treatiesById: Record<string, TreatyState>;
+  tick: number;
+  selectedCountryId: string | null;
+  selectedLeaderId: string | null;
+  timeline: { tick: number; desc: string; category: string }[];
+  derivedIndexes: {
+    unstableCountries: string[];
+    nuclearCountries: string[];
+    sanctionedCountries: string[];
+    highRiskFlashpoints: { countryId: string; score: number; hazardReason: string }[];
+    globalAverageStability: number;
+    globalTensionIndex: number; // 0-100
+  };
+  scenarioMeta: Record<string, any>;
 }

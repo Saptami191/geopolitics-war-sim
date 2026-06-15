@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { produce } from 'immer';
 import { WorldState, Country, BallisticStrike, CommodityMarket, ArmsDeal, ThreatLevel, LeaderPersonality, MajorActionType, ScheduledConsequence, WorldConfig, CountryStartConfig } from '../types';
 import { INITIAL_COUNTRIES } from '../data/countries';
+import { generateInitialCanonicalWorld, advanceCanonicalWorldTick } from '../utils/canonicalGenerator';
 import { COMMODITY_BASELINES } from '../constants';
 import { useBlackMarketStore } from './blackMarketStore';
 import { useLeaderStore } from './leaderStore';
@@ -67,6 +68,9 @@ const syncBuilderConfigToCountries = (draft: any) => {
       }
     }
   });
+  if (draft.world) {
+    draft.world = advanceCanonicalWorldTick(draft.world, draft.countries, draft.currentTick || 0);
+  }
 };
 
 export function getInitialWorldBuilderConfig(): WorldConfig {
@@ -112,6 +116,7 @@ interface WorldStoreActions {
 
 export const useWorldStore = create<WorldState & WorldStoreActions>((set) => ({
   countries: JSON.parse(JSON.stringify(INITIAL_COUNTRIES)), // Deep copy of seed
+  world: generateInitialCanonicalWorld(JSON.parse(JSON.stringify(INITIAL_COUNTRIES)), {}),
   worldBuilderConfig: getInitialWorldBuilderConfig(),
   activeStrikes: [],
   commodityMarkets: Object.keys(COMMODITY_BASELINES).map((key) => {
@@ -175,11 +180,17 @@ export const useWorldStore = create<WorldState & WorldStoreActions>((set) => ({
 
   applyTickDelta: (updater) => set(produce((draft: WorldState & WorldStoreActions) => {
     updater(draft);
+    if (draft.world) {
+      draft.world = advanceCanonicalWorldTick(draft.world, draft.countries, draft.currentTick);
+    }
   })),
 
   updateCountry: (id, updater) => set(produce((draft: WorldState & WorldStoreActions) => {
     if (draft.countries[id]) {
       updater(draft.countries[id]);
+      if (draft.world) {
+        draft.world = advanceCanonicalWorldTick(draft.world, draft.countries, draft.currentTick);
+      }
     }
   })),
 
@@ -229,8 +240,12 @@ export const useWorldStore = create<WorldState & WorldStoreActions>((set) => ({
   resetWorld: (leaderOverrides) => {
     useBlackMarketStore.getState().resetMarket();
     useLeaderStore.getState().initializeLeadersForAllCountries(0, leaderOverrides);
+    const initialCountries = JSON.parse(JSON.stringify(INITIAL_COUNTRIES));
+    const currentLeaders = useLeaderStore.getState().leadersByCountryId;
+    const initialCanonical = generateInitialCanonicalWorld(initialCountries, currentLeaders, 0);
     set({
-      countries: JSON.parse(JSON.stringify(INITIAL_COUNTRIES)),
+      countries: initialCountries,
+      world: initialCanonical,
       activeStrikes: [],
       commodityMarkets: Object.keys(COMMODITY_BASELINES).map((key) => {
         const baseline = COMMODITY_BASELINES[key as keyof typeof COMMODITY_BASELINES];

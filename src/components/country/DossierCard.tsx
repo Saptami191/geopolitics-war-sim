@@ -20,7 +20,7 @@ interface DossierCardProps {
 
 export const DossierCard: React.FC<DossierCardProps> = ({ countryId, onClose }) => {
   const [flipped, setFlipped] = useState(false);
-  const [activeTab, setActiveTab] = useState<'GENERAL' | 'MILITARY' | 'COVERT' | 'INTEL'>('GENERAL');
+  const [activeTab, setActiveTab] = useState<'GENERAL' | 'MILITARY' | 'COVERT' | 'INTEL' | 'SYSTEMS'>('GENERAL');
   
   const [activeHeroImageIdx, setActiveHeroImageIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -41,6 +41,7 @@ export const DossierCard: React.FC<DossierCardProps> = ({ countryId, onClose }) 
   const [coordinatesCopied, setCoordinatesCopied] = useState(false);
 
   const country = useWorldStore((state) => state.countries[countryId]);
+  const world = useWorldStore((state) => state.world);
   const playerCountryId = usePlayerStore((state) => state.countryId);
   const hudMode = usePlayerStore((state) => state.hudMode);
   
@@ -536,7 +537,7 @@ export const DossierCard: React.FC<DossierCardProps> = ({ countryId, onClose }) 
 
               {/* Tabs Navigation Bar with sliding-like visual borders */}
               <div className="flex border-b border-[#0d2a0d]/60 pb-2 mb-3 gap-2 shrink-0 justify-start">
-                {(['GENERAL', 'MILITARY', 'COVERT', 'INTEL'] as const).map((tab) => (
+                {(['GENERAL', 'MILITARY', 'COVERT', 'INTEL', 'SYSTEMS'] as const).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => { audio.sfxKeyClick(); setActiveTab(tab); }}
@@ -555,7 +556,7 @@ export const DossierCard: React.FC<DossierCardProps> = ({ countryId, onClose }) 
               <div className="grid grid-cols-12 gap-3.5 min-h-0 flex-1 overflow-hidden relative">
                 
                 {/* Left Column: Portrait & Behavioral Profiler (Always visible except in deep INTEL search screen for layout balance) */}
-                <div className={`col-span-3 flex flex-col items-center border-r border-[#124d12]/40 pr-3 min-h-0 overflow-y-auto custom-scrollbar ${activeTab === 'INTEL' ? 'hidden' : ''}`}>
+                <div className={`col-span-3 flex flex-col items-center border-r border-[#124d12]/40 pr-3 min-h-0 overflow-y-auto custom-scrollbar ${activeTab === 'INTEL' || activeTab === 'SYSTEMS' ? 'hidden' : ''}`}>
                   <div className="relative group border border-[#1a5c1a]/55 p-1 bg-black/40 rounded-sm">
                     <LeaderPortrait countryId={countryId} size={110} />
                     <div className="absolute inset-0 pointer-events-none border-2 border-green-500/0 group-hover:border-green-500/20 transition-all duration-200" />
@@ -648,7 +649,7 @@ export const DossierCard: React.FC<DossierCardProps> = ({ countryId, onClose }) 
                 </div>
 
                 {/* Right Tab Content Screen */}
-                <div className={`${activeTab === 'INTEL' ? 'col-span-12' : 'col-span-9'} flex flex-col justify-between min-h-0 overflow-y-auto custom-scrollbar pl-1`}>
+                <div className={`${activeTab === 'INTEL' || activeTab === 'SYSTEMS' ? 'col-span-12' : 'col-span-9'} flex flex-col justify-between min-h-0 overflow-y-auto custom-scrollbar pl-1`}>
                   
                   {/* --- GENERAL TAB MONITOR --- */}
                   {activeTab === 'GENERAL' && (
@@ -781,6 +782,175 @@ export const DossierCard: React.FC<DossierCardProps> = ({ countryId, onClose }) 
                           </div>
                         )}
                       </div>
+                    </div>
+                  )}
+
+                  {/* --- SYSTEMS TAB MONITOR --- */}
+                  {activeTab === 'SYSTEMS' && (
+                    <div className="space-y-3 text-[9px]/relaxed h-[360px] overflow-y-auto custom-scrollbar pr-1 flex-1">
+                      {(() => {
+                        const countryState = world?.countriesById[countryId];
+                        const leaderState = countryState?.leaderId ? world?.leadersById[countryState.leaderId] : null;
+                        if (!countryState) {
+                          return <div className="text-red-500 font-bold border border-red-950 p-2 text-center bg-red-950/20">CANONICAL SYSTEMS SYNCHRONIZATION LOCKED</div>;
+                        }
+                        
+                        const events = world?.eventsById ? Object.values(world.eventsById).filter(e => e.involvedCountryIds.includes(countryId)) : [];
+                        const ops = world?.operationsById ? Object.values(world.operationsById).filter(op => op.sponsorCountryId === countryId || op.targetCountryIds.includes(countryId)) : [];
+                        const intel = world?.intelFactsById ? Object.values(world.intelFactsById).filter(fact => fact.relatedCountryIds.includes(countryId)) : [];
+                        const treaties = world?.treatiesById ? Object.values(world.treatiesById).filter(t => t.signatoryCountryIds.includes(countryId)) : [];
+
+                        return (
+                          <div className="space-y-3">
+                            <div className="bg-[#020502]/80 p-2.5 border border-[#1a5c1a]/40 rounded-sm">
+                              <span className="text-[#00ff44] font-black text-[8px] tracking-widest block border-b border-[#124d12] pb-1 uppercase mb-2">
+                                ⚙ CANONICAL WORLD STATE ACTIVE ENGINE (TICK: {world?.tick || currentTick})
+                              </span>
+                              <div className="grid grid-cols-3 gap-2.5 text-[8.5px]">
+                                <div><span className="text-gray-500 uppercase font-black block text-[7px]">SYSTEM ISO CODE</span> <span className="text-white font-bold font-mono">{countryState.isoCode}</span></div>
+                                <div><span className="text-gray-500 uppercase font-black block text-[7px]">CAPITAL COMMAND</span> <span className="text-[#00ff44]">{countryState.capital}</span></div>
+                                <div><span className="text-gray-500 uppercase font-black block text-[7px]">REGISTRY REGION</span> <span className="text-white font-bold">{countryState.region} ({countryState.subregion})</span></div>
+                                <div><span className="text-gray-500 uppercase font-black block text-[7px]">GOV STATUS</span> <span className="text-[#ffb300] font-bold">{countryState.governmentType}</span></div>
+                                <div><span className="text-gray-500 uppercase font-black block text-[7px]">REGIME INDEX</span> <span className="text-white">{countryState.regimeStability}% STABILITY</span></div>
+                                <div><span className="text-gray-500 uppercase font-black block text-[7px]">PUBLIC SENTIMENT</span> <span className="text-cyan-400 font-bold">{countryState.publicSentiment}% APPROVAL</span></div>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                              {/* Leader details */}
+                              <div className="bg-[#121612]/35 border border-[#1a5c1a]/35 p-3 rounded-sm">
+                                <span className="text-pink-400 font-black block border-b border-[#1a5c1a]/20 pb-1 mb-1.5 uppercase tracking-wide text-[7.5px]">
+                                  ★ CANONICAL PROFILED LEADER STATE:
+                                </span>
+                                {leaderState ? (
+                                  <div className="space-y-1.5 text-[8.5px]">
+                                    <div><span className="text-gray-400">FULL NAME:</span> <span className="text-white font-extrabold">{leaderState.fullName}</span></div>
+                                    <div><span className="text-gray-400">EXECUTIVE TITLE:</span> <span className="text-[#00ff44]">{leaderState.title}</span></div>
+                                    <div className="flex gap-1.5 flex-wrap items-center mt-1"><span className="text-gray-400">TRAITS:</span> {leaderState.traits.map((t, idx) => <span key={idx} className="bg-green-950/40 text-green-400 px-1 border border-green-900 rounded-[2px] text-[7.5px]">{t}</span>)}</div>
+                                    <div className="grid grid-cols-3 gap-1 pt-1.5 border-t border-[#092009] mt-1.5">
+                                      <div><span className="text-gray-500 text-[6.5px] block font-bold uppercase">AGGRESSION</span> <span className="text-red-400 font-bold">{leaderState.aggression}%</span></div>
+                                      <div><span className="text-gray-500 text-[6.5px] block font-bold uppercase">CAUTION</span> <span className="text-blue-400 font-bold">{leaderState.caution}%</span></div>
+                                      <div><span className="text-gray-500 text-[6.5px] block font-bold uppercase">PARANOIA</span> <span className="text-yellow-400 font-bold">{leaderState.paranoia}%</span></div>
+                                    </div>
+                                    <div className="pt-1.5"><span className="text-gray-500 text-[7px]">HIDDEN RED-LINES:</span> <span className="text-red-400 font-bold italic block mt-0.5 border border-red-950/40 p-1.5 rounded bg-black/40 text-[7.5px]">"{leaderState.hiddenRedLines[0] || 'Sovereign boundaries violated'}"</span></div>
+                                  </div>
+                                ) : (
+                                  <p className="text-gray-500 italic">No leader mapped to this system identifier.</p>
+                                )}
+                              </div>
+
+                              {/* Strategic goals */}
+                              <div className="bg-[#121612]/35 border border-[#1a5c1a]/35 p-3 rounded-sm space-y-2">
+                                <span className="text-amber-400 font-black block border-b border-[#1a5c1a]/20 pb-1 mb-1.5 uppercase tracking-wide text-[7.5px]">
+                                  STRATEGIC GOALS & THREAT PERCEPTIONS
+                                </span>
+                                <div>
+                                  <span className="text-gray-400 block font-bold mb-1 uppercase text-[7px]">ACTIVE AI STRATEGY GOALS:</span>
+                                  <ul className="list-disc list-inside space-y-0.5 text-zinc-300 text-[8px]">
+                                    {(countryState.ai.strategicGoals || []).slice(0, 3).map((g, idx) => (
+                                      <li key={idx} className="truncate">{g}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                                <div className="border-t border-[#0d2a0d] pt-1.5 mt-1.5 text-[8px] space-y-1">
+                                  <span className="text-orange-400 font-bold text-[7.5px]">MONITORED THREAT PERCEPTIONS:</span>
+                                  <div className="grid grid-cols-2 gap-1.5 max-h-[50px] overflow-y-auto custom-scrollbar pr-0.5">
+                                    {Object.keys(countryState.ai.threatPerceptions || {}).slice(0, 4).map((cid) => (
+                                      <div key={cid} className="flex justify-between border-b border-[#124d12]/10 py-0.5 font-mono">
+                                        <span className="text-gray-500 font-bold">{cid}:</span>
+                                        <span className="text-red-400 font-bold">{countryState.ai.threatPerceptions[cid]}% WRN</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Economy, military, and cyber snapshots */}
+                            <div className="grid grid-cols-3 gap-2.5">
+                              <div className="bg-[#020502]/60 p-2 border border-[#1a5c1a]/30 rounded-sm space-y-1.5">
+                                <span className="text-[#00ff44] font-black block border-b border-[#0d2a0d] pb-0.5 text-[7px] uppercase tracking-wider">
+                                  ECONOMY SNAPSHOT
+                                </span>
+                                <div className="space-y-1 text-[7.5px] text-zinc-300">
+                                  <div className="flex justify-between"><span>GDP growth:</span> <span className="text-[#00ff44] font-bold">{countryState.economy.growthRate.toFixed(1)}%</span></div>
+                                  <div className="flex justify-between"><span>Debt ratio:</span> <span className="text-orange-400 font-bold">{countryState.economy.debtRatio.toFixed(1)}%</span></div>
+                                  <div className="flex justify-between"><span>Trade balance:</span> <span className="text-blue-400 font-bold">${countryState.economy.tradeBalance.toFixed(1)}B</span></div>
+                                  <div className="flex justify-between flex-wrap"><span>Energy style:</span> <span className="text-white block truncate">{countryState.economy.energyProfile}</span></div>
+                                </div>
+                              </div>
+
+                              <div className="bg-[#020502]/60 p-2 border border-[#1a5c1a]/30 rounded-sm space-y-1.5">
+                                <span className="text-red-400 font-black block border-b border-[#0d2a0d] pb-0.5 text-[7px] uppercase tracking-wider">
+                                  MILITARY SNAPSHOT
+                                </span>
+                                <div className="space-y-1 text-[7.5px] text-zinc-300">
+                                  <div className="flex justify-between"><span>Morale ratio:</span> <span className="text-green-400 font-bold">{countryState.military.morale}%</span></div>
+                                  <div className="flex justify-between"><span>Logistics level:</span> <span className="text-cyan-400 font-bold">{countryState.military.logisticsCapacity}%</span></div>
+                                  <div className="flex justify-between"><span>Mobilization:</span> <span className="text-orange-400 font-bold">{countryState.military.mobilizationLevel}%</span></div>
+                                  <div className="flex justify-between"><span>Deterrence index:</span> <span className="text-white font-bold">{countryState.military.strategicDeterrence} IND</span></div>
+                                </div>
+                              </div>
+
+                              <div className="bg-[#020502]/60 p-2 border border-[#1a5c1a]/30 rounded-sm space-y-1.5">
+                                <span className="text-cyan-400 font-black block border-b border-[#0d2a0d] pb-0.5 text-[7px] uppercase tracking-wider">
+                                  CYBER SNAPSHOT
+                                </span>
+                                <div className="space-y-1 text-[7.5px] text-zinc-300">
+                                  <div className="flex justify-between"><span>Offensive:</span> <span className="text-red-400 font-bold">{countryState.cyber.offensiveCapability}%</span></div>
+                                  <div className="flex justify-between"><span>Defense Level:</span> <span className="text-[#00ff44] font-bold">{countryState.cyber.defensiveCapability}%</span></div>
+                                  <div className="flex justify-between"><span>Intrusion Pct:</span> <span className="text-pink-400 font-bold">{countryState.cyber.intrusionLevel}%</span></div>
+                                  <div className="flex justify-between flex-wrap"><span>Apt group:</span> <span className="text-zinc-400 font-mono block">APT-{countryState.cyber.aptStrength}</span></div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Active simulation records */}
+                            <div className="bg-[#101511]/40 p-2.5 border border-[#124d12]/45 rounded-sm space-y-2">
+                              <span className="text-cyan-400 font-black text-[7.5px] tracking-wide block border-b border-[#124d12] pb-1 uppercase">
+                                MONITORED SIMULATION RELATIONSHIPS (DATABASE ENTITY ARRAYS)
+                              </span>
+                              <div className="grid grid-cols-4 gap-2.5 text-[7.5px]">
+                                <div className="space-y-1 bg-black/40 p-1.5 border border-[#124d12]/20 rounded-sm">
+                                  <span className="text-red-400 font-bold block uppercase border-b border-[#124d12]/20 pb-0.5 text-[6.5px]">ACTIVE CRISES ({events.length})</span>
+                                  {events.length > 0 ? events.map((ev, i) => (
+                                    <div key={i} className="py-0.5 mb-1 border-b border-[#0b250b] truncate text-zinc-300 font-medium uppercase font-mono" title={ev.description}>
+                                      ⚠️ {ev.title}
+                                    </div>
+                                  )) : <p className="text-zinc-600 italic">No active crises.</p>}
+                                </div>
+
+                                <div className="space-y-1 bg-black/40 p-1.5 border border-[#124d12]/20 rounded-sm">
+                                  <span className="text-[#ffb300] font-bold block uppercase border-b border-[#124d12]/20 pb-0.5 text-[6.5px]">COVERT OPERATIONS ({ops.length})</span>
+                                  {ops.length > 0 ? ops.map((op, i) => (
+                                    <div key={i} className="py-0.5 mb-1 border-b border-[#0b250b] truncate text-zinc-300 font-medium uppercase font-mono" title={op.expectedEffects.join(', ')}>
+                                      🕵️‍♂️ {op.ownerSystem}
+                                    </div>
+                                  )) : <p className="text-zinc-600 italic">No hidden operations.</p>}
+                                </div>
+
+                                <div className="space-y-1 bg-black/40 p-1.5 border border-[#124d12]/20 rounded-sm">
+                                  <span className="text-[#00ff44] font-bold block uppercase border-b border-[#124d12]/20 pb-0.5 text-[6.5px]">ACTIVE TREATIES ({treaties.length})</span>
+                                  {treaties.length > 0 ? treaties.map((t, i) => (
+                                    <div key={i} className="py-0.5 mb-1 border-b border-[#0b250b] truncate text-zinc-300 font-medium uppercase font-mono" title={t.obligations.join(', ')}>
+                                      📜 {t.name}
+                                    </div>
+                                  )) : <p className="text-zinc-600 italic">No valid treaties.</p>}
+                                </div>
+
+                                <div className="space-y-1 bg-black/40 p-1.5 border border-[#124d12]/20 rounded-sm">
+                                  <span className="text-cyan-400 font-bold block uppercase border-b border-[#124d12]/20 pb-0.5 text-[6.5px]">COMPILED INTEL ({intel.length})</span>
+                                  {intel.length > 0 ? intel.map((fact, i) => (
+                                    <div key={i} className="py-0.5 mb-1 border-b border-[#0b250b] truncate text-zinc-300 font-medium uppercase font-mono" title={fact.summary}>
+                                      📡 {fact.title}
+                                    </div>
+                                  )) : <p className="text-zinc-600 italic">No discrete intel.</p>}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   )}
 
