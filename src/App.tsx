@@ -22,6 +22,8 @@ import IntelPanel from './components/panels/IntelPanel';
 import SpacePanel from './components/panels/SpacePanel';
 import PopulationPanel from './components/panels/PopulationPanel';
 import PropagandaPanel from './components/panels/PropagandaPanel';
+import GothamPanel from './components/panels/GothamPanel';
+import FoundryPanel from './components/panels/FoundryPanel';
 import CommandEventBusPanel from './components/panels/CommandEventBusPanel';
 import ScenarioPersistencePanel from './components/panels/ScenarioPersistencePanel';
 import { checkAndRestoreSharedScenario } from './utils/persistence';
@@ -92,6 +94,8 @@ const getTabClassification = (tabId: number): string => {
     case 8: return "RESTRICTED"; // Population
     case 10: return "COSMIC STRATEGY"; // Event pipeline trace (F10)
     case 11: return "CLASSIFIED ARCHIVE"; // Scenario persistence manager (F11)
+    case 12: return "GOTHAM SIGNAL GRAPH"; // Geopolitical network (F12)
+    case 13: return "FOUNDRY LOGISTICS"; // Supply-Chain Intelligence (Shift+F1)
     default: return "CONFIDENTIAL";
   }
 };
@@ -166,6 +170,8 @@ function ActivePanelWrapper({ activeTab, getTabClassification }: { activeTab: nu
       {activeTab === 9 && <PropagandaPanel />}
       {activeTab === 10 && <CommandEventBusPanel />}
       {activeTab === 11 && <ScenarioPersistencePanel />}
+      {activeTab === 12 && <GothamPanel />}
+      {activeTab === 13 && <FoundryPanel />}
     </div>
   );
 }
@@ -305,6 +311,15 @@ export default function App() {
         const busHistory = useWorldStore.getState().world?.busEventHistory?.length || 0;
         return `signals:${busHistory} active`;
       }
+      case 12: { // GOTHAM GRAPH
+        const stability = Math.round(
+          Object.values(countries).reduce((sum, n) => sum + (n.political?.stabilityIndex ?? 50), 0) / Object.keys(countries).length
+        );
+        return `stab:${stability}%`;
+      }
+      case 13: { // FOUNDRY LOGISTICS
+        return `flows:10 secure`;
+      }
       default:
         return '';
     }
@@ -379,11 +394,19 @@ export default function App() {
         return;
       }
 
-      if (e.key === 'F10' || e.key === 'F11') {
+      if (e.key === 'F10' || e.key === 'F11' || e.key === 'F12') {
         e.preventDefault();
         const tabNum = parseInt(e.key.substring(1), 10);
         audio.sfxKeyClick();
         usePlayerStore.getState().setActiveTab(tabNum);
+        return;
+      }
+
+      // Check Shift+F1 for Foundry Logistics routing console
+      if (e.key === 'F1' && e.shiftKey) {
+        e.preventDefault();
+        audio.sfxKeyClick();
+        usePlayerStore.getState().setActiveTab(13);
         return;
       }
 
@@ -1038,6 +1061,8 @@ export default function App() {
                   { id: 9, label: 'PROPAGANDA (F9)' },
                   { id: 10, label: 'SIGNAL TRACE (F10)' },
                   { id: 11, label: 'SCENARIOS (F11)' },
+                  { id: 12, label: 'GOTHAM GRAPH (F12)' },
+                  { id: 13, label: 'FOUNDRY LOGISTICS (Shift+F1)' },
                 ].map((tab) => {
                   const isActive = playerState.activeTab === tab.id;
                   return (

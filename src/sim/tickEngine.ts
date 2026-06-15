@@ -4,6 +4,8 @@ import { useClockStore } from '../store/clockStore';
 import { useUnitStore } from '../store/unitStore';
 import { useBlackMarketStore } from '../store/blackMarketStore';
 import { useArachneStore } from '../store/arachneStore';
+import { useGothamStore } from '../store/gothamStore';
+import { useFoundryStore } from '../store/foundryStore';
 import { pollScenarioStatus } from './scenarioEngine';
 import { processFactions } from './factionEngine';
 import { processFiscal } from './fiscalEngine';
@@ -117,6 +119,12 @@ export function executeSimulationStep() {
 
   // Dynamic live briefing update for Arachne
   useArachneStore.getState().tickArachne(useWorldStore.getState().currentTick);
+
+  // Synchronize Gotham Relationship Graph states and capture snapshot history
+  useGothamStore.getState().tickGotham(useWorldStore.getState().currentTick);
+
+  // Synchronize Foundry supply chain intelligence systems
+  useFoundryStore.getState().tickFoundry(useWorldStore.getState().currentTick);
 
   // Regularly save a checkpoint if there is no ongoing nuclear exchange or active aftermath
   const currentWorld = useWorldStore.getState();
