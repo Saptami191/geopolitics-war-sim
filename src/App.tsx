@@ -35,6 +35,10 @@ import { useSanctionsStore } from './store/sanctionsStore';
 import CommandEventBusPanel from './components/panels/CommandEventBusPanel';
 import ScenarioPersistencePanel from './components/panels/ScenarioPersistencePanel';
 import EconomicForecastPanel from './components/panels/EconomicForecastPanel';
+import UNPanel from './components/panels/UNPanel';
+import { useUNStore } from './store/unStore';
+import BlocsPanel from './components/panels/BlocsPanel';
+import { useBlocStore } from './store/blocStore';
 import { checkAndRestoreSharedScenario, hydrateScenario, ScenarioPackage } from './utils/persistence';
 
 import AnalysisModeSwitcher from './components/map/AnalysisModeSwitcher';
@@ -111,6 +115,8 @@ const getTabClassification = (tabId: number): string => {
     case 16: return "ENERGY INTEGRITY MATRIX"; // Energy System (Shift+F4)
     case 17: return "COERCIVE SANCTIONS MATRIX"; // Sanctions (Shift+F5)
     case 18: return "FINANCIAL HORIZONS FORECAST"; // Forecasting (Shift+F6)
+    case 19: return "COSMIC MULTILATERAL UNIT"; // UN & Legal (Shift+F7)
+    case 20: return "REGIONAL ALLIANCES CONSOLE"; // Blocs (Shift+F8)
     default: return "CONFIDENTIAL";
   }
 };
@@ -192,6 +198,8 @@ function ActivePanelWrapper({ activeTab, getTabClassification }: { activeTab: nu
       {activeTab === 16 && <EnergyPanel />}
       {activeTab === 17 && <SanctionsPanel />}
       {activeTab === 18 && <EconomicForecastPanel />}
+      {activeTab === 19 && <UNPanel />}
+      {activeTab === 20 && <BlocsPanel />}
     </div>
   );
 }
@@ -361,6 +369,18 @@ export default function App() {
         const globalStress = useEconomicForecastStore.getState().calculateWorldEconomicStress().globalStressIndex;
         return `gstress:${globalStress}%`;
       }
+      case 19: { // UN & LEGAL INSTITUTIONS
+        const unscStore = useUNStore.getState();
+        const activeResCount = Object.values(unscStore.resolutions).filter((r: any) => r.status === 'LOBBYING_STAGE' || r.status === 'SPONSORSHIP_STAGE').length;
+        const activeCasesCount = Object.values(unscStore.icjCases).filter((c: any) => c.proceduralStage !== 'DECIDED' && c.proceduralStage !== 'DISMISSED').length;
+        return `unsc:${activeResCount} active:${activeCasesCount}`;
+      }
+      case 20: { // REGIONAL BLOCS
+        const blocStore = useBlocStore.getState();
+        const natoCohesion = blocStore.organizations.NATO?.cohesion?.overallScore ?? 78;
+        const bricsCohesion = blocStore.organizations.BRICS?.cohesion?.overallScore ?? 66;
+        return `nato:${natoCohesion}% brics:${bricsCohesion}%`;
+      }
       default:
         return '';
     }
@@ -488,6 +508,22 @@ export default function App() {
         e.preventDefault();
         audio.sfxKeyClick();
         usePlayerStore.getState().setActiveTab(18);
+        return;
+      }
+
+      // Check Shift+F7 for UN Security Council & Legal Institutions command console
+      if (e.key === 'F7' && e.shiftKey) {
+        e.preventDefault();
+        audio.sfxKeyClick();
+        usePlayerStore.getState().setActiveTab(19);
+        return;
+      }
+
+      // Check Shift+F8 for Regional Blocs command console
+      if (e.key === 'F8' && e.shiftKey) {
+        e.preventDefault();
+        audio.sfxKeyClick();
+        usePlayerStore.getState().setActiveTab(20);
         return;
       }
 
@@ -1171,6 +1207,8 @@ export default function App() {
                   { id: 16, label: 'ENERGY INTEGRITY (Shift+F4)' },
                   { id: 17, label: 'COERCIVE SANCTIONS (Shift+F5)' },
                   { id: 18, label: 'FINANCIAL HORIZONS (Shift+F6)' },
+                  { id: 19, label: 'UN & LEGAL INQ (Shift+F7)' },
+                  { id: 20, label: 'REGIONAL BLOCS (Shift+F8)' },
                 ].map((tab) => {
                   const isActive = playerState.activeTab === tab.id;
                   return (

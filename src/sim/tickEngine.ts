@@ -10,6 +10,8 @@ import { useFinintStore } from '../store/finintStore';
 import { useTradeStore } from '../store/tradeStore';
 import { useEnergyStore } from '../store/energyStore';
 import { useSanctionsStore } from '../store/sanctionsStore';
+import { useUNStore } from '../store/unStore';
+import { useBlocStore } from '../store/blocStore';
 import { pollScenarioStatus } from './scenarioEngine';
 import { processFactions } from './factionEngine';
 import { processFiscal } from './fiscalEngine';
@@ -142,6 +144,12 @@ export function executeSimulationStep() {
 
   // Synchronize Sanctions, Coalitions, and Evasion Models
   useSanctionsStore.getState().tickSanctionsSystem(useWorldStore.getState().currentTick);
+
+  // Synchronize UN Security Council and Legal Systems
+  useUNStore.getState().tickUNSystem(useWorldStore.getState().currentTick);
+
+  // Synchronize Regional Blocs and Institutions System
+  useBlocStore.getState().tickBlocSystem(useWorldStore.getState().currentTick);
 
   // Regularly save a checkpoint if there is no ongoing nuclear exchange or active aftermath
   const currentWorld = useWorldStore.getState();
