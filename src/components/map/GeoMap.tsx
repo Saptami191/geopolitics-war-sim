@@ -67,26 +67,14 @@ interface GeoMapProps {
   theme?: 'dark' | 'light';
 }
 
-export function GeoMap({ mode: initialMode, layers: initialLayers, theme = 'dark' }: GeoMapProps) {
+export function GeoMap({ mode: initialMode, layers: localLayers, theme = 'dark' }: GeoMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const deckRef = useRef<Deck | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
-  const [activeMode, setActiveMode] = useState<'2d' | '3d'>(initialMode);
-  const [localLayers, setLocalLayers] = useState<LayerToggleState>({
-    political: true,
-    military: true,
-    conflicts: true,
-    economic: false,
-    nuclear: true,
-    cyber: false,
-    population: false,
-    propaganda: true,
-    ...initialLayers,
-  });
+  const activeMode = initialMode;
 
-  const [isLayerPanelOpen, setIsLayerPanelOpen] = useState(true);
   const [animationTick, setAnimationTick] = useState(0);
   const [mapZoom, setMapZoom] = useState(1.8);
 
@@ -118,11 +106,6 @@ export function GeoMap({ mode: initialMode, layers: initialLayers, theme = 'dark
     frameId = requestAnimationFrame(updateAnimations);
     return () => cancelAnimationFrame(frameId);
   }, []);
-
-  // Update layout when mode prop updates
-  useEffect(() => {
-    setActiveMode(initialMode);
-  }, [initialMode]);
 
   // MapLibre and Deck.gl Initialization Cycle
   useEffect(() => {
@@ -821,57 +804,11 @@ export function GeoMap({ mode: initialMode, layers: initialLayers, theme = 'dark
     deckRef.current.setProps({ layers: activeDeckLayers });
   }, [activeMode, countries, activeStrikes, localLayers, playerCountryId, targetCountryId, animationTick, units, selectedUnitId, selectedHotspotId, mapZoom]);
 
-  const handleToggleLayer = (key: LayerKey) => {
-    setLocalLayers((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
-  };
-
-  const handleAllLayers = () => {
-    setLocalLayers({
-      political: true,
-      military: true,
-      conflicts: true,
-      economic: true,
-      nuclear: true,
-      cyber: true,
-      population: true,
-      propaganda: true,
-    });
-  };
-
-  const handleClearLayers = () => {
-    setLocalLayers({
-      political: false,
-      military: false,
-      conflicts: false,
-      economic: false,
-      nuclear: false,
-      cyber: false,
-      population: false,
-      propaganda: false,
-    });
-  };
-
   if (activeMode === '3d') {
     return (
       <div className="absolute inset-0 w-full h-full relative overflow-hidden bg-slate-950">
         {/* Render 3D Earth Globe with the shared state */}
         <InGameGlobe theme={theme} layers={localLayers} />
-
-        {/* Tactical Layer Toggle Panels and map widgets floating on core 3D scene */}
-        <MapLayerPanel
-          layers={localLayers}
-          onToggle={handleToggleLayer}
-          onAll={handleAllLayers}
-          onClear={handleClearLayers}
-          theme={theme}
-          isOpen={isLayerPanelOpen}
-          onToggleOpen={() => setIsLayerPanelOpen(prev => !prev)}
-        />
-
-        <MapModeToggle mode={activeMode} onToggle={(m) => setActiveMode(m)} />
       </div>
     );
   }
@@ -910,20 +847,6 @@ export function GeoMap({ mode: initialMode, layers: initialLayers, theme = 'dark
 
       {/* Coordinates status readouts */}
       <MapCoordinateReadout map={mapRef.current} theme={theme} />
-
-      {/* Floating Panel Widgets */}
-      <MapLayerPanel
-        layers={localLayers}
-        onToggle={handleToggleLayer}
-        onAll={handleAllLayers}
-        onClear={handleClearLayers}
-        theme={theme}
-        isOpen={isLayerPanelOpen}
-        onToggleOpen={() => setIsLayerPanelOpen(prev => !prev)}
-      />
-
-      {/* 2D Flat vs 3D Globe Projection Select */}
-      <MapModeToggle mode={activeMode} onToggle={(m) => setActiveMode(m)} />
     </div>
   );
 }

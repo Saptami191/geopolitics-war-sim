@@ -129,7 +129,7 @@ export const useArachneStore = create<ArachneState & ArachneActions>((set, get) 
     set({
       feed: initialFeed,
       pdbCards: fallbackPdb,
-      pdbActive: fallbackPdb.length > 0, // open automatically on scenario load
+      pdbActive: false, // do not open automatically on scenario load
       selectedItemId: initialFeed[0]?.id || null,
       unreadAlertCount: initialFeed.filter(item => item.requiresAttention).length,
       filters: initialFilters

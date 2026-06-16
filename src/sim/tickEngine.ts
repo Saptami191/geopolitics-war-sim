@@ -8,6 +8,8 @@ import { useGothamStore } from '../store/gothamStore';
 import { useFoundryStore } from '../store/foundryStore';
 import { useFinintStore } from '../store/finintStore';
 import { useTradeStore } from '../store/tradeStore';
+import { useEnergyStore } from '../store/energyStore';
+import { useSanctionsStore } from '../store/sanctionsStore';
 import { pollScenarioStatus } from './scenarioEngine';
 import { processFactions } from './factionEngine';
 import { processFiscal } from './fiscalEngine';
@@ -134,6 +136,12 @@ export function executeSimulationStep() {
 
   // Synchronize Trade Matrix and Route Systems
   useTradeStore.getState().tickTradeSystem(useWorldStore.getState().currentTick);
+
+  // Synchronize Energy Security and Supply Models
+  useEnergyStore.getState().tickEnergySystem(useWorldStore.getState().currentTick);
+
+  // Synchronize Sanctions, Coalitions, and Evasion Models
+  useSanctionsStore.getState().tickSanctionsSystem(useWorldStore.getState().currentTick);
 
   // Regularly save a checkpoint if there is no ongoing nuclear exchange or active aftermath
   const currentWorld = useWorldStore.getState();

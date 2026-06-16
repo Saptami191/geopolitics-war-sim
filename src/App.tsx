@@ -28,6 +28,10 @@ import FinintPanel from './components/panels/FinintPanel';
 import { useFinintStore } from './store/finintStore';
 import TradeMatrixPanel from './components/panels/TradeMatrixPanel';
 import { useTradeStore } from './store/tradeStore';
+import EnergyPanel from './components/panels/EnergyPanel';
+import { useEnergyStore } from './store/energyStore';
+import SanctionsPanel from './components/panels/SanctionsPanel';
+import { useSanctionsStore } from './store/sanctionsStore';
 import CommandEventBusPanel from './components/panels/CommandEventBusPanel';
 import ScenarioPersistencePanel from './components/panels/ScenarioPersistencePanel';
 import { checkAndRestoreSharedScenario, hydrateScenario, ScenarioPackage } from './utils/persistence';
@@ -102,6 +106,8 @@ const getTabClassification = (tabId: number): string => {
     case 13: return "FOUNDRY LOGISTICS"; // Supply-Chain Intelligence (Shift+F1)
     case 14: return "FINANCIAL WARFARE"; // Financial Special Operations (Shift+F2)
     case 15: return "COERCIVE TRADE GRAPH"; // Trade Interdependence (Shift+F3)
+    case 16: return "ENERGY INTEGRITY MATRIX"; // Energy System (Shift+F4)
+    case 17: return "COERCIVE SANCTIONS MATRIX"; // Sanctions (Shift+F5)
     default: return "CONFIDENTIAL";
   }
 };
@@ -180,6 +186,8 @@ function ActivePanelWrapper({ activeTab, getTabClassification }: { activeTab: nu
       {activeTab === 13 && <FoundryPanel />}
       {activeTab === 14 && <FinintPanel />}
       {activeTab === 15 && <TradeMatrixPanel />}
+      {activeTab === 16 && <EnergyPanel />}
+      {activeTab === 17 && <SanctionsPanel />}
     </div>
   );
 }
@@ -335,6 +343,16 @@ export default function App() {
         const campaignsCount = useTradeStore.getState().campaigns.length;
         return `friction:${campaignsCount} active`;
       }
+      case 16: { // ENERGY SYSTEM (Shift+F4)
+        const embargoesCount = useEnergyStore.getState().activeEmbargoes.length;
+        const profile = useEnergyStore.getState().profiles[usePlayerStore.getState().countryId];
+        const stress = profile ? profile.domesticStressScore : 0;
+        return `stress:${stress}% bans:${embargoesCount}`;
+      }
+      case 17: { // COERCIVE SANCTIONS (Shift+F5)
+        const activeCount = Object.values(useSanctionsStore.getState().campaigns).filter(c => c.status === 'ACTIVE').length;
+        return `campaigns:${activeCount}`;
+      }
       default:
         return '';
     }
@@ -438,6 +456,22 @@ export default function App() {
         e.preventDefault();
         audio.sfxKeyClick();
         usePlayerStore.getState().setActiveTab(15);
+        return;
+      }
+
+      // Check Shift+F4 for Energy Security command console
+      if (e.key === 'F4' && e.shiftKey) {
+        e.preventDefault();
+        audio.sfxKeyClick();
+        usePlayerStore.getState().setActiveTab(16);
+        return;
+      }
+
+      // Check Shift+F5 for Coercive Sanctions console
+      if (e.key === 'F5' && e.shiftKey) {
+        e.preventDefault();
+        audio.sfxKeyClick();
+        usePlayerStore.getState().setActiveTab(17);
         return;
       }
 
@@ -1118,6 +1152,8 @@ export default function App() {
                   { id: 13, label: 'FOUNDRY LOGISTICS (Shift+F1)' },
                   { id: 14, label: 'FINANCIAL WARFARE (Shift+F2)' },
                   { id: 15, label: 'TRADE COERCION (Shift+F3)' },
+                  { id: 16, label: 'ENERGY INTEGRITY (Shift+F4)' },
+                  { id: 17, label: 'COERCIVE SANCTIONS (Shift+F5)' },
                 ].map((tab) => {
                   const isActive = playerState.activeTab === tab.id;
                   return (
