@@ -6,6 +6,7 @@ import { useBlackMarketStore } from '../store/blackMarketStore';
 import { useArachneStore } from '../store/arachneStore';
 import { useGothamStore } from '../store/gothamStore';
 import { useFoundryStore } from '../store/foundryStore';
+import { useFinintStore } from '../store/finintStore';
 import { pollScenarioStatus } from './scenarioEngine';
 import { processFactions } from './factionEngine';
 import { processFiscal } from './fiscalEngine';
@@ -18,6 +19,7 @@ import { processComplexPhase2Geopolitics } from './geopoliticalEngine';
 import { CovertOp, WorldState } from '../types';
 import { dampenOpinionDelta } from '../utils/pacing';
 import { ConsequenceEngine } from './consequenceEngine';
+import { saveAutosaveScenario } from '../utils/persistence';
 
 export const TICK_INTERVALS: Record<"day" | "week" | "month", number> = {
   day: 2000,
@@ -126,11 +128,15 @@ export function executeSimulationStep() {
   // Synchronize Foundry supply chain intelligence systems
   useFoundryStore.getState().tickFoundry(useWorldStore.getState().currentTick);
 
+  // Synchronize financial-intelligence and capital networks
+  useFinintStore.getState().tickFinint(useWorldStore.getState().currentTick);
+
   // Regularly save a checkpoint if there is no ongoing nuclear exchange or active aftermath
   const currentWorld = useWorldStore.getState();
   const currentPlayer = usePlayerStore.getState();
   if (!currentWorld.nuclearExchangeOccurred && !currentPlayer.aftermathActive) {
     currentPlayer.saveCheckpoint();
+    saveAutosaveScenario().catch(console.error);
   }
 }
 

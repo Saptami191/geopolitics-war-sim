@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { SCENARIOS } from '../../data/scenarios';
+import { loadScenarioFromBrowser, ScenarioPackage } from '../../utils/persistence';
 import { useClockStore } from '../../store/clockStore';
 import { useDefconStore } from '../../store/defconStore';
 import { useFogOfWarStore } from '../../store/fogOfWarStore';
@@ -62,14 +63,30 @@ const LOBBY_NATIONS = [
 interface GameLobbyProps {
   onStartScenario: (id: ScenarioId, countryId: string, customOptions?: any) => void;
   onOpenWorldBuilder: () => void;
+  onResumeScenario: (pkg: ScenarioPackage) => void;
 }
 
 type PresetKey = 'ANALYST_MODE' | 'NATO_STAFF' | 'DOOMSDAY' | 'CUSTOM';
 
-export default function GameLobby({ onStartScenario, onOpenWorldBuilder }: GameLobbyProps) {
+export default function GameLobby({ onStartScenario, onOpenWorldBuilder, onResumeScenario }: GameLobbyProps) {
   const [selectedCountry, setSelectedCountry] = useState('US');
   const [selectedScenario, setSelectedScenario] = useState<ScenarioId>('MENA_SPARK');
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Autosaved session package
+  const [lastSessionPkg, setLastSessionPkg] = useState<ScenarioPackage | null>(null);
+
+  useEffect(() => {
+    loadScenarioFromBrowser('autosave_last_session')
+      .then((pkg) => {
+        if (pkg) {
+          setLastSessionPkg(pkg);
+        }
+      })
+      .catch((err) => {
+        console.error('Error querying IndexedDB localized autosave:', err);
+      });
+  }, []);
   
   // Mission params
   const [durationMode, setDurationMode] = useState<'SCENARIO' | 'TIMED' | 'ENDLESS'>('SCENARIO');
@@ -1356,6 +1373,16 @@ export default function GameLobby({ onStartScenario, onOpenWorldBuilder }: GameL
 
           <div className="flex items-center gap-3 w-full md:w-auto justify-end shrink-0">
             
+            {lastSessionPkg && (
+              <button
+                onClick={() => { audio.sfxKlaxon(); onResumeScenario(lastSessionPkg); }}
+                className="px-4 py-3 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/45 hover:border-amber-400 text-amber-400 hover:text-amber-300 text-[9.5px] font-bold uppercase tracking-wider rounded transition-all cursor-pointer flex items-center gap-1.5 animate-pulse shadow-[0_0_15px_rgba(245,158,11,0.15)] hover:shadow-[0_0_25px_rgba(245,158,11,0.3)]"
+              >
+                <Radio className="w-4 h-4 text-amber-400 animate-pulse" />
+                RESUME ACTIVE PROJECTION (TICK {lastSessionPkg.clockState.currentTick})
+              </button>
+            )}
+
             {/* Trigger World Builder custom matrix overwrite */}
             <button
               onClick={() => { audio.sfxKeyClick(); onOpenWorldBuilder(); }}

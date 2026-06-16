@@ -24,9 +24,11 @@ import PopulationPanel from './components/panels/PopulationPanel';
 import PropagandaPanel from './components/panels/PropagandaPanel';
 import GothamPanel from './components/panels/GothamPanel';
 import FoundryPanel from './components/panels/FoundryPanel';
+import FinintPanel from './components/panels/FinintPanel';
+import { useFinintStore } from './store/finintStore';
 import CommandEventBusPanel from './components/panels/CommandEventBusPanel';
 import ScenarioPersistencePanel from './components/panels/ScenarioPersistencePanel';
-import { checkAndRestoreSharedScenario } from './utils/persistence';
+import { checkAndRestoreSharedScenario, hydrateScenario, ScenarioPackage } from './utils/persistence';
 
 import AnalysisModeSwitcher from './components/map/AnalysisModeSwitcher';
 import TimelineStrip from './components/map/TimelineStrip';
@@ -96,6 +98,7 @@ const getTabClassification = (tabId: number): string => {
     case 11: return "CLASSIFIED ARCHIVE"; // Scenario persistence manager (F11)
     case 12: return "GOTHAM SIGNAL GRAPH"; // Geopolitical network (F12)
     case 13: return "FOUNDRY LOGISTICS"; // Supply-Chain Intelligence (Shift+F1)
+    case 14: return "FINANCIAL WARFARE"; // Financial Special Operations (Shift+F2)
     default: return "CONFIDENTIAL";
   }
 };
@@ -172,6 +175,7 @@ function ActivePanelWrapper({ activeTab, getTabClassification }: { activeTab: nu
       {activeTab === 11 && <ScenarioPersistencePanel />}
       {activeTab === 12 && <GothamPanel />}
       {activeTab === 13 && <FoundryPanel />}
+      {activeTab === 14 && <FinintPanel />}
     </div>
   );
 }
@@ -320,6 +324,9 @@ export default function App() {
       case 13: { // FOUNDRY LOGISTICS
         return `flows:10 secure`;
       }
+      case 14: { // FINANCIAL SPECIAL OPERATIONS (FININT)
+        return `blowback:${Math.round(useFinintStore.getState().globalAggregatedBlowback)}%`;
+      }
       default:
         return '';
     }
@@ -407,6 +414,14 @@ export default function App() {
         e.preventDefault();
         audio.sfxKeyClick();
         usePlayerStore.getState().setActiveTab(13);
+        return;
+      }
+
+      // Check Shift+F2 for Financial Warfare (FININT) command console
+      if (e.key === 'F2' && e.shiftKey) {
+        e.preventDefault();
+        audio.sfxKeyClick();
+        usePlayerStore.getState().setActiveTab(14);
         return;
       }
 
@@ -801,6 +816,28 @@ export default function App() {
       <GameLobby
         onStartScenario={selectScenario}
         onOpenWorldBuilder={() => setWorldBuilderActive(true)}
+        onResumeScenario={(pkg: ScenarioPackage) => {
+          audio.resume();
+          audio.sfxSuccessConfirmation();
+          const res = hydrateScenario(pkg);
+          if (res.success) {
+            setScenarioSelected(pkg.playerState.activeScenario);
+            setShowIntro(false);
+            setLobbyActive(false);
+            setWorldBuilderActive(false);
+            useUIStore.getState().pushAlert({
+              title: 'PROJECTION RESUMED',
+              message: `Restored active projection "${pkg.scenarioName}" at Tick ${pkg.worldState.currentTick}.`,
+              type: 'INFO'
+            });
+            playGlobeTransition(() => {
+              restartTickTimer();
+            });
+          } else {
+            audio.sfxCrisisWarning();
+            alert(`FAILED TO RESUME DIRECTIVE: ${res.error}`);
+          }
+        }}
       />
     );
   }
@@ -1063,6 +1100,7 @@ export default function App() {
                   { id: 11, label: 'SCENARIOS (F11)' },
                   { id: 12, label: 'GOTHAM GRAPH (F12)' },
                   { id: 13, label: 'FOUNDRY LOGISTICS (Shift+F1)' },
+                  { id: 14, label: 'FINANCIAL WARFARE (Shift+F2)' },
                 ].map((tab) => {
                   const isActive = playerState.activeTab === tab.id;
                   return (

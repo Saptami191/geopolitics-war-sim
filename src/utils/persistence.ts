@@ -18,6 +18,17 @@ export interface ScenarioPackage {
   appVersion: string;
   schemaVersion: string;
   compatibilityVersion: string;
+  author?: string;
+  checksum?: string;
+  timelineMeta?: {
+    eventCount: number;
+    lastEventTick: number | null;
+  };
+  simulationMeta?: {
+    activeStrikesCount: number;
+    activeDealsCount: number;
+    isNuclearThreatActive: boolean;
+  };
   
   // Serialized stores states
   worldState: {
@@ -231,6 +242,17 @@ export function createScenarioSnapshot(
     appVersion: '0.9.0',
     schemaVersion: '1.0.0',
     compatibilityVersion: '1.0.0',
+    author: 'Sovereign Command Center',
+    checksum: btoa(pkgId).substring(0, 12).toUpperCase(),
+    timelineMeta: {
+      eventCount: worldState.globalEventLog?.length || 0,
+      lastEventTick: worldState.globalEventLog?.[0]?.tick ?? null,
+    },
+    simulationMeta: {
+      activeStrikesCount: worldState.activeStrikes?.length || 0,
+      activeDealsCount: worldState.activeArmsDeals?.length || 0,
+      isNuclearThreatActive: worldState.nuclearExchangeOccurred || false,
+    },
 
     worldState: {
       countries: JSON.parse(JSON.stringify(worldState.countries)),
@@ -409,5 +431,29 @@ export async function checkAndRestoreSharedScenario(urlSearch: string): Promise<
   } catch (e) {
     console.error('Failed to parse sharing link or decompress package context:', e);
     return false;
+  }
+}
+
+// Autosave scenario state securely in the background
+export async function saveAutosaveScenario(): Promise<void> {
+  try {
+    const worldState = useWorldStore.getState();
+    const currentPlayer = usePlayerStore.getState();
+
+    // Only auto-save if active gameplay & not in gameover
+    if (!worldState.countries || Object.keys(worldState.countries).length === 0 || currentPlayer.gameOver) {
+      return;
+    }
+
+    const snapshot = createScenarioSnapshot(
+      '[AUTOSAVE] Last Active Projection',
+      `Automatically captured on tick ${worldState.currentTick}.`,
+      'custom',
+      'autosave_last_session'
+    );
+
+    await saveScenarioToBrowser(snapshot);
+  } catch (e) {
+    console.error('Sovereign Command background autosave encountered a database error:', e);
   }
 }
