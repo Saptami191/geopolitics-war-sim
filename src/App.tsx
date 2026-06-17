@@ -77,6 +77,7 @@ import { useCommsStore } from './store/commsStore';
 
 import CinematicsSyncController from './components/cinematics/CinematicsSyncController';
 import CinematicsManager from './components/cinematics/CinematicsManager';
+import { useCinematicsStore } from './store/cinematicsStore';
 
 import { useOnboardingStore } from './store/onboardingStore';
 import OnboardingHints from './components/hud/OnboardingHints';
@@ -252,6 +253,7 @@ export default function App() {
   
   const personaDef = PERSONAS[activePersona];
   const availablePanels = getAvailablePanels(currentDefconLevel, personaDef.authorityTier);
+  const isInputBlocked = useCinematicsStore((s) => s.isInputBlocked);
 
   const globalEventLog = useWorldStore((s) => s.globalEventLog);
   const prevLogLengthRef = React.useRef(globalEventLog.length);
@@ -282,6 +284,7 @@ export default function App() {
             durationMs: 2000,
             payload: { message: ev.text }
           });
+          audio.playIntelPing('radar');
         } else if (text.includes('coup') || text.includes('regime')) {
           useFxStore.getState().triggerFx({
             type: 'COUP_SUCCESS',
@@ -291,6 +294,7 @@ export default function App() {
             durationMs: 1800,
             payload: { message: ev.text }
           });
+          audio.sfxCoupStaticBurst();
         } else if (text.includes('ceasefire')) {
           useFxStore.getState().triggerFx({
             type: 'CEASEFIRE_SIGNED',
@@ -300,6 +304,9 @@ export default function App() {
             durationMs: 2500,
             payload: { message: ev.text }
           });
+          // Wait, the scene takes care of the peace resolution
+        } else {
+          audio.playIntelPing('cyber');
         }
       });
     }
@@ -1141,7 +1148,7 @@ export default function App() {
   // 4. Main Dashboard Simulation View
   return (
     <div className="h-screen w-screen flex flex-col bg-[#030503] relative text-xs font-mono overflow-hidden">
-      <div id="sovereign-fx-shake-root" className="w-full h-full flex flex-col relative" style={{ willChange: 'transform' }}>
+      <div id="sovereign-fx-shake-root" className="w-full h-full flex flex-col relative" style={{ willChange: 'transform', pointerEvents: isInputBlocked ? 'none' : 'auto' }}>
         {/* Popups, Alerts & Bazaar overlays */}
         <WhiteFlashOverlay />
         <GlobalFXLayer />

@@ -1,141 +1,265 @@
 import { useEffect, useRef } from 'react';
+import { useCinematicsStore } from '../../store/cinematicsStore';
+import { useDefconStore } from '../../store/defconStore';
+import { useFxStore } from '../../store/fxStore';
 import { useWorldStore } from '../../store/worldStore';
 import { usePlayerStore } from '../../store/playerStore';
-import { useCinematicQueue } from './useCinematicQueue';
-import { Country, BallisticStrike } from '../../types';
 import { audio } from '../../utils/audio';
 
-export default function CinematicsSyncController() {
-  const enqueueCinematic = useCinematicQueue((s) => s.enqueueCinematic);
-  const playerCountryId = usePlayerStore((s) => s.countryId);
+export function CinematicsSyncController() {
+  const queueScene = useCinematicsStore((state) => state.queueScene);
 
-  const prevCountriesRef = useRef<Record<string, Country> | null>(null);
-  const prevStrikesRef = useRef<BallisticStrike[]>([]);
+  // Use refs to avoid double-firing or recursive loops
+  const bootTriggered = useRef(false);
+  const defcon1Triggered = useRef(false);
+  const exchangeTriggered = useRef(false);
+  const aftermathTriggered = useRef(false);
+  const lastEventLoggedLength = useRef(0);
+  const scenarioInitTriggered = useRef(false);
+
+  // Cache previously processed event texts to limit duplicate triggers
+  const processedEvents = useRef<string[]>([]);
+  const processedFxIds = useRef<string[]>([]);
+
+  // WATCHER 1: Boot Sequence on Core Mount
+  useEffect(() => {
+    if (!bootTriggered.current) {
+      bootTriggered.current = true;
+      const t = setTimeout(() => {
+        queueScene({
+          type: 'SCENARIO_BOOT',
+          totalPhases: 3,
+          isSkippable: false,
+          blocksInput: true,
+          phaseDurationMs: 2000,
+          autoAdvance: true,
+          payload: {}
+        });
+      }, 800);
+
+      return () => clearTimeout(t);
+    }
+  }, [queueScene]);
+
+  // WATCHER 2: DEFCON 1 Lockdown
+  const currentDefcon = useDefconStore((state) => state.currentDefconLevel);
+  const currentTick = useWorldStore((state) => state.currentTick);
 
   useEffect(() => {
-    // Pre-populate refs with the starting state immediately on mount
-    const state = useWorldStore.getState();
-    prevCountriesRef.current = JSON.parse(JSON.stringify(state.countries));
-    prevStrikesRef.current = JSON.parse(JSON.stringify(state.activeStrikes));
-
-    // Subscribe to state transactions safely
-    const unsubscribe = useWorldStore.subscribe((state) => {
-      const prevCountries = prevCountriesRef.current;
-      const prevStrikes = prevStrikesRef.current;
-
-      if (!prevCountries) {
-        prevCountriesRef.current = JSON.parse(JSON.stringify(state.countries));
-        prevStrikesRef.current = JSON.parse(JSON.stringify(state.activeStrikes));
-        return;
-      }
-
-      // 1. DETECT WAR DECLARATIONS AND CEASEFIRES (PEACE)
-      Object.keys(state.countries).forEach((cId) => {
-        const prevC = prevCountries[cId];
-        const nextC = state.countries[cId];
-        if (!prevC || !nextC) return;
-
-        const prevWar = prevC.atWarWith || [];
-        const nextWar = nextC.atWarWith || [];
-
-        // WAR DECLARATION
-        nextWar.forEach((enemyId) => {
-          if (!prevWar.includes(enemyId)) {
-            // Unify mutual triggers (only process if lexicographically cId < enemyId to prevent double trigger)
-            if (cId < enemyId) {
-              const srcC = state.countries[cId];
-              const tgtC = state.countries[enemyId];
-              enqueueCinematic('WAR_DECLARATION', {
-                sourceCountry: srcC ? { id: cId, name: srcC.name, flagEmoji: srcC.flagEmoji } : undefined,
-                targetCountry: tgtC ? { id: enemyId, name: tgtC.name, flagEmoji: tgtC.flagEmoji } : undefined,
-              });
-              audio.sfxWarKlaxon();
-            }
-          }
-        });
-
-        // PEACE AGREEMENT
-        prevWar.forEach((enemyId) => {
-          if (!nextWar.includes(enemyId)) {
-            if (cId < enemyId) {
-              const srcC = state.countries[cId];
-              const tgtC = state.countries[enemyId];
-              enqueueCinematic('PEACE_AGREEMENT', {
-                sourceCountry: srcC ? { id: cId, name: srcC.name, flagEmoji: srcC.flagEmoji } : undefined,
-                targetCountry: tgtC ? { id: enemyId, name: tgtC.name, flagEmoji: tgtC.flagEmoji } : undefined,
-              });
-              audio.sfxPeaceResolution();
-            }
-          }
-        });
+    if (currentDefcon === 1 && !defcon1Triggered.current) {
+      defcon1Triggered.current = true;
+      queueScene({
+        type: 'DEFCON_1_LOCKDOWN',
+        totalPhases: 5,
+        isSkippable: false,
+        blocksInput: false,
+        phaseDurationMs: 1200,
+        autoAdvance: true,
+        payload: {
+          triggerReason: 'HOSTILE BLOCK INTERCEPT DETECTED — NUCLEAR STATUS ACTIVE',
+          currentTick
+        }
       });
+    } else if (currentDefcon > 1) {
+      // Allow re-escalation triggering if player/enemies step down and back up
+      defcon1Triggered.current = false;
+    }
+  }, [currentDefcon, currentTick, queueScene]);
 
-      // 2. DETECT COUPS
-      Object.keys(state.countries).forEach((cId) => {
-        const prevC = prevCountries[cId];
-        const nextC = state.countries[cId];
-        if (!prevC || !nextC) return;
+  // WATCHER 3: Nuclear Exchange Detection inside fxStore
+  const activeFx = useFxStore((state) => state.activeFx);
 
-        const prevLeader = prevC.political?.leaderName;
-        const nextLeader = nextC.political?.leaderName;
+  useEffect(() => {
+    const catastrophicDetonation = (activeFx || []).find(
+      (fx) => fx.type === 'NUCLEAR_DETONATION' && !processedFxIds.current.includes(fx.id)
+    );
 
-        if (prevLeader && nextLeader && prevLeader !== nextLeader) {
-          enqueueCinematic('COUP', {
-            targetCountry: { id: cId, name: nextC.name, flagEmoji: nextC.flagEmoji },
-            leaderName: nextLeader,
-            oldLeaderName: prevLeader,
+    if (catastrophicDetonation && !exchangeTriggered.current) {
+      exchangeTriggered.current = true;
+      processedFxIds.current.push(catastrophicDetonation.id);
+      
+      queueScene({
+        type: 'NUCLEAR_EXCHANGE',
+        totalPhases: 4,
+        isSkippable: true,
+        blocksInput: false,
+        phaseDurationMs: 1600,
+        autoAdvance: true,
+        payload: {
+          strikerCountry: catastrophicDetonation.sourceCountryId || 'COALITION SILO',
+          targetCountry: catastrophicDetonation.targetCountryId || 'TARGET SECTOR',
+          weaponCount: catastrophicDetonation.payload?.weaponCount || 24,
+          estimatedYield: catastrophicDetonation.payload?.yield || '45.8MT'
+        }
+      });
+    }
+  }, [activeFx, queueScene]);
+
+  // WATCHER 4 & 5: Regime Change and Ceasefire tracking in globalEventLog
+  const globalEventLog = useWorldStore((state) => state.globalEventLog);
+
+  useEffect(() => {
+    if (!globalEventLog || globalEventLog.length === 0) return;
+
+    const latestEvent = globalEventLog[0];
+    const logLength = globalEventLog.length;
+
+    if (logLength > lastEventLoggedLength.current) {
+      lastEventLoggedLength.current = logLength;
+
+      if (latestEvent && latestEvent.tick > 0 && !processedEvents.current.includes(latestEvent.text)) {
+        processedEvents.current.push(latestEvent.text);
+        const txt = latestEvent.text.toLowerCase();
+
+        // Check for Coup / Regime Change patterns
+        if (
+          txt.includes('coup') || 
+          txt.includes('regime change') || 
+          txt.includes('deposed') || 
+          txt.includes('government fell') || 
+          txt.includes('regime collapsed')
+        ) {
+          // simple country parsing
+          let extractedCountry = 'UNKNOWN SECTOR';
+          const countries = useWorldStore.getState().countries;
+          if (countries) {
+            Object.values(countries).forEach((c: any) => {
+              if (latestEvent.text.includes(c.name)) {
+                extractedCountry = c.name;
+              }
+            });
+          }
+
+          queueScene({
+            type: 'REGIME_CHANGE_SEQUENCE',
+            totalPhases: 4,
+            isSkippable: true,
+            blocksInput: false,
+            phaseDurationMs: 1400,
+            autoAdvance: true,
+            payload: {
+              country: extractedCountry,
+              method: txt.includes('coup') ? "COUP D'ÉTAT" : 'MILITARY TRANSITION',
+              oldLeader: 'PREVIOUS EXECUTIVE REGIME',
+              newLeader: 'JOINT CRISIS BOARD AUTHORITY',
+              backingPower: 'FOREIGN CONFLICT INTELLIGENCE'
+            }
           });
-          audio.sfxCoupStaticBurst();
         }
-      });
 
-      // 3. DETECT ECONOMIC DEFAULTS (TREASURY < 1.0)
-      if (playerCountryId) {
-        const prevPlayerC = prevCountries[playerCountryId];
-        const nextPlayerC = state.countries[playerCountryId];
-        if (prevPlayerC && nextPlayerC) {
-          const prevCash = prevPlayerC.economic?.treasuryCashB ?? 10;
-          const nextCash = nextPlayerC.economic?.treasuryCashB ?? 10;
-
-          if (prevCash >= 1.0 && nextCash < 1.0) {
-            enqueueCinematic('ECONOMIC_COLLAPSE', {
-              targetCountry: { id: playerCountryId, name: nextPlayerC.name, flagEmoji: nextPlayerC.flagEmoji },
-              details: 'Treasury funds depleted below emergency stability baseline.',
-            });
-          }
+        // Check for Ceasefire patterns
+        if (txt.includes('ceasefire') || txt.includes('armistice') || txt.includes('peace treaty')) {
+          queueScene({
+            type: 'CEASEFIRE_EPILOGUE',
+            totalPhases: 3,
+            isSkippable: true,
+            blocksInput: false,
+            phaseDurationMs: 2200,
+            autoAdvance: true,
+            payload: {
+              party1: 'COALITION DEFENSE FORCE',
+              party2: 'RIVAL BLOC LEAGUE',
+              conflictDuration: currentTick,
+              terms: [
+                'Complete termination of forward combat trajectories.',
+                'Establish secure neutral boundaries mapped to current sectors.',
+                'Joint radioactive monitoring coordinates initialized.'
+              ]
+            }
+          });
         }
       }
+    }
+  }, [globalEventLog, currentTick, queueScene]);
 
-      // 4. DETECT NUCLEAR MISSILE LAUNCHES
-      (state.activeStrikes || []).forEach((strike) => {
-        if (!strike || !strike.id) return;
-        const isNew = !(prevStrikes || []).some((ps) => ps && ps.id === strike.id);
-        if (isNew) {
-          const isNuclear =
-            (strike.warheadYieldMT && strike.warheadYieldMT > 0) ||
-            strike.weaponType?.includes('ICBM') ||
-            strike.weaponType?.includes('SLBM');
+  // WATCHER 6: Market Crash tracking from fxStore
+  useEffect(() => {
+    const marketCrashFx = (activeFx || []).find(
+      (fx) => fx.type === 'MARKET_CRASH' && !processedFxIds.current.includes(fx.id)
+    );
 
-          if (isNuclear) {
-            const srcC = state.countries[strike.sourceCountryId];
-            const tgtC = state.countries[strike.targetCountryId];
-            enqueueCinematic('NUCLEAR_LAUNCH', {
-              sourceCountry: srcC ? { id: strike.sourceCountryId, name: srcC.name, flagEmoji: srcC.flagEmoji } : undefined,
-              targetCountry: tgtC ? { id: strike.targetCountryId, name: tgtC.name, flagEmoji: tgtC.flagEmoji } : undefined,
-            });
-          }
+    if (marketCrashFx) {
+      processedFxIds.current.push(marketCrashFx.id);
+      queueScene({
+        type: 'MARKET_CRASH_BROADCAST',
+        totalPhases: 3,
+        isSkippable: true,
+        blocksInput: false,
+        phaseDurationMs: 2000,
+        autoAdvance: true,
+        payload: {
+          affectedMarkets: 'New York, London, Tokyo, Shanghai, Frankfurt',
+          crashMagnitude: '24.9%',
+          triggerEvent: 'Hyper-escalation risk indices exceeded threshold bounds'
         }
       });
+    }
+  }, [activeFx, queueScene]);
 
-      // update standard checkpoint variables
-      prevCountriesRef.current = JSON.parse(JSON.stringify(state.countries));
-      prevStrikesRef.current = JSON.parse(JSON.stringify(state.activeStrikes));
-    });
+  // WATCHER 7: Aftermath
+  const aftermathActive = usePlayerStore((state) => state.aftermathActive);
+  const nuclearExchangeOccurred = useWorldStore((state) => state.nuclearExchangeOccurred);
 
-    return () => {
-      unsubscribe();
-    };
-  }, [playerCountryId, enqueueCinematic]);
+  useEffect(() => {
+    if ((aftermathActive || nuclearExchangeOccurred) && !aftermathTriggered.current) {
+      aftermathTriggered.current = true;
+      queueScene({
+        type: 'NUCLEAR_AFTERMATH',
+        totalPhases: 5,
+        isSkippable: false,
+        blocksInput: true,
+        phaseDurationMs: 3200,
+        autoAdvance: true,
+        payload: {
+          totalWarheads: 48,
+          globalDamage: 84,
+          outcome: aftermathActive ? 'MUTUAL DESTRUCTION' : 'PYRRHIC ESCALATION',
+          currentTick
+        }
+      });
+    }
+  }, [aftermathActive, nuclearExchangeOccurred, currentTick, queueScene]);
+
+  // WATCHER 8: Scenario Start
+  const activeScenario = usePlayerStore((state) => state.activeScenario);
+  const playerCountry = usePlayerStore((state) => state.countryId);
+  const playerPersona = usePlayerStore((state) => state.pendingStrike); // Or default fallback
+
+  useEffect(() => {
+    // Detect scenario starting (when activeScenario is set and boot sequence has happened)
+    if (activeScenario && !scenarioInitTriggered.current && bootTriggered.current) {
+      scenarioInitTriggered.current = true;
+      
+      const scenarioNameMapped = activeScenario === 'MENA_SPARK' 
+        ? 'Crisis in Jordan' 
+        : activeScenario === 'STRAIT_CLOSURE' 
+        ? 'Sovereign Drift' 
+        : activeScenario === 'KASHMIR_FLASHPOINT' 
+        ? 'Aperture DMZ'
+        : 'Sovereign Operation';
+
+      const briefingTxt = `Operational parameters require immediate cabinet assessment of diplomatic shield structures. Initiate tactical reconnaissance immediately.`;
+
+      queueScene({
+        type: 'SCENARIO_START',
+        totalPhases: 4,
+        isSkippable: true,
+        blocksInput: false,
+        phaseDurationMs: 2200,
+        autoAdvance: true,
+        payload: {
+          scenarioName: scenarioNameMapped,
+          year: '2026',
+          playerCountry,
+          playerPersona: 'EXECUTIVE SUPREME CHANCELLOR',
+          briefingText: briefingTxt,
+          threatLevel: 'ORANGE'
+        }
+      });
+    }
+  }, [activeScenario, playerCountry, playerPersona, queueScene]);
 
   return null;
 }
+
+export default CinematicsSyncController;

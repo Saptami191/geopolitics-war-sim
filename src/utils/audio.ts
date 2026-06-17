@@ -22,6 +22,10 @@ class AudioEngine {
   private ambientDroneGainNode: GainNode | null = null;
   private isDroneRunning: boolean = false;
 
+  private musicLayers: any[] = [];
+  private currentMusicDefcon: DefconLevel = 5;
+  private distortionNode: WaveShaperNode | null = null;
+
   init() {
     if (this.ctx) return; // Prevent double initialization
     try {
@@ -124,16 +128,288 @@ class AudioEngine {
     this.startAmbientDrone();
   }
 
+  private makeDistortionCurve(amount = 20) {
+    const k = typeof amount === 'number' ? amount : 50;
+    const n_samples = 44100;
+    const curve = new Float32Array(n_samples);
+    const deg = Math.PI / 180;
+    for (let i = 0; i < n_samples; ++i) {
+      const x = (i * 2) / n_samples - 1;
+      curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
+    }
+    return curve;
+  }
+
+  private clearDistortion() {
+    if (this.distortionNode && this.master && this.ctx) {
+      try {
+        this.master.disconnect();
+        this.distortionNode.disconnect();
+        this.master.connect(this.ctx.destination);
+      } catch (e) {}
+      this.distortionNode = null;
+    }
+  }
+
+  buildAdaptiveScore(defcon: DefconLevel) {
+    if (!this.ctx || !this.ambientGain) return;
+    this.resume();
+
+    const now = this.ctx.currentTime;
+
+    // Stop all current music layers
+    this.musicLayers.forEach((node) => {
+      try {
+        node.stop();
+      } catch (e) {}
+    });
+    this.musicLayers = [];
+
+    // Reset/Apply distortion node for DEFCON 1 master bus
+    if (defcon === 1) {
+      if (!this.distortionNode && this.master) {
+        try {
+          this.distortionNode = this.ctx.createWaveShaper();
+          this.distortionNode.curve = this.makeDistortionCurve(10);
+          this.master.disconnect();
+          this.master.connect(this.distortionNode);
+          this.distortionNode.connect(this.ctx.destination);
+        } catch (e) {
+          console.warn('Distortion application failed:', e);
+        }
+      }
+    } else {
+      this.clearDistortion();
+    }
+
+    // Determine target overall ambient gain for crossfading
+    let targetOverallGain = 0.12;
+    if (defcon === 5) targetOverallGain = 0.12;
+    else if (defcon === 4) targetOverallGain = 0.18;
+    else if (defcon === 3) targetOverallGain = 0.20;
+    else if (defcon === 2) targetOverallGain = 0.28;
+    else if (defcon === 1) targetOverallGain = 0.38;
+
+    // Crossfade ambientGain node value to new target over 2 seconds
+    this.ambientGain.gain.setValueAtTime(this.ambientGain.gain.value, now);
+    this.ambientGain.gain.linearRampToValueAtTime(targetOverallGain, now + 2.0);
+
+    /* --- LEVEL-SPECIFIC HARMONIC LAYERING --- */
+    
+    // Modulation depth variables depending on defcon tension
+    let lfoDepth = 4.0;
+    let lfoRate = 0.08;
+    if (defcon <= 4) { lfoDepth = 8.0; lfoRate = 0.1; }
+    if (defcon === 1) { lfoDepth = 16.0; lfoRate = 0.2; } // doubled depth and rate
+
+    // Standard base LFO for core drone pitch modulation
+    const baseLfo = this.ctx.createOscillator();
+    baseLfo.type = 'sine';
+    baseLfo.frequency.setValueAtTime(lfoRate, now);
+    const baseLfoGain = this.ctx.createGain();
+    baseLfoGain.gain.setValueAtTime(lfoDepth, now);
+    baseLfo.connect(baseLfoGain);
+    baseLfo.start();
+    this.musicLayers.push(baseLfo);
+
+    // Layer 1 (Base Drone frequency 38Hz sinusoid modulated by LFO)
+    const osc1 = this.ctx.createOscillator();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(38, now);
+    baseLfoGain.connect(osc1.frequency);
+    const g1 = this.ctx.createGain();
+    g1.gain.setValueAtTime(0, now);
+    g1.gain.linearRampToValueAtTime(0.06, now + 2.0); // fade in 2s
+    osc1.connect(g1);
+    g1.connect(this.ambientGain);
+    osc1.start();
+    this.musicLayers.push(osc1);
+
+    // Layer 2 (Sine 76Hz / Octave Above - with gating if defcon <= 4)
+    const osc2 = this.ctx.createOscillator();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(76, now);
+    const g2 = this.ctx.createGain();
+    g2.gain.setValueAtTime(0, now);
+    g2.gain.linearRampToValueAtTime(0.02, now + 2.0);
+
+    if (defcon <= 4) {
+      // 0.5Hz LFO gating the volume of Layer 2 dynamically
+      const gateLfo = this.ctx.createOscillator();
+      gateLfo.type = 'sine';
+      gateLfo.frequency.setValueAtTime(0.5, now);
+      const gateLfoGain = this.ctx.createGain();
+      // vary gain subtly between 0.01 and 0.03
+      gateLfoGain.gain.setValueAtTime(0.01, now);
+      gateLfo.connect(gateLfoGain);
+      gateLfoGain.connect(g2.gain);
+      gateLfo.start();
+      this.musicLayers.push(gateLfo);
+    }
+    osc2.connect(g2);
+    g2.connect(this.ambientGain);
+    osc2.start();
+    this.musicLayers.push(osc2);
+
+    // Layer 3 (Sine 57Hz / Perfect Fifth)
+    const osc3 = this.ctx.createOscillator();
+    osc3.type = 'sine';
+    osc3.frequency.setValueAtTime(57, now);
+    const g3 = this.ctx.createGain();
+    g3.gain.setValueAtTime(0, now);
+    g3.gain.linearRampToValueAtTime(0.015, now + 2.0);
+    osc3.connect(g3);
+    g3.connect(this.ambientGain);
+    osc3.start();
+    this.musicLayers.push(osc3);
+
+    // DEFCON 4 / 3 / 2 / 1: Layer 4 (Triangle 110Hz)
+    if (defcon <= 4) {
+      const osc4 = this.ctx.createOscillator();
+      osc4.type = 'triangle';
+      osc4.frequency.setValueAtTime(110, now);
+      const g4 = this.ctx.createGain();
+      g4.gain.setValueAtTime(0, now);
+      g4.gain.linearRampToValueAtTime(0.03, now + 2.0);
+      osc4.connect(g4);
+      g4.connect(this.ambientGain);
+      osc4.start();
+      this.musicLayers.push(osc4);
+    }
+
+    // DEFCON 3 / 2 / 1: Layer 5 (Sawtooth 55Hz + lowpass filter 400Hz + 0.8Hz square gate)
+    if (defcon <= 3) {
+      const osc5 = this.ctx.createOscillator();
+      osc5.type = 'sawtooth';
+      osc5.frequency.setValueAtTime(55, now);
+      
+      const filter5 = this.ctx.createBiquadFilter();
+      filter5.type = 'lowpass';
+      filter5.frequency.setValueAtTime(400, now);
+
+      const g5 = this.ctx.createGain();
+      g5.gain.setValueAtTime(0, now);
+
+      const gateLfo = this.ctx.createOscillator();
+      gateLfo.type = 'square';
+      gateLfo.frequency.setValueAtTime(0.8, now);
+      const gateLfoGain = this.ctx.createGain();
+      gateLfoGain.gain.setValueAtTime(0.04, now);
+      
+      gateLfo.connect(gateLfoGain);
+      gateLfoGain.connect(g5.gain);
+      gateLfo.start();
+      this.musicLayers.push(gateLfo);
+
+      osc5.connect(filter5);
+      filter5.connect(g5);
+      g5.connect(this.ambientGain);
+      osc5.start();
+      this.musicLayers.push(osc5);
+    }
+
+    // DEFCON 2 / 1: Layer 6 (Sawtooth 220Hz + bandpass filter 180-260Hz + 1.2Hz gate + 0.03Hz pitch drift)
+    if (defcon <= 2) {
+      const osc6 = this.ctx.createOscillator();
+      osc6.type = 'sawtooth';
+      osc6.frequency.setValueAtTime(220, now);
+
+      const driftLfo = this.ctx.createOscillator();
+      driftLfo.type = 'sine';
+      driftLfo.frequency.setValueAtTime(0.03, now);
+      const driftGain = this.ctx.createGain();
+      driftGain.gain.setValueAtTime(lfoDepth / 2.0, now); // scale with LFO depth setting
+      driftLfo.connect(driftGain);
+      driftGain.connect(osc6.frequency);
+      driftLfo.start();
+      this.musicLayers.push(driftLfo);
+
+      const filter6 = this.ctx.createBiquadFilter();
+      filter6.type = 'bandpass';
+      filter6.frequency.setValueAtTime(220, now);
+      filter6.Q.setValueAtTime(2.5, now);
+
+      const g6 = this.ctx.createGain();
+      g6.gain.setValueAtTime(0, now);
+
+      const gate6 = this.ctx.createOscillator();
+      gate6.type = 'square';
+      gate6.frequency.setValueAtTime(1.2, now);
+      const gate6Gain = this.ctx.createGain();
+      gate6Gain.gain.setValueAtTime(0.035, now);
+      gate6.connect(gate6Gain);
+      gate6Gain.connect(g6.gain);
+      gate6.start();
+      this.musicLayers.push(gate6);
+
+      osc6.connect(filter6);
+      filter6.connect(g6);
+      g6.connect(this.ambientGain);
+      osc6.start();
+      this.musicLayers.push(osc6);
+    }
+
+    // DEFCON 1 exclusive: White noise burst + sub-bass 22Hz rumble
+    if (defcon === 1) {
+      // Low sub-bass sine at 22Hz
+      const subOsc = this.ctx.createOscillator();
+      subOsc.type = 'sine';
+      subOsc.frequency.setValueAtTime(22, now);
+      const subGain = this.ctx.createGain();
+      subGain.gain.setValueAtTime(0, now);
+      subGain.gain.linearRampToValueAtTime(0.08, now + 2.0);
+      subOsc.connect(subGain);
+      subGain.connect(this.ambientGain);
+      subOsc.start();
+      this.musicLayers.push(subOsc);
+
+      // Looping white noise burst simulator (1s on, 0.5s off) using LFO square gating
+      try {
+        const bufferSize = this.ctx.sampleRate * 1.5; // 1.5s total cycle
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        // fill with noise but zero out the last 0.5s
+        const cutOffIndex = this.ctx.sampleRate * 1.0;
+        for (let i = 0; i < bufferSize; i++) {
+          if (i < cutOffIndex) {
+            data[i] = Math.random() * 2 - 1;
+          } else {
+            data[i] = 0;
+          }
+        }
+        const noiseNode1 = this.ctx.createBufferSource();
+        noiseNode1.buffer = buffer;
+        noiseNode1.loop = true;
+
+        const noiseFilter = this.ctx.createBiquadFilter();
+        noiseFilter.type = 'bandpass';
+        noiseFilter.frequency.setValueAtTime(400, now);
+        noiseFilter.Q.setValueAtTime(0.8, now);
+
+        const noiseGainNode = this.ctx.createGain();
+        noiseGainNode.gain.setValueAtTime(0, now);
+        noiseGainNode.gain.linearRampToValueAtTime(0.06, now + 2.0);
+
+        noiseNode1.connect(noiseFilter);
+        noiseFilter.connect(noiseGainNode);
+        noiseGainNode.connect(this.ambientGain);
+        noiseNode1.start(now);
+        this.musicLayers.push(noiseNode1);
+      } catch (err) {
+        console.warn('White noise loop injection failed:', err);
+      }
+    }
+  }
+
   updateAmbientScore(defcon: DefconLevel) {
     this.currentDefcon = defcon;
-    const targetGain = this.getDroneGainForDefcon(defcon);
-    if (this.ambientDroneGainNode && this.ctx) {
-      this.ambientDroneGainNode.gain.linearRampToValueAtTime(targetGain, this.ctx.currentTime + 1.5);
-    }
-    if (this.ambientGain && this.ctx) {
-      const overallTarget = defcon === 5 ? 0.08 : defcon === 4 ? 0.12 : defcon === 3 ? 0.16 : defcon === 2 ? 0.22 : 0.32;
-      this.ambientGain.gain.linearRampToValueAtTime(overallTarget, this.ctx.currentTime + 1.5);
-    }
+    this.updateAdaptiveScore(defcon);
+  }
+
+  updateAdaptiveScore(defcon: DefconLevel) {
+    if (defcon === this.currentMusicDefcon) return;
+    this.buildAdaptiveScore(defcon);
+    this.currentMusicDefcon = defcon;
   }
 
   // 2. INTEL PINGS IMPLEMENTATION (Non-Negotiable requirement)
@@ -245,6 +521,10 @@ class AudioEngine {
       osc.start(now);
       osc.stop(now + 1.3);
     });
+
+    if (level === 1) {
+      this.sfxNuclearAlarm();
+    }
 
     // Layer in synthesized low-bandpass white noise if DEFCON 1
     if (includeWhiteNoise && this.ctx) {
@@ -711,6 +991,304 @@ class AudioEngine {
     gain.connect(this.sfxGain || this.ctx.destination);
     osc.start();
     osc.stop(this.ctx.currentTime + 0.45);
+  }
+
+  /* --- GEOPOLITICAL SIMULATOR CINEMATIC AUDIO SYSTEMS --- */
+
+  playCinematicCue(sceneType: string, phase: number) {
+    if (!this.ctx) return;
+    switch (sceneType) {
+      case 'SCENARIO_BOOT':
+        if (phase === 0) this.startIntroDrone();
+        if (phase === 2) this.playPhaseReveal();
+        break;
+      case 'SCENARIO_START':
+        if (phase === 0) this.playDefconTransition(5);
+        if (phase === 3) this.sfxSuccessConfirmation();
+        break;
+      case 'DEFCON_1_LOCKDOWN':
+        if (phase === 0) this.sfxWarKlaxon();
+        if (phase === 1) this.playDefconTransition(1);
+        if (phase === 4) this.sfxCrisisWarning();
+        break;
+      case 'NUCLEAR_EXCHANGE':
+        if (phase === 0) {
+          this.sfxMissileLaunch();
+          setTimeout(() => this.sfxMissileImpact(), 400);
+        }
+        if (phase === 3) this.sfxCrisisWarning();
+        break;
+      case 'NUCLEAR_AFTERMATH':
+        if (phase === 0) {
+          // Adjust volume
+          const prev = this.musicVolume;
+          this.musicVolume = 0.03;
+          this.startIntroDrone();
+          this.musicVolume = prev;
+        }
+        if (phase === 4) this.sfxPeaceResolution();
+        break;
+      case 'REGIME_CHANGE_SEQUENCE':
+        if (phase === 0) this.sfxCoupStaticBurst();
+        if (phase === 2) this.sfxFactionAlert();
+        break;
+      case 'CEASEFIRE_EPILOGUE':
+        if (phase === 0) this.sfxPeaceResolution();
+        break;
+      case 'MARKET_CRASH_BROADCAST':
+        if (phase === 0) this.sfxMarketCrash();
+        break;
+      case 'COUP_NARRATIVE':
+        if (phase === 0) {
+          this.sfxCoupStaticBurst();
+          this.sfxFactionAlert();
+        }
+        break;
+      case 'PEACE_TREATY_CEREMONY':
+        if (phase === 0) this.sfxUNVote();
+        if (phase === 2) this.sfxPeaceResolution();
+        break;
+      case 'ALLIANCE_SUMMIT':
+        if (phase === 2) this.sfxSuccessConfirmation();
+        break;
+      case 'CYBER_WAR_DECLARATION':
+        if (phase === 0) {
+          this.playIntelPing('cyber');
+          setTimeout(() => this.playIntelPing('cyber'), 200);
+          setTimeout(() => this.playIntelPing('cyber'), 400);
+        }
+        break;
+      case 'OPERATIVE_BURNED_REPORT':
+        if (phase === 0) this.sfxCoupStaticBurst();
+        break;
+      case 'NUCLEAR_DETERRENCE_WIN':
+        if (phase === 0) this.sfxPeaceResolution();
+        break;
+      case 'GAME_OVER_DEFEAT':
+        if (phase === 0) this.sfxWarKlaxon();
+        break;
+      case 'GAME_OVER_VICTORY':
+        if (phase === 0) {
+          this.sfxSuccessConfirmation();
+          setTimeout(() => this.sfxSuccessConfirmation(), 500);
+          setTimeout(() => this.sfxSuccessConfirmation(), 1000);
+        }
+        break;
+      default:
+        break;
+    }
+  }
+
+  sfxTensionPulse(intensity: number) {
+    if (!this.ctx) return;
+    this.resume();
+
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(55, now);
+
+    const actualGain = 0.1 * Math.max(0, Math.min(1, intensity));
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(actualGain, now + 0.2); // attack 200ms
+    gain.gain.setValueAtTime(actualGain, now + 0.5);          // hold 300ms
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 1.1); // release 600ms
+
+    osc.connect(gain);
+    gain.connect(this.sfxGain || this.ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + 1.25);
+  }
+
+  sfxRadioIntercept() {
+    if (!this.ctx) return;
+    this.resume();
+
+    const now = this.ctx.currentTime;
+
+    // 1. White noise band-pass filtered at 1200Hz Q=3 for 80ms
+    try {
+      const bufferSize = this.ctx.sampleRate * 0.08;
+      const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      const noiseNode1 = this.ctx.createBufferSource();
+      noiseNode1.buffer = buffer;
+      const filter1 = this.ctx.createBiquadFilter();
+      filter1.type = 'bandpass';
+      filter1.frequency.setValueAtTime(1200, now);
+      filter1.Q.setValueAtTime(3.0, now);
+      const gain1 = this.ctx.createGain();
+      gain1.gain.setValueAtTime(0.08, now);
+      
+      noiseNode1.connect(filter1);
+      filter1.connect(gain1);
+      gain1.connect(this.sfxGain || this.ctx.destination);
+      noiseNode1.start(now);
+    } catch (e) {}
+
+    // 2. Short burst of 1000Hz sine for 40ms
+    const osc2 = this.ctx.createOscillator();
+    const gain2 = this.ctx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(1000, now + 0.08);
+    gain2.gain.setValueAtTime(0.05, now + 0.08);
+    gain2.gain.setValueAtTime(0, now + 0.12);
+    osc2.connect(gain2);
+    gain2.connect(this.sfxGain || this.ctx.destination);
+    osc2.start(now + 0.08);
+    osc2.stop(now + 0.12);
+
+    // 3. More noise 600Hz for 60ms
+    try {
+      const bufferSize3 = this.ctx.sampleRate * 0.06;
+      const buffer3 = this.ctx.createBuffer(1, bufferSize3, this.ctx.sampleRate);
+      const data3 = buffer3.getChannelData(0);
+      for (let i = 0; i < bufferSize3; i++) {
+        data3[i] = Math.random() * 2 - 1;
+      }
+      const noiseNode3 = this.ctx.createBufferSource();
+      noiseNode3.buffer = buffer3;
+      const filter3 = this.ctx.createBiquadFilter();
+      filter3.type = 'bandpass';
+      filter3.frequency.setValueAtTime(600, now + 0.12);
+      filter3.Q.setValueAtTime(2.0, now + 0.12);
+      const gain3 = this.ctx.createGain();
+      gain3.gain.setValueAtTime(0.08, now + 0.12);
+      
+      noiseNode3.connect(filter3);
+      filter3.connect(gain3);
+      gain3.connect(this.sfxGain || this.ctx.destination);
+      noiseNode3.start(now + 0.12);
+    } catch (e) {}
+
+    // 4. Tone sweep 800 -> 1400Hz over 100ms
+    const osc4 = this.ctx.createOscillator();
+    const gain4 = this.ctx.createGain();
+    osc4.type = 'sine';
+    osc4.frequency.setValueAtTime(800, now + 0.18);
+    osc4.frequency.linearRampToValueAtTime(1400, now + 0.28);
+    gain4.gain.setValueAtTime(0.05, now + 0.18);
+    gain4.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+    
+    osc4.connect(gain4);
+    gain4.connect(this.sfxGain || this.ctx.destination);
+    osc4.start(now + 0.18);
+    osc4.stop(now + 0.285);
+  }
+
+  sfxNuclearAlarm() {
+    if (!this.ctx) return;
+    this.resume();
+
+    const now = this.ctx.currentTime;
+    const dur = 1.2; // 1.2s per cycle, 2 cycles = 2.4s total
+
+    for (let cycle = 0; cycle < 2; cycle++) {
+      const cycleStart = now + cycle * dur;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sawtooth';
+
+      // Sweep frequency: 800Hz -> 1200Hz -> 800Hz over 1.2 seconds
+      osc.frequency.setValueAtTime(800, cycleStart);
+      osc.frequency.linearRampToValueAtTime(1200, cycleStart + 0.6);
+      osc.frequency.linearRampToValueAtTime(800, cycleStart + 1.2);
+
+      // Vibrato: 4Hz LFO at ±30Hz depth
+      const vib = this.ctx.createOscillator();
+      vib.frequency.setValueAtTime(4.0, cycleStart);
+      const vibGain = this.ctx.createGain();
+      vibGain.gain.setValueAtTime(30.0, cycleStart);
+
+      vib.connect(vibGain);
+      vibGain.connect(osc.frequency);
+
+      // Gain: attack 100ms -> peak 0.12 -> hold -> release 400ms
+      gain.gain.setValueAtTime(0, cycleStart);
+      gain.gain.linearRampToValueAtTime(0.12, cycleStart + 0.1);
+      gain.gain.setValueAtTime(0.12, cycleStart + dur - 0.4);
+      gain.gain.linearRampToValueAtTime(0.001, cycleStart + dur);
+
+      vib.start(cycleStart);
+      vib.stop(cycleStart + dur);
+
+      osc.connect(gain);
+      gain.connect(this.sfxGain || this.ctx.destination);
+
+      osc.start(cycleStart);
+      osc.stop(cycleStart + dur);
+    }
+  }
+
+  sfxEMPBurst() {
+    if (!this.ctx) return;
+    this.resume();
+
+    const now = this.ctx.currentTime;
+
+    // 1. Wide-spectrum noise
+    try {
+      const bufferSize = this.ctx.sampleRate * 0.08;
+      const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      const noiseNode = this.ctx.createBufferSource();
+      noiseNode.buffer = buffer;
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'allpass';
+      const gain1 = this.ctx.createGain();
+      gain1.gain.setValueAtTime(0.18, now);
+
+      noiseNode.connect(filter);
+      filter.connect(gain1);
+      gain1.connect(this.sfxGain || this.ctx.destination);
+      noiseNode.start(now);
+    } catch (e) {}
+
+    // 3. Triangle sweep from 20Hz -> 20000Hz -> 20Hz over 400ms starting after 200ms silence
+    const sweepStart = now + 0.28;
+    const osc = this.ctx.createOscillator();
+    const gain2 = this.ctx.createGain();
+
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(20, sweepStart);
+    osc.frequency.exponentialRampToValueAtTime(20000, sweepStart + 0.2);
+    osc.frequency.exponentialRampToValueAtTime(20, sweepStart + 0.4);
+
+    gain2.gain.setValueAtTime(0, sweepStart);
+    gain2.gain.linearRampToValueAtTime(0.03, sweepStart + 0.2);
+    gain2.gain.exponentialRampToValueAtTime(0.001, sweepStart + 0.4);
+
+    osc.connect(gain2);
+    gain2.connect(this.sfxGain || this.ctx.destination);
+
+    osc.start(sweepStart);
+    osc.stop(sweepStart + 0.41);
+  }
+
+  setSceneVolume(targetVolume: number, durationMs: number) {
+    if (this.master && this.ctx) {
+      const targetTime = this.ctx.currentTime + (durationMs / 1000);
+      this.master.gain.setValueAtTime(this.master.gain.value, this.ctx.currentTime);
+      this.master.gain.linearRampToValueAtTime(this.isMuted ? 0.0 : targetVolume, targetTime);
+    }
+  }
+
+  restoreSimVolume(durationMs: number = 1200) {
+    if (this.master && this.ctx) {
+      const targetTime = this.ctx.currentTime + (durationMs / 1000);
+      this.master.gain.setValueAtTime(this.master.gain.value, this.ctx.currentTime);
+      this.master.gain.linearRampToValueAtTime(this.isMuted ? 0.0 : 0.7, targetTime);
+    }
   }
 
   setMute(muted: boolean) {

@@ -194,7 +194,7 @@ export const useDefconStore = create<DefconStoreState & DefconStoreActions>((set
       
       // Fire synthesized harmony chord signature on DEFCON level transition
       audio.playDefconTransition(level);
-      audio.updateAmbientScore(level);
+      audio.updateAdaptiveScore(level);
 
       // Trigger cinematic FX in fxStore
       if (level < current) { // Escalating
@@ -263,7 +263,7 @@ export const useDefconStore = create<DefconStoreState & DefconStoreActions>((set
     });
     applyDefconPalette(5);
     audio.playDefconTransition(5);
-    audio.updateAmbientScore(5);
+    audio.updateAdaptiveScore(5);
   },
 }));
 

@@ -1631,6 +1631,78 @@ body.defcon-1 {
   animation: corePulseFast 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
+@keyframes sceneFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes sceneSlideFromRight {
+  from { transform: translateX(60px); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes sceneSlideFromBottom {
+  from { transform: translateY(40px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes sceneTextReveal {
+  from { clip-path: inset(0 100% 0 0); }
+  to   { clip-path: inset(0 0% 0 0); }
+}
+
+@keyframes sceneCRTTearAway {
+  0%   { clip-path: inset(0 0 0 0); }
+  40%  { clip-path: inset(0 0 60% 0); }
+  70%  { clip-path: inset(40% 0 0 0); }
+  100% { clip-path: inset(50% 50% 50% 50%); opacity: 0; }
+}
+
+@keyframes sceneNuclearPulse {
+  0%,100% { text-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000; }
+  50%     { text-shadow: 0 0 30px #ff4400, 0 0 60px #ff0000, 0 0 100px #ff0000; }
+}
+
+@keyframes sceneDoveFadeIn {
+  0%   { opacity: 0; transform: scale(0.5); }
+  60%  { opacity: 1; transform: scale(1.2); }
+  100% { opacity: 1; transform: scale(1.0); }
+}
+
+@keyframes sceneParticleBurst {
+  0%   { transform: translate(0,0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
+}
+
+@keyframes sceneCursorBlink {
+  0%,100% { opacity: 1; }
+  50%     { opacity: 0; }
+}
+
+@keyframes sceneGeigerSweep {
+  0%   { transform: rotate(-80deg); }
+  80%  { transform: rotate(80deg); }
+  100% { transform: rotate(75deg); }
+}
+
+@keyframes sceneSignatureStroke {
+  from { stroke-dashoffset: 400; }
+  to   { stroke-dashoffset: 0; }
+}
+
+@keyframes sceneRadioStatic {
+  0%,100% { filter: brightness(1) contrast(1); }
+  25%     { filter: brightness(1.3) contrast(1.5) hue-rotate(30deg); }
+  50%     { filter: brightness(0.7) contrast(2) saturate(0); }
+  75%     { filter: brightness(1.1) contrast(1.2); }
+}
+
+@keyframes sceneFinalFade {
+  0%   { opacity: 1; filter: blur(0px); }
+  70%  { opacity: 0.4; filter: blur(2px); }
+  100% { opacity: 0; filter: blur(8px); }
+}
+
 
 
 
