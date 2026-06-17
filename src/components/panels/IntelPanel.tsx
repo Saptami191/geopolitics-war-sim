@@ -6,7 +6,7 @@ import { audio } from '../../utils/audio';
 import { useUIStore } from '../../store/uiStore';
 import AnimatedValue from '../shared/AnimatedValue';
 import ArachnePanel from './ArachnePanel';
-import LeaderDossiersView from './DossierPanel';
+import LeaderProfilesPanel from './LeaderProfilesPanel';
 import { useMirrorStore } from '../../store/mirrorStore';
 
 export default function IntelPanel() {
@@ -419,7 +419,7 @@ export default function IntelPanel() {
         </div>
       )}
 
-      {intelTab === 'DOSSIERS' && <LeaderDossiersView />}
+      {intelTab === 'DOSSIERS' && <LeaderProfilesPanel />}
     </div>
   );
 }
