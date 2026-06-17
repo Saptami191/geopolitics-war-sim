@@ -589,12 +589,199 @@ export interface AuctionLot {
 // ==========================================
 // T3.4 - LEADER PERSONALITY TYPES
 // ==========================================
-export enum LeaderPersonality {
-  HAWK = 'HAWK',
-  DOVE = 'DOVE',
-  PRAGMATIST = 'PRAGMATIST',
-  IDEOLOGUE = 'IDEOLOGUE',
-  UNPREDICTABLE = 'UNPREDICTABLE'
+export const LeaderPersonality = {
+  HAWK: 'HAWK',
+  DOVE: 'DOVE',
+  PRAGMATIST: 'PRAGMATIST',
+  IDEOLOGUE: 'IDEOLOGUE',
+  UNPREDICTABLE: 'UNPREDICTABLE'
+} as const;
+
+export type LeaderPersonality = typeof LeaderPersonality[keyof typeof LeaderPersonality];
+
+export interface LeaderTraitVector {
+  hawkishness: number;         // 0-100
+  prestigeHunger: number;      // 0-100
+  paranoia: number;            // 0-100
+  corruption: number;          // 0-100
+  rigidity: number;            // 0-100
+  riskTolerance: number;       // 0-100
+  patience: number;            // 0-100
+  ideologicalFixation: number; // 0-100
+  institutionalLoyalty: number;// 0-100
+  personalVanity: number;      // 0-100
+  empathy: number;             // 0-100
+  vindictiveness: number;      // 0-100
+  bluffPropensity: number;     // 0-100
+  crisisComposure: number;     // 0-100
+  adaptability: number;        // 0-100
+}
+
+export interface LeaderPersonalityProfile {
+  archetype: string;           // e.g. "Hawkish prestige-driven nationalist", "Paranoid besieged autocrat", etc.
+  traits: LeaderTraitVector;
+}
+
+export interface LeaderEmotionalState {
+  humiliation: number;         // 0-100 (decaying)
+  fear: number;                // 0-100 (decaying)
+  emboldenment: number;        // 0-100 (decaying)
+  anger: number;               // 0-100
+  anxiety: number;             // 0-100
+  pride: number;               // 0-100
+  resentment: number;          // 0-100
+  vindication: number;         // 0-100
+  desperation: number;         // 0-100
+  overconfidence: number;      // 0-100
+  fatigue: number;             // 0-100
+  relief: number;              // 0-100
+  paranoiaSpike: number;       // 0-100
+  moralInjury: number;         // 0-100
+  shame: number;               // 0-100
+}
+
+export interface LeaderTriggerRecord {
+  triggerType: string;         // e.g. "PUBLIC_DEFEAT", "BORDER_PRESSURE", "DIPLOMATIC_CONCESSION"
+  tickOccurred: number;
+  emotionShifted: string;
+  magnitude: number;
+}
+
+export interface LeaderStressHistory {
+  currentStress: number;       // 0-100
+  peakStress: number;
+  ticksAtMaxStress: number;
+  triggerLogs: LeaderTriggerRecord[];
+}
+
+export interface LeaderPublicPersona {
+  rhetoricStyle: 'BELLICOSE' | 'CONCILIATORY' | 'REASSURING' | 'VICTIMHOOD' | 'TRIUMPHALIST' | 'DEFLECTIVE';
+  mediaPresence: string;
+  propagandaFocus: string;
+  un_stance: string;
+}
+
+export interface LeaderPrivateDisposition {
+  negotiationStance: 'UNCOMPROMISING' | 'TRANSACTIONAL' | 'CONCILIATORY' | 'REVOLUTIONARY';
+  coerciveTendency: number; // 0-100
+  backchannelOpenness: number; // 0-100
+  innerCircleLoyaltyRequired: number; // 0-100
+}
+
+export interface LeaderRiskAppetiteProfile {
+  militaryCoercionLimit: number; // 0-100
+  cyberOffensiveTolerance: number; // 0-100
+  nuclearBrinkmanshipThreshold: number; // 0-100
+  covertOperationsExposureFear: number; // 0-100
+}
+
+export interface LeaderTrustStyleProfile {
+  institutionalTrust: number; // 0-100
+  personalTrust: number;      // 0-100
+  coercivePreference: number; // 0-100
+  economicInterdependenceTrust: number; // 0-100
+}
+
+export interface LeaderEscalationStyleProfile {
+  pacing: 'SLOW_METHODICAL' | 'THEATRICAL_PUBLIC' | 'SECRETIVE_DENIABLE' | 'IMPULSIVE_HOT_BLOODED' | 'BRINKMANSHIP_HEAVY';
+  escalationCeiling: number; // 0-100
+  retaliationSpeed: 'INSTANT' | 'CALCULATED_DELAYED' | 'ASYMMETRIC';
+  nuclearLaunchPrudence: number; // 0-100
+}
+
+export interface LeaderCompromiseStyleProfile {
+  faceSavingRequired: boolean;
+  concessionThreshold: number; // 0-100
+  alliedConsultationStance: 'UNCOOPERATIVE' | 'CONSULTATIVE' | 'DEPENDENT';
+  bribeAcceptanceScore: number; // 0-100
+}
+
+export interface LeaderMiscalculationProfile {
+  influenceOfAdvisorFiltering: number; // 0-100
+  propagandaBeliefFactor: number; // 0-100
+  overconfidenceBias: number; // 0-100
+  stressDistortionMultiplier: number; // e.g. 1.0 - 2.0
+}
+
+export interface LeaderSuccessionProfile {
+  coupRiskScore: number; // 0-100
+  successionInstabilityIndex: number; // 0-100
+  designatedSuccessorId?: string;
+  expectedTransitionType: 'ELECTION' | 'COUP' | 'RESPONSES' | 'HANDOFF' | 'ILLNESS';
+}
+
+export interface LeaderVulnerabilityProfile {
+  corruptionVulnerability: number; // 0-100
+  intelligencePenetrationScore: number; // 0-100
+  eliteDissentFractureIndex: number; // 0-100
+  blackmailExposureLevel: number; // 0-100
+}
+
+export const RedLineTriggerType = {
+  TERRITORIAL_INTEGRITY: 'TERRITORIAL_INTEGRITY',
+  REGIME_SURVIVAL: 'REGIME_SURVIVAL',
+  FAMILY_ELITE_SECURITY: 'FAMILY_ELITE_SECURITY',
+  PUBLIC_HUMILIATION: 'PUBLIC_HUMILIATION',
+  ALLIANCE_BETRAYAL: 'ALLIANCE_BETRAYAL',
+  NUCLEAR_STATUS: 'NUCLEAR_STATUS',
+  SYMBOLIC_SOVEREIGNTY: 'SYMBOLIC_SOVEREIGNTY',
+  IDEOLOGICAL_CHALLENGE: 'IDEOLOGICAL_CHALLENGE',
+  ECONOMIC_STRANGULATION: 'ECONOMIC_STRANGULATION',
+  MILITARY_ENCIRCLEMENT: 'MILITARY_ENCIRCLEMENT'
+} as const;
+
+export type RedLineTriggerType = typeof RedLineTriggerType[keyof typeof RedLineTriggerType];
+
+export interface LeaderRedLineProfile {
+  id: string;
+  type: RedLineTriggerType;
+  description: string;
+  isTriggered: boolean;
+  severityIndex: number;    // 0-100
+  actionOnCross: string;
+  discoveryProgress: number; // 0-100 progress towards being known
+  sourceOfDiscovery?: string;
+}
+
+export interface LeaderIntelligenceExposureState {
+  kompromatAssetsTracked: string[];
+  buggedCommsActive: boolean;
+  advisorInfiltrated: boolean;
+  publicDossierCertainty: number; // 0-100
+}
+
+export interface LeaderReactionModel {
+  lastEventReactedTo?: string;
+  lastReactionTick?: number;
+  customRhetoricHistory: string[];
+}
+
+export interface LeaderMemoryTrace {
+  id: string;
+  targetCountryId: string;
+  type: 'PROMISE_KEPT' | 'PROMISE_BROKEN' | 'COERCION_ATTEMPT' | 'BLUFF_SUCCESS' | 'BETRAYAL' | 'PUBLIC_HUMILIATION' | 'PERSONAL_SLIGHT';
+  tickOccurred: number;
+  description: string;
+  weight: number;
+}
+
+export interface LeaderPsychologyState {
+  personality: LeaderPersonalityProfile;
+  emotions: LeaderEmotionalState;
+  stress: LeaderStressHistory;
+  publicPersona: LeaderPublicPersona;
+  privateDisposition: LeaderPrivateDisposition;
+  riskAppetiteToEscalate: LeaderRiskAppetiteProfile;
+  trustStyle: LeaderTrustStyleProfile;
+  escalationStyle: LeaderEscalationStyleProfile;
+  compromiseStyle: LeaderCompromiseStyleProfile;
+  miscalculations: LeaderMiscalculationProfile;
+  succession: LeaderSuccessionProfile;
+  vulnerability: LeaderVulnerabilityProfile;
+  exposure: LeaderIntelligenceExposureState;
+  reactionModel: LeaderReactionModel;
+  redLines: LeaderRedLineProfile[];
+  memories: LeaderMemoryTrace[];
 }
 
 export interface Leader {
@@ -608,19 +795,22 @@ export interface Leader {
   portraitDataUrl?: string;
   installedAtTick: number;
   source: 'INITIAL' | 'ELECTION' | 'COUP';
+  psychology?: LeaderPsychologyState;
 }
 
 // ==========================================
 // T3.5 - CONSEQUENCE CHAIN TYPES
 // ==========================================
-export enum ConsequenceEffectType {
-  SANCTIONS = 'SANCTIONS',
-  UN_RESOLUTION = 'UN_RESOLUTION',
-  REFUGEE_FLOW = 'REFUGEE_FLOW',
-  MARKET_REACTION = 'MARKET_REACTION',
-  ALLIANCE_INVITATION = 'ALLIANCE_INVITATION',
-  COUP_RISK_INCREASE = 'COUP_RISK_INCREASE'
-}
+export const ConsequenceEffectType = {
+  SANCTIONS: 'SANCTIONS',
+  UN_RESOLUTION: 'UN_RESOLUTION',
+  REFUGEE_FLOW: 'REFUGEE_FLOW',
+  MARKET_REACTION: 'MARKET_REACTION',
+  ALLIANCE_INVITATION: 'ALLIANCE_INVITATION',
+  COUP_RISK_INCREASE: 'COUP_RISK_INCREASE'
+} as const;
+
+export type ConsequenceEffectType = typeof ConsequenceEffectType[keyof typeof ConsequenceEffectType];
 
 export type MajorActionType =
   | 'DECLARE_WAR'
