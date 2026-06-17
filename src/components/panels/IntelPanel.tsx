@@ -6,7 +6,7 @@ import { audio } from '../../utils/audio';
 import { useUIStore } from '../../store/uiStore';
 import AnimatedValue from '../shared/AnimatedValue';
 import ArachnePanel from './ArachnePanel';
-import LeaderDossiersView from './DossiersView';
+import LeaderDossiersView from './LeaderDossiersPanel';
 import { useMirrorStore } from '../../store/mirrorStore';
 
 export default function IntelPanel() {
