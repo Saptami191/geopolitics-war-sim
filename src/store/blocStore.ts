@@ -18,7 +18,26 @@ import {
   MembershipSuspensionRecord,
   MembershipExitRecord,
   BlocMediationProcess,
-  BlocActionPreview
+  BlocActionPreview,
+  AllianceObjective,
+  SharedObjectiveStack,
+  MemberReliabilityScore,
+  MemberBurdenShareModel,
+  MemberContributionHistory,
+  FreeRidePressureModel,
+  BlocMemberProfile,
+  BlocCohesionModel,
+  BlocFractureRiskModel,
+  PivotStateProfile,
+  UnalignedPowerProfile,
+  InfluenceCompetitionRecord,
+  CommitmentCredibilityModel,
+  CoalitionTaskingPlan,
+  SharedThreatAssessment,
+  BlocIntelSharingPolicy,
+  BlocEscalationAgreement,
+  MutualAssuranceProfile,
+  BlocIntelligenceState
 } from '../types/bloc';
 import { useWorldStore } from './worldStore';
 import { usePlayerStore } from './playerStore';
@@ -30,6 +49,11 @@ interface BlocState {
   crossBlocChannels: Record<string, CrossBlocChannel>;
   institutionalMemories: Record<BlocType, BlocInstitutionalMemory>;
   mediationProcesses: Record<string, BlocMediationProcess>;
+
+  // Module 4.4 Intelligence Extensions
+  pivotStates: Record<string, PivotStateProfile>;
+  unalignedPowers: Record<string, UnalignedPowerProfile>;
+  influenceCompetition: Record<string, InfluenceCompetitionRecord>;
 }
 
 interface BlocActions {
@@ -56,6 +80,15 @@ interface BlocActions {
   auditContributions: (blocId: BlocType) => void;
   getBlocActionPreview: (blocId: BlocType, agendaType: BlocAgendaItem['type']) => BlocActionPreview;
   tickBlocSystem: (currentTick: number) => void;
+
+  // Module 4.4 specific functional actions
+  proposeAllianceObjective: (blocId: BlocType, obj: Omit<AllianceObjective, 'id' | 'status'>) => string;
+  assignCoalitionTask: (blocId: BlocType, assigneeId: string, taskType: CoalitionTaskingPlan['activeTasks'][0]['taskType']) => string;
+  resolveCoalitionTask: (blocId: BlocType, taskId: string, compliance: CoalitionTaskingPlan['activeTasks'][0]['complianceStatus']) => void;
+  courtPivotState: (pivotId: string, blocId: BlocType, actionType: 'SECURITY_GUARANTEE' | 'ARMS_SALE' | 'TRADE_DEAL' | 'INFRASTRUCTURE' | 'COVERT_OPS', costAP: number, costFinancialB: number) => string;
+  courtUnalignedPower: (unalignedId: string, blocId: BlocType, bidAmountB: number) => string;
+  auditFreeRiders: (blocId: BlocType) => void;
+  reconcileFracture: (blocId: BlocType) => void;
 }
 
 export const useBlocStore = create<BlocState & BlocActions>((set, get) => {
@@ -391,20 +424,360 @@ export const useBlocStore = create<BlocState & BlocActions>((set, get) => {
     BRICS: { blocId: 'BRICS', historyLog: [{ tick: 0, description: 'Fortaleza treaty initiates New Development Bank foundations.', impactType: 'COHESION_GAIN' }] }
   });
 
+  const INITIAL_PIVOT_STATES = (): Record<string, PivotStateProfile> => ({
+    IN: {
+      countryId: 'IN',
+      name: 'India',
+      strategicLocationDescription: 'Himalayan Frontier and Central Indian Ocean Sea Lanes',
+      tradeDependencyWest: 48,
+      tradeDependencyEast: 52,
+      securityDependencyWest: 40,
+      securityDependencyEast: 60,
+      regimeType: 'Democratic Republic',
+      eliteFactionBalance: { proWestPercent: 50, proEastPercent: 30, neutralPercent: 20 },
+      domesticAlignmentPressure: 65,
+      externalCourtingPressure: 85,
+      toleranceForHedging: 90,
+      allianceAttractivenessWest: 70,
+      allianceAttractivenessEast: 65,
+      neutralityStability: 80
+    },
+    TR: {
+      countryId: 'TR',
+      name: 'Turkey',
+      strategicLocationDescription: 'Bosphorus Strait, Europe-Asia Landbridge',
+      tradeDependencyWest: 70,
+      tradeDependencyEast: 30,
+      securityDependencyWest: 85,
+      securityDependencyEast: 15,
+      regimeType: 'Presidential Republic',
+      eliteFactionBalance: { proWestPercent: 45, proEastPercent: 40, neutralPercent: 15 },
+      domesticAlignmentPressure: 55,
+      externalCourtingPressure: 80,
+      toleranceForHedging: 75,
+      allianceAttractivenessWest: 85,
+      allianceAttractivenessEast: 50,
+      neutralityStability: 60
+    },
+    SA: {
+      countryId: 'SA',
+      name: 'Saudi Arabia',
+      strategicLocationDescription: 'Red Sea and Persian Gulf Crude Shipping Lanes',
+      tradeDependencyWest: 35,
+      tradeDependencyEast: 65,
+      securityDependencyWest: 90,
+      securityDependencyEast: 10,
+      regimeType: 'Absolute Monarchy',
+      eliteFactionBalance: { proWestPercent: 60, proEastPercent: 25, neutralPercent: 15 },
+      domesticAlignmentPressure: 45,
+      externalCourtingPressure: 75,
+      toleranceForHedging: 80,
+      allianceAttractivenessWest: 80,
+      allianceAttractivenessEast: 70,
+      neutralityStability: 70
+    },
+    EG: {
+      countryId: 'EG',
+      name: 'Egypt',
+      strategicLocationDescription: 'Suez Canal maritime gateway',
+      tradeDependencyWest: 50,
+      tradeDependencyEast: 50,
+      securityDependencyWest: 80,
+      securityDependencyEast: 20,
+      regimeType: 'Military-backed Presidential State',
+      eliteFactionBalance: { proWestPercent: 55, proEastPercent: 30, neutralPercent: 15 },
+      domesticAlignmentPressure: 50,
+      externalCourtingPressure: 70,
+      toleranceForHedging: 65,
+      allianceAttractivenessWest: 75,
+      allianceAttractivenessEast: 55,
+      neutralityStability: 75
+    }
+  });
+
+  const INITIAL_UNALIGNED_POWERS = (): Record<string, UnalignedPowerProfile> => ({
+    BR: {
+      countryId: 'BR',
+      name: 'Brazil',
+      strengthIndex: 75,
+      accessSellingOptions: ['Agribusiness corridor', 'Amazon climate funds', 'Atlantic naval access'],
+      hedgingParameterTicks: 0,
+      sidePaymentsDemandedB: 3.2,
+      rivalryExploitationLevel: 60,
+      threatToSwingAlignment: true,
+      mediationEffortsHosted: ['Global Peace Summit', 'Amazon Climate Pact'],
+      governanceStance: 'GENUINE_NON_ALIGNED'
+    },
+    ZA: {
+      countryId: 'ZA',
+      name: 'South Africa',
+      strengthIndex: 60,
+      accessSellingOptions: ['Deep water ports', 'Rare earth mining', 'Antarctic scientific research base'],
+      hedgingParameterTicks: 0,
+      sidePaymentsDemandedB: 1.8,
+      rivalryExploitationLevel: 45,
+      threatToSwingAlignment: false,
+      mediationEffortsHosted: ['African Peace Initiative'],
+      governanceStance: 'OPPORTUNISTIC_BALANCER'
+    },
+    PK: {
+      countryId: 'PK',
+      name: 'Pakistan',
+      strengthIndex: 65,
+      accessSellingOptions: ['CPEC corridor ports', 'Nuclear command sharing', 'Central Asia logistics'],
+      hedgingParameterTicks: 0,
+      sidePaymentsDemandedB: 2.5,
+      rivalryExploitationLevel: 75,
+      threatToSwingAlignment: true,
+      mediationEffortsHosted: [],
+      governanceStance: 'OPPORTUNISTIC_BALANCER'
+    }
+  });
+
+  const INITIAL_INFLUENCE_COMPETITION = (): Record<string, InfluenceCompetitionRecord> => ({
+    IN: {
+      targetCountryId: 'IN',
+      influenceWeightWest: 45,
+      influenceWeightEast: 55,
+      tradeTiesWest: 40,
+      tradeTiesEast: 60,
+      securityDependenceWest: 30,
+      securityDependenceEast: 70,
+      intelligenceAccessWest: 50,
+      intelligenceAccessEast: 30,
+      publicNarrativePullWest: 65,
+      publicNarrativePullEast: 35,
+      eliteFactionLeaning: 'BALANCED',
+      recentDiplomacyLogs: ['US-India high-tech partnership agreement signed.', 'Russia-India energy discount channel expanded.'],
+      covertPenetrationIndexWest: 30,
+      covertPenetrationIndexEast: 40
+    },
+    TR: {
+      targetCountryId: 'TR',
+      influenceWeightWest: 65,
+      influenceWeightEast: 35,
+      tradeTiesWest: 75,
+      tradeTiesEast: 25,
+      securityDependenceWest: 80,
+      securityDependenceEast: 20,
+      intelligenceAccessWest: 85,
+      intelligenceAccessEast: 15,
+      publicNarrativePullWest: 50,
+      publicNarrativePullEast: 50,
+      eliteFactionLeaning: 'WEST_LEANING',
+      recentDiplomacyLogs: ['NATO Black Sea military exercise completed.', 'Russia-Turkey gas hub framework negotiated.'],
+      covertPenetrationIndexWest: 60,
+      covertPenetrationIndexEast: 45
+    },
+    SA: {
+      targetCountryId: 'SA',
+      influenceWeightWest: 60,
+      influenceWeightEast: 40,
+      tradeTiesWest: 30,
+      tradeTiesEast: 70,
+      securityDependenceWest: 90,
+      securityDependenceEast: 10,
+      intelligenceAccessWest: 80,
+      intelligenceAccessEast: 20,
+      publicNarrativePullWest: 55,
+      publicNarrativePullEast: 45,
+      eliteFactionLeaning: 'WEST_LEANING',
+      recentDiplomacyLogs: ['US-Saudi defensive security treaty draft reviewed.', 'Saudi-BRICS local currency trade pilot started.'],
+      covertPenetrationIndexWest: 40,
+      covertPenetrationIndexEast: 30
+    }
+  });
+
+  const enrichOrganizationsWithIntelligence = (orgs: Record<BlocType, RegionalOrganization>): Record<BlocType, RegionalOrganization> => {
+    Object.keys(orgs).forEach(k => {
+      const bId = k as BlocType;
+      const org = orgs[bId];
+      
+      const initialObjectives: AllianceObjective[] = [
+        {
+          id: `${bId}-O-1`,
+          name: bId === 'NATO' ? 'Containment of Eastern Pivot States' : bId === 'SCO' ? 'Deterrence of NATO Border Mobilizations' : 'Strategic Economic Security',
+          category: bId === 'NATO' ? 'MILITARY_CONTAINMENT' : bId === 'SCO' ? 'REGIONAL_DETERRENCE' : 'TRADE_PROTECTION',
+          priority: 8,
+          costAP: 15,
+          costFinancialB: 5.0,
+          confidenceRating: { US: 100, GB: 100, CN: 90, RU: 90 },
+          politicalPressure: 45,
+          domesticConstraints: 'Public opinion resists escalating direct costs.',
+          status: 'ACTIVE'
+        },
+        {
+          id: `${bId}-O-2`,
+          name: 'Joint Maritime Corridors Protection',
+          category: 'TRADE_PROTECTION',
+          priority: 6,
+          costAP: 8,
+          costFinancialB: 2.5,
+          confidenceRating: { US: 90, CN: 95 },
+          politicalPressure: 30,
+          domesticConstraints: 'Requires merchant Navy and coast guard permissions.',
+          status: 'ACTIVE'
+        }
+      ];
+
+      org.objectives = {
+        objectives: initialObjectives,
+        lastEvaluationTick: 0,
+        globalPrioritiesDescription: `Standard strategic defense framework for ${org.name}.`
+      };
+
+      org.memberProfiles = {};
+      Object.keys(org.members).forEach(countryId => {
+        const m = org.members[countryId];
+        const isAnchor = m.role === 'ANCHOR_POWER';
+        
+        org.memberProfiles![countryId] = {
+          countryId,
+          reliability: {
+            military: isAnchor ? 90 : Math.round(55 + Math.random() * 35),
+            diplomatic: Math.round(60 + Math.random() * 30),
+            intelligence: Math.round(50 + Math.random() * 40),
+            sanctions: Math.round(55 + Math.random() * 35),
+            crisis: isAnchor ? 95 : Math.round(40 + Math.random() * 50),
+            treaty: Math.round(70 + Math.random() * 25),
+            publicRating: Math.round(m.trustScore),
+            hiddenRating: Math.round(m.trustScore - (Math.random() * 15))
+          },
+          burdenShare: {
+            expectedContribution: {
+              financialB: isAnchor ? 12.0 : 2.5,
+              militaryForces: isAnchor ? 15 : 4,
+              basingRightsAuthorized: isAnchor ? true : Math.random() > 0.4,
+              sanctionsSupport: true,
+              diplomaticCapital: 75,
+              intelligenceExposureRisk: 50,
+              escalationRiskTier: 3,
+              domesticPoliticalCostLimit: 70
+            },
+            actualContribution: {
+              financialB: isAnchor ? 12.0 : (m.role === 'FREE_RIDER' ? 0.8 : 2.2),
+              militaryForces: isAnchor ? 15 : (m.role === 'FREE_RIDER' ? 1 : 3),
+              basingRightsProvided: isAnchor ? true : Math.random() > 0.5,
+              sanctionsSupport: m.role !== 'HEDGING_INSIDER',
+              diplomaticCapital: isAnchor ? 90 : (m.role === 'FREE_RIDER' ? 30 : 60),
+              intelligenceExposureRisk: isAnchor ? 85 : 40,
+              escalationRiskTier: isAnchor ? 4 : 2,
+              domesticPoliticalCostIncurred: isAnchor ? 45 : 30
+            },
+            willingnessToPay: isAnchor ? 95 : (m.role === 'FREE_RIDER' ? 30 : 70),
+            willingnessToRisk: isAnchor ? 90 : (m.role === 'HEDGING_INSIDER' ? 35 : 60),
+            strainRating: m.role === 'FREE_RIDER' ? 20 : Math.round(25 + Math.random() * 40)
+          },
+          contributionHistory: [
+            {
+              tick: 0,
+              actionType: 'KEPT_PROMISE',
+              description: `Initial signing commitment to the ${bId} regional assembly.`,
+              costIncurredB: isAnchor ? 5.0 : 0.8
+            }
+          ],
+          freeRidePressure: {
+            currentFreeRideIndex: m.role === 'FREE_RIDER' ? 75 : 15,
+            accumulatedResentment: m.role === 'FREE_RIDER' ? 45 : 5,
+            targetWillingnessToCorrect: m.role === 'FREE_RIDER' ? 40 : 85,
+            activeAuditing: false,
+            proposedPenalties: m.role === 'FREE_RIDER' ? ['Lapse Voting Privilege', 'Restrict Intelligence Stream'] : []
+          },
+          threatAssessment: isAnchor ? 'No immediate threat of defection.' : `Friction rating centered at ${(100 - m.trustScore).toFixed(1)}%.`
+        };
+      });
+
+      org.cohesionModel = {
+        overallScore: org.cohesion.overallScore,
+        sharedThreatCohesionBonus: 15,
+        ideologicalProximityBonus: bId === 'NATO' ? 20 : 5,
+        tradeInterdependenceFactor: Math.round(org.cohesion.economicCoordination * 0.8),
+        burdenFairnessIndex: bId === 'NATO' ? 45 : 60,
+        unresolvedDisputesPenalty: org.burdenSharingDisputes.length * 10,
+        domesticPoliticalDrag: 10
+      };
+
+      org.fractureModel = {
+        fractureRiskIndex: bId === 'ARAB_LEAGUE' ? 45 : (bId === 'BRICS' ? 35 : 15),
+        primaryStressSource: bId === 'NATO' ? 'Military underfunding' : bId === 'SCO' ? 'Severe territorial rivalries between major anchors' : 'Trade divergence',
+        splinterFactionCountryIds: bId === 'BRICS' ? ['IN'] : [],
+        reconciliationFeasibility: 75
+      };
+
+      org.intelSharingPolicy = {
+        clearanceLevelRequired: bId === 'NATO' ? 'TOP_SECRET' : 'CONFIDENTIAL',
+        sharingFrictionIndex: bId === 'NATO' ? 25 : 55,
+        jointIntrusionsAuthorized: bId === 'NATO' || bId === 'SCO',
+        bannedTargetCountryIds: bId === 'NATO' ? ['RU', 'CN', 'IR'] : ['US', 'GB']
+      };
+
+      org.escalationAgreement = {
+        authorizedResponseTier: bId === 'NATO' ? 'ASYMMETRIC_ESCALATORY' : 'PROPORTIONAL_SYMMETRIC',
+        nuclearBackstopInvoked: bId === 'NATO' || bId === 'SCO',
+        escalationCapCostB: bId === 'NATO' ? 50 : 25
+      };
+
+      org.mutualAssurance = {
+        sovereignGuaranteesActive: bId === 'NATO' ? ['US', 'GB', 'FR', 'DE', 'TR'] : ['CN', 'RU'],
+        retaliatoryTriggersCount: bId === 'NATO' ? 8 : 4,
+        crisisSummitBufferTicks: 2
+      };
+
+      org.coalitionTasking = {
+        activeTasks: [
+          {
+            id: `${bId}-T-1`,
+            assigneeCountryId: bId === 'NATO' ? 'GB' : bId === 'SCO' ? 'RU' : 'JP',
+            taskType: 'PATROL_ZONE',
+            assignedBurdenScore: 30,
+            expectedCompletionTick: 5,
+            actualProgress: 25,
+            complianceStatus: 'FULL',
+            delayTicks: 0,
+            narrative: 'Conducting standard maritime surveillance corridors as agreed.'
+          }
+        ]
+      };
+
+      org.sharedThreatAssessment = {
+        adversaryBlocId: bId === 'NATO' ? 'SCO' : 'NATO',
+        perceivedThreatLevel: bId === 'NATO' ? 75 : 68,
+        sharedIntelAlertsCount: 12,
+        leakedDirectivesCount: 2,
+        criticalVulnIdentified: bId === 'NATO' ? 'Suez logistical choke point and pipeline security.' : 'Western finance hub centralization.'
+      };
+
+      org.intelState = {
+        compiledDate: '2026-06-17',
+        overallThreatLandscape: bId === 'NATO' ? 'INTEGRATED HYBRID FRICTION DETECTED IN SOUTH SEAS AND BALTICS.' : 'WESTERN EXPORT CONTROL EXPANSION DETECTED.',
+        highestDefectionRiskMemberId: bId === 'NATO' ? 'TR' : (bId === 'BRICS' ? 'IN' : undefined),
+        activeInformationOperationsCount: 3
+      };
+    });
+    return orgs;
+  };
+
   return {
-    organizations: INITIAL_ORGANIZATIONS(),
+    organizations: enrichOrganizationsWithIntelligence(INITIAL_ORGANIZATIONS()),
     swingStates: INITIAL_SWING_STATES(),
     crossBlocChannels: INITIAL_CROSS_BLOC_CHANNELS(),
     institutionalMemories: INITIAL_INSTITUTIONAL_MEMORIES(),
     mediationProcesses: {},
 
+    pivotStates: INITIAL_PIVOT_STATES(),
+    unalignedPowers: INITIAL_UNALIGNED_POWERS(),
+    influenceCompetition: INITIAL_INFLUENCE_COMPETITION(),
+
     initializeBlocStore: () => {
       set({
-        organizations: INITIAL_ORGANIZATIONS(),
+        organizations: enrichOrganizationsWithIntelligence(INITIAL_ORGANIZATIONS()),
         swingStates: INITIAL_SWING_STATES(),
         crossBlocChannels: INITIAL_CROSS_BLOC_CHANNELS(),
         institutionalMemories: INITIAL_INSTITUTIONAL_MEMORIES(),
-        mediationProcesses: {}
+        mediationProcesses: {},
+        pivotStates: INITIAL_PIVOT_STATES(),
+        unalignedPowers: INITIAL_UNALIGNED_POWERS(),
+        influenceCompetition: INITIAL_INFLUENCE_COMPETITION()
       });
     },
 
@@ -1260,6 +1633,229 @@ export const useBlocStore = create<BlocState & BlocActions>((set, get) => {
           }
         });
       }));
-    }
+    },
+
+    proposeAllianceObjective: (blocId, obj) => {
+      const id = `OBJ-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      set(produce((draft: BlocState) => {
+        const org = draft.organizations[blocId];
+        if (!org) return;
+        if (!org.objectives) {
+          org.objectives = { objectives: [], lastEvaluationTick: 0, globalPrioritiesDescription: '' };
+        }
+        const newObj: AllianceObjective = {
+          ...obj,
+          id,
+          status: 'ACTIVE'
+        };
+        org.objectives.objectives.push(newObj);
+        
+        draft.institutionalMemories[blocId].historyLog.unshift({
+          tick: useWorldStore.getState().currentTick,
+          description: `Alliance Objective proposed: "${obj.name}" (Priority: ${obj.priority}).`,
+          impactType: 'TRUST_BOOST'
+        });
+      }));
+      useUIStore.getState().pushTerminalLine(`${blocId}: Outlined new shared objective "${obj.name}". Cost: ${obj.costFinancialB}B.`, 'INFO');
+      return id;
+    },
+
+    assignCoalitionTask: (blocId, assigneeId, taskType) => {
+      const id = `TSK-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      set(produce((draft: BlocState) => {
+        const org = draft.organizations[blocId];
+        if (!org) return;
+        if (!org.coalitionTasking) {
+          org.coalitionTasking = { activeTasks: [] };
+        }
+        org.coalitionTasking.activeTasks.push({
+          id,
+          assigneeCountryId: assigneeId,
+          taskType,
+          assignedBurdenScore: Math.round(15 + Math.random() * 40),
+          expectedCompletionTick: useWorldStore.getState().currentTick + 4,
+          actualProgress: 0,
+          complianceStatus: 'PARTIAL',
+          delayTicks: 0,
+          narrative: `Assigned task ${taskType.replace(/_/g, ' ')} to ${assigneeId} to co-share alliance burden.`
+        });
+      }));
+      useUIStore.getState().pushTerminalLine(`${blocId}: Assigned coalition task ${taskType} to ${assigneeId}.`, 'INFO');
+      return id;
+    },
+
+    resolveCoalitionTask: (blocId, taskId, compliance) => {
+      set(produce((draft: BlocState) => {
+        const org = draft.organizations[blocId];
+        if (!org || !org.coalitionTasking) return;
+        const t = org.coalitionTasking.activeTasks.find(x => x.id === taskId);
+        if (!t) return;
+        t.complianceStatus = compliance;
+        t.actualProgress = compliance === 'FULL' ? 100 : (compliance === 'PARTIAL' ? 50 : 10);
+        
+        if (org.memberProfiles && org.memberProfiles[t.assigneeCountryId]) {
+          const mProf = org.memberProfiles[t.assigneeCountryId];
+          const histType: MemberContributionHistory['actionType'] = 
+            compliance === 'FULL' ? 'KEPT_PROMISE' :
+            compliance === 'PARTIAL' ? 'HESITATED' :
+            compliance === 'SYMBOLIC' ? 'BACK_PUBLIC_RESIST_PRIVATE' :
+            compliance === 'OVERT_DEFECTION' ? 'BROKEN_PROMISE' : 'FREE_RODE';
+
+          mProf.contributionHistory.push({
+            tick: useWorldStore.getState().currentTick,
+            objectiveId: taskId,
+            actionType: histType,
+            description: `Resolved coalition task ${t.taskType} with compliance: ${compliance}.`,
+            costIncurredB: compliance === 'FULL' ? 1.5 : 0.2
+          });
+
+          const delta = compliance === 'FULL' ? 15 : (compliance === 'PARTIAL' ? 2 : -20);
+          mProf.reliability.military = Math.max(0, Math.min(100, mProf.reliability.military + delta));
+          mProf.reliability.treaty = Math.max(0, Math.min(100, mProf.reliability.treaty + delta));
+          mProf.reliability.crisis = Math.max(0, Math.min(100, mProf.reliability.crisis + delta));
+          
+          if (compliance === 'OVERT_DEFECTION' || compliance === 'QUIET_RESISTANCE') {
+            mProf.freeRidePressure.currentFreeRideIndex = Math.min(100, mProf.freeRidePressure.currentFreeRideIndex + 25);
+            mProf.freeRidePressure.accumulatedResentment = Math.min(100, mProf.freeRidePressure.accumulatedResentment + 20);
+          }
+        }
+      }));
+      useUIStore.getState().pushTerminalLine(`${blocId}: Resolved task ${taskId} as ${compliance}.`, 'INFO');
+    },
+
+    courtPivotState: (pivotId, blocId, actionType, costAP, costFinancialB) => {
+      const id = `CRT-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      const isWest = blocId === 'NATO' || blocId === 'ASEAN';
+      set(produce((draft: BlocState) => {
+        const pivot = draft.pivotStates[pivotId];
+        if (!pivot) return;
+
+        // Shift elite faction balance
+        const balance = pivot.eliteFactionBalance;
+        if (isWest) {
+          const shift = Math.min(balance.proEastPercent, Math.round(5 + Math.random() * 8));
+          balance.proWestPercent += shift;
+          balance.proEastPercent -= shift;
+          pivot.allianceAttractivenessWest = Math.min(100, pivot.allianceAttractivenessWest + 10);
+        } else {
+          const shift = Math.min(balance.proWestPercent, Math.round(5 + Math.random() * 8));
+          balance.proEastPercent += shift;
+          balance.proWestPercent -= shift;
+          pivot.allianceAttractivenessEast = Math.min(100, pivot.allianceAttractivenessEast + 10);
+        }
+
+        // Adjust influence competition record
+        if (draft.influenceCompetition[pivotId]) {
+          const comp = draft.influenceCompetition[pivotId];
+          if (isWest) {
+            comp.influenceWeightWest = Math.min(100, comp.influenceWeightWest + 15);
+            comp.tradeTiesWest = Math.min(100, comp.tradeTiesWest + 8);
+            if (actionType === 'SECURITY_GUARANTEE' || actionType === 'ARMS_SALE') {
+              comp.securityDependenceWest = Math.min(100, comp.securityDependenceWest + 12);
+            }
+            comp.recentDiplomacyLogs.unshift(`[Tick ${useWorldStore.getState().currentTick}] Courted via Western ${actionType}. Strategic leaning shifted.`);
+          } else {
+            comp.influenceWeightEast = Math.min(100, comp.influenceWeightEast + 15);
+            comp.tradeTiesEast = Math.min(100, comp.tradeTiesEast + 8);
+            if (actionType === 'SECURITY_GUARANTEE' || actionType === 'ARMS_SALE') {
+              comp.securityDependenceEast = Math.min(100, comp.securityDependenceEast + 12);
+            }
+            comp.recentDiplomacyLogs.unshift(`[Tick ${useWorldStore.getState().currentTick}] Courted via Eastern ${actionType}. Strategic leaning shifted.`);
+          }
+        }
+      }));
+
+      // Deduct player cash if they are active country
+      const activePlayerCash = usePlayerStore.getState().cashB;
+      if (activePlayerCash >= costFinancialB) {
+        usePlayerStore.setState({ cashB: activePlayerCash - costFinancialB });
+      }
+
+      useUIStore.getState().pushTerminalLine(`${blocId}: Initiated Courting of Pivot ${pivotId} via ${actionType}. Cost: ${costFinancialB}B.`, 'INFO');
+      return id;
+    },
+
+    courtUnalignedPower: (unalignedId, blocId, bidAmountB) => {
+      const id = `CBID-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      set(produce((draft: BlocState) => {
+        const u = draft.unalignedPowers[unalignedId];
+        if (!u) return;
+
+        u.sidePaymentsDemandedB = Math.max(0, u.sidePaymentsDemandedB - bidAmountB * 0.5);
+        u.rivalryExploitationLevel = Math.min(100, u.rivalryExploitationLevel + 10);
+        
+        draft.institutionalMemories[blocId].historyLog.unshift({
+          tick: useWorldStore.getState().currentTick,
+          description: `Offered side-payment facilitation bid of ${bidAmountB}B to court unaligned power ${unalignedId}.`,
+          impactType: 'TRUST_BOOST'
+        });
+      }));
+
+      // Deduct player cash if they can make it
+      const activePlayerCash = usePlayerStore.getState().cashB;
+      if (activePlayerCash >= bidAmountB) {
+        usePlayerStore.setState({ cashB: activePlayerCash - bidAmountB });
+      }
+
+      useUIStore.getState().pushTerminalLine(`${blocId}: Transferred side-payment aid bid of ${bidAmountB}B to court Unaligned power ${unalignedId}.`, 'INFO');
+      return id;
+    },
+
+    auditFreeRiders: (blocId) => {
+      set(produce((draft: BlocState) => {
+        const org = draft.organizations[blocId];
+        if (!org) return;
+
+        Object.keys(org.members).forEach(cid => {
+          const m = org.members[cid];
+          const mProf = org.memberProfiles?.[cid];
+          
+          if (m.role === 'FREE_RIDER' && mProf) {
+            mProf.freeRidePressure.currentFreeRideIndex = Math.min(100, mProf.freeRidePressure.currentFreeRideIndex + 15);
+            mProf.freeRidePressure.accumulatedResentment = Math.min(100, mProf.freeRidePressure.accumulatedResentment + 25);
+            mProf.freeRidePressure.activeAuditing = true;
+            
+            org.burdenSharingDisputes.push({
+              id: `${blocId}-D-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
+              initiatingCountryId: org.primaryAnchorPowerId,
+              targetCountryId: cid,
+              disputeType: 'MILITARY_UNDERFUNDING',
+              intensity: 70,
+              unresolvedTicks: 0,
+              narrative: `Audit identified substantial contribution shortfall by state ${cid}.`
+            });
+          }
+        });
+
+        draft.institutionalMemories[blocId].historyLog.unshift({
+          tick: useWorldStore.getState().currentTick,
+          description: `Formal alliance contribution audit conducted. Core disputes logged.`,
+          impactType: 'FRACTURE_RISK'
+        });
+      }));
+      useUIStore.getState().pushTerminalLine(`${blocId}: Audit finalized. Burden sharing deficit warning dispatches emitted.`, 'WARNING');
+    },
+
+    reconcileFracture: (blocId) => {
+      set(produce((draft: BlocState) => {
+        const org = draft.organizations[blocId];
+        if (!org) return;
+
+        if (org.fractureModel) {
+          org.fractureModel.fractureRiskIndex = Math.max(0, org.fractureModel.fractureRiskIndex - 25);
+          org.fractureModel.reconciliationFeasibility = Math.min(100, org.fractureModel.reconciliationFeasibility + 15);
+        }
+        
+        org.cohesion.overallScore = Math.min(100, org.cohesion.overallScore + 10);
+        org.cohesion.strategicCoherence = Math.min(100, org.cohesion.strategicCoherence + 12);
+        
+        draft.institutionalMemories[blocId].historyLog.unshift({
+          tick: useWorldStore.getState().currentTick,
+          description: `Strategic consensus summit held to reconcile internal fracture lines.`,
+          impactType: 'COHESION_GAIN'
+        });
+      }));
+      useUIStore.getState().pushTerminalLine(`${blocId}: De-escalated fracture pressures via conciliation framework.`, 'INFO');
+    },
   };
 });

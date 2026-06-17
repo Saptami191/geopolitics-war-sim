@@ -41,6 +41,10 @@ import BlocsPanel from './components/panels/BlocsPanel';
 import { useBlocStore } from './store/blocStore';
 import SoftPowerPanel from './components/panels/SoftPowerPanel';
 import { useSoftPowerStore } from './store/softPowerStore';
+import { useMirrorStore } from './store/mirrorStore';
+import MirrorAdaptationPanel from './components/panels/MirrorAdaptationPanel';
+import { useInfluenceStore } from './store/influenceStore';
+import AdversarialInfluencePanel from './components/panels/AdversarialInfluencePanel';
 import { checkAndRestoreSharedScenario, hydrateScenario, ScenarioPackage } from './utils/persistence';
 
 import AnalysisModeSwitcher from './components/map/AnalysisModeSwitcher';
@@ -120,6 +124,8 @@ const getTabClassification = (tabId: number): string => {
     case 19: return "COSMIC MULTILATERAL UNIT"; // UN & Legal (Shift+F7)
     case 20: return "REGIONAL ALLIANCES CONSOLE"; // Blocs (Shift+F8)
     case 21: return "SOFT POWER & COALITION PRESTIGE"; // Soft power (Shift+F9)
+    case 22: return "COGNITIVE MIRROR ARCHIVE"; // Mirror adaptation (Shift+F10)
+    case 23: return "COGNITIVE SHIELD & DECEPTION (Shift+F11)"; // Adversarial influence & CI
     default: return "CONFIDENTIAL";
   }
 };
@@ -204,6 +210,8 @@ function ActivePanelWrapper({ activeTab, getTabClassification }: { activeTab: nu
       {activeTab === 19 && <UNPanel />}
       {activeTab === 20 && <BlocsPanel />}
       {activeTab === 21 && <SoftPowerPanel />}
+      {activeTab === 22 && <MirrorAdaptationPanel />}
+      {activeTab === 23 && <AdversarialInfluencePanel />}
     </div>
   );
 }
@@ -391,6 +399,15 @@ export default function App() {
         const reach = spStore.profiles[pId]?.index?.globalCompositeScore ?? 50;
         return `prestige:${reach}%`;
       }
+      case 22: { // MIRROR ADAPTATION
+        const mirrorStore = useMirrorStore.getState();
+        const fp = mirrorStore.fingerprint.substring(0, 10).toLowerCase().replace('_', '-');
+        return `fp:${fp} stab:${mirrorStore.stability.coreStability}%`;
+      }
+      case 23: { // ADVERSARIAL INFLUENCE & COGNITIVE SHIELD
+        const infl = useInfluenceStore.getState();
+        return `sus:${infl.warningMetrics.deceptionSuspicion}% poison:${infl.warningMetrics.contaminationLevel}%`;
+      }
       default:
         return '';
     }
@@ -534,6 +551,30 @@ export default function App() {
         e.preventDefault();
         audio.sfxKeyClick();
         usePlayerStore.getState().setActiveTab(20);
+        return;
+      }
+
+      // Check Shift+F9 for Soft Power command console
+      if (e.key === 'F9' && e.shiftKey) {
+        e.preventDefault();
+        audio.sfxKeyClick();
+        usePlayerStore.getState().setActiveTab(21);
+        return;
+      }
+
+      // Check Shift+F10 for Mirror Adaptation command console
+      if (e.key === 'F10' && e.shiftKey) {
+        e.preventDefault();
+        audio.sfxKeyClick();
+        usePlayerStore.getState().setActiveTab(22);
+        return;
+      }
+
+      // Check Shift+F11 for Adversarial Influence & Cognitive Shield command console
+      if (e.key === 'F11' && e.shiftKey) {
+        e.preventDefault();
+        audio.sfxKeyClick();
+        usePlayerStore.getState().setActiveTab(23);
         return;
       }
 
@@ -764,6 +805,9 @@ export default function App() {
               severity: 'CRITICAL',
             });
           });
+
+          // Record Military player action for Mirror Adaptation
+          useMirrorStore.getState().recordPlayerAction('MILITARY', 20, currentTick);
 
           useUIStore.getState().pushAlert({
             title: 'RAPID MISSILE DEPLOYED (ALT+L)',
@@ -1220,6 +1264,8 @@ export default function App() {
                   { id: 19, label: 'UN & LEGAL INQ (Shift+F7)' },
                   { id: 20, label: 'REGIONAL BLOCS (Shift+F8)' },
                   { id: 21, label: 'SOFT POWER (Shift+F9)' },
+                  { id: 22, label: 'MIRROR ADAPTATION (Shift+F10)' },
+                  { id: 23, label: 'COGNITIVE SHIELD (Shift+F11)' },
                 ].map((tab) => {
                   const isActive = playerState.activeTab === tab.id;
                   return (

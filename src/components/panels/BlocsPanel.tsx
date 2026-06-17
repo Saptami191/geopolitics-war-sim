@@ -33,7 +33,17 @@ export default function BlocsPanel() {
     engageHedgingAction,
     proposeCrossBlocCBM,
     auditContributions,
-    getBlocActionPreview
+    getBlocActionPreview,
+    pivotStates,
+    unalignedPowers,
+    influenceCompetition,
+    proposeAllianceObjective,
+    assignCoalitionTask,
+    resolveCoalitionTask,
+    courtPivotState,
+    courtUnalignedPower,
+    auditFreeRiders,
+    reconcileFracture
   } = useBlocStore();
 
   const { countries, currentTick } = useWorldStore();
@@ -41,6 +51,7 @@ export default function BlocsPanel() {
 
   const [selectedBlocId, setSelectedBlocId] = useState<BlocType>('NATO');
   const [selectedSwingStateId, setSelectedSwingStateId] = useState<string>('IN');
+  const [activeSubTab, setActiveSubTab] = useState<'ACTION' | 'INTELLIGENCE'>('ACTION');
   
   // States for sub-forms
   const [newAgendaTitle, setNewAgendaTitle] = useState('');
@@ -55,6 +66,25 @@ export default function BlocsPanel() {
   const [newApplicantId, setNewApplicantId] = useState('BR');
   const [newSuspendedId, setNewSuspendedId] = useState('TR');
   const [newExitedId, setNewExitedId] = useState('TR');
+
+  // Module 4.4 states
+  const [newObjName, setNewObjName] = useState('');
+  const [newObjCategory, setNewObjCategory] = useState<'MILITARY_CONTAINMENT' | 'REGIONAL_DETERRENCE' | 'TRADE_PROTECTION' | 'INTELLIGENCE_INTEGRATION' | 'SANCTIONS_SYNCHRONIZATION'>('TRADE_PROTECTION');
+  const [newObjPriority, setNewObjPriority] = useState(5);
+  const [newObjCostFinance, setNewObjCostFinance] = useState(5.0);
+  const [newObjAP, setNewObjAP] = useState(10);
+  const [newObjConstraints, setNewObjConstraints] = useState('Friction of local legislative chambers.');
+
+  const [newTaskAssignee, setNewTaskAssignee] = useState('DE');
+  const [newTaskType, setNewTaskType] = useState<'INTELLIGENCE_DRILL' | 'PATROL_ZONE' | 'ECONOMIC_COMPAK' | 'SYNCHRONIZE_SANCTION' | 'NUCLEAR_BACKSTOP'>('INTELLIGENCE_DRILL');
+
+  const [courtPivotId, setCourtPivotId] = useState('IN');
+  const [courtActionType, setCourtActionType] = useState<'SECURITY_GUARANTEE' | 'ARMS_SALE' | 'TRADE_DEAL' | 'INFRASTRUCTURE' | 'COVERT_OPS'>('TRADE_DEAL');
+  const [courtCostAP, setCourtCostAP] = useState(15);
+  const [courtCostFinanceB, setCourtCostFinanceB] = useState(4.0);
+
+  const [courtUnalignedId, setCourtUnalignedId] = useState('BR');
+  const [courtBidB, setCourtBidB] = useState(2.5);
 
   const selectedBloc = organizations[selectedBlocId];
   const activeMemory = institutionalMemories[selectedBlocId];
@@ -380,270 +410,829 @@ export default function BlocsPanel() {
               ))}
             </div>
           </div>
-
         </div>
 
         {/* MIDDLE COLUMN 1: Member Roster, Disputes, and Article 5 triggers */}
         <div className="lg:border-r border-[#0f3d0f] p-5 flex flex-col gap-6 lg:col-span-2 overflow-y-auto h-full">
           
-          {/* Active Roster & Roles inside the Chosen Organization */}
-          <div className="border border-[#0f3d0f] bg-black p-4 rounded">
-            <h2 className="text-[11px] uppercase text-gray-400 font-mono tracking-widest mb-4">MEMBER ROSTER AND ROLES mapping</h2>
-            
-            <div className="space-y-4">
-              {Object.keys(selectedBloc.members).map(cid => {
-                const member: BlocMemberState = selectedBloc.members[cid];
-                const country = countries[cid];
-                if (!country) return null;
-
-                return (
-                  <div key={cid} className="border border-[#113011] bg-[#020a02] p-3 rounded flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-base">{country.flagEmoji}</span>
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-mono text-sm text-white font-bold">{country.name}</span>
-                          <span className="text-[8px] bg-[#1a4a1a] px-1 text-green-300 font-mono tracking-tighter rounded uppercase">
-                            {member.role.replace(/_/g, ' ')}
-                          </span>
-                        </div>
-                        <div className="text-[9px] text-gray-500 font-mono mt-0.5">
-                          ENTRANCE_TICK: {member.entranceTick} // CONTRIBUTION: ${member.accumulatedContributions}M
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Numeric Indicators */}
-                    <div className="flex items-center gap-5 text-xs font-mono">
-                      <div className="text-center">
-                        <div className="text-[9px] text-gray-500 uppercase">Trust</div>
-                        <div className={`font-bold ${member.trustScore > 75 ? 'text-green-400' : member.trustScore < 45 ? 'text-red-500' : 'text-yellow-400'}`}>
-                          {member.trustScore}%
-                        </div>
-                      </div>
-
-                      <div className="text-center">
-                        <div className="text-[9px] text-gray-500 uppercase">Fracture</div>
-                        <div className="text-red-400 font-bold">{member.fractureVulnerability}%</div>
-                      </div>
-
-                      <div className="text-center">
-                        <div className="text-[9px] text-gray-500 uppercase">Leverage</div>
-                        <div className="text-cyan-400 font-bold">{member.leveragePoints}pt</div>
-                      </div>
-
-                      {/* Interactive Lobby Action */}
-                      <div className="flex flex-col gap-1">
-                        <button
-                          onClick={() => lobbyMember(selectedBlocId, cid, 'AID')}
-                          className="bg-[#0c240c] border border-[#1b551b] hover:bg-[#164816] text-[8px] px-2 py-0.5 rounded text-white font-mono uppercase"
-                        >
-                          💸 Send Aid
-                        </button>
-                        <button
-                          onClick={() => lobbyMember(selectedBlocId, cid, 'PRESSURE')}
-                          className="bg-[#1e0a0a] border border-[#4a1a1a] hover:bg-[#3a1111] text-[8px] px-2 py-0.5 rounded text-red-400 font-mono uppercase"
-                        >
-                          ⚡ Pressure
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+          {/* Sub Tab Navigation */}
+          <div className="flex bg-[#051105] border border-[#0f3d0f] rounded p-1 mb-2">
+            <button
+              onClick={() => setActiveSubTab('ACTION')}
+              className={`flex-grow py-2 text-xs font-bold font-mono uppercase tracking-widest rounded transition-all ${
+                activeSubTab === 'ACTION'
+                  ? 'bg-[#18ed10]/15 text-[#18ed10] border border-[#18ed10]/30 shadow-[0_0_6px_rgba(24,237,16,0.15)]'
+                  : 'text-gray-500 hover:text-gray-300'
+              }`}
+            >
+              🌐 COALITION ACTION CENTRE
+            </button>
+            <button
+              onClick={() => setActiveSubTab('INTELLIGENCE')}
+              className={`flex-grow py-2 text-xs font-bold font-mono uppercase tracking-widest rounded transition-all ${
+                activeSubTab === 'INTELLIGENCE'
+                  ? 'bg-[#18ed10]/15 text-[#18ed10] border border-[#18ed10]/30 shadow-[0_0_6px_rgba(24,237,16,0.15)]'
+                  : 'text-gray-500 hover:text-gray-300'
+              }`}
+            >
+              👁️ ALLIANCE BLOC INTELLIGENCE (v4.4)
+            </button>
           </div>
 
-          {/* Burden Sharing disputes & Mediation ledger */}
-          <div className="border border-[#0f3d0f] bg-black p-4 rounded">
-            <h2 className="text-[11px] uppercase text-gray-400 font-mono tracking-widest mb-4 flex justify-between">
-              <span>BURDEN-SHARING DISPUTES LEDGER</span>
-              <button
-                onClick={() => auditContributions(selectedBlocId)}
-                className="text-[9px] bg-red-950/40 border border-red-500/40 text-red-400 px-2 rounded hover:bg-red-900/30 transition-all uppercase font-mono"
-              >
-                🔍 Audit compliance
-              </button>
-            </h2>
+          {activeSubTab === 'ACTION' ? (
+            <>
+              {/* Active Roster & Roles inside the Chosen Organization */}
+              <div className="border border-[#0f3d0f] bg-black p-4 rounded">
+                <h2 className="text-[11px] uppercase text-gray-400 font-mono tracking-widest mb-4">MEMBER ROSTER AND ROLES mapping</h2>
+                
+                <div className="space-y-4">
+                  {Object.keys(selectedBloc.members).map(cid => {
+                    const member: BlocMemberState = selectedBloc.members[cid];
+                    const country = countries[cid];
+                    if (!country) return null;
 
-            {selectedBloc.burdenSharingDisputes.length === 0 ? (
-              <p className="text-xs text-gray-500 font-mono">No active disputes registered inside {selectedBlocId}. Strategic consensus maintains.</p>
-            ) : (
-              <div className="space-y-4">
-                {selectedBloc.burdenSharingDisputes.map(dispute => {
-                  const initiatorC = countries[dispute.initiatingCountryId];
-                  const defendantC = countries[dispute.targetCountryId];
-                  if (!initiatorC || !defendantC) return null;
-
-                  // Check if there is an active mediation process for this dispute
-                  const mediation = Object.values(mediationProcesses).find(
-                    m => m.disputeId === dispute.id && m.status === 'ONGOING'
-                  );
-
-                  return (
-                    <div key={dispute.id} className="border border-red-900 bg-[#140505] p-3 rounded font-mono text-xs">
-                      <div className="flex justify-between items-start mb-2">
-                        <span className="text-red-400 font-bold bg-red-950 px-1 text-[9px] border border-red-800/60 uppercase">
-                          DISPUTE: {dispute.disputeType.replace(/_/g, ' ')}
-                        </span>
-                        <div className="text-red-500 text-[10px] font-bold">INTENSITY: {dispute.intensity}%</div>
-                      </div>
-
-                      <p className="text-[11px] text-gray-300 leading-normal mb-3">
-                        {dispute.narrative} <span className="text-red-600">(Unresolved {dispute.unresolvedTicks} ticks)</span>
-                      </p>
-
-                      <div className="flex flex-wrap justify-between items-center gap-2 border-t border-red-900/40 pt-2.5">
-                        <div className="flex items-center gap-1.5 text-[10px]">
-                          <span>Accuser: {initiatorC.flagEmoji} {dispute.initiatingCountryId}</span>
-                          <span>↔</span>
-                          <span>Target: {defendantC.flagEmoji} {dispute.targetCountryId}</span>
+                    return (
+                      <div key={cid} className="border border-[#113011] bg-[#020a02] p-3 rounded flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-base">{country.flagEmoji}</span>
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-mono text-sm text-white font-bold">{country.name}</span>
+                              <span className="text-[8px] bg-[#1a4a1a] px-1 text-green-300 font-mono tracking-tighter rounded uppercase">
+                                {member.role.replace(/_/g, ' ')}
+                              </span>
+                            </div>
+                            <div className="text-[9px] text-gray-500 font-mono mt-0.5">
+                              ENTRANCE_TICK: {member.entranceTick} // CONTRIBUTION: ${member.accumulatedContributions}M
+                            </div>
+                          </div>
                         </div>
 
-                        <div className="flex gap-1.5">
-                          {mediation ? (
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[9px] text-cyan-400 animate-pulse font-bold">MEDIATION ONGOING ({Math.round(mediation.successProbability)}%)</span>
+                        {/* Numeric Indicators */}
+                        <div className="flex items-center gap-5 text-xs font-mono">
+                          <div className="text-center">
+                            <div className="text-[9px] text-gray-500 uppercase">Trust</div>
+                            <div className={`font-bold ${member.trustScore > 75 ? 'text-green-400' : member.trustScore < 45 ? 'text-red-500' : 'text-yellow-400'}`}>
+                              {member.trustScore}%
+                            </div>
+                          </div>
+
+                          <div className="text-center">
+                            <div className="text-[9px] text-gray-500 uppercase">Fracture</div>
+                            <div className="text-red-400 font-bold">{member.fractureVulnerability}%</div>
+                          </div>
+
+                          <div className="text-center">
+                            <div className="text-[9px] text-gray-500 uppercase">Leverage</div>
+                            <div className="text-cyan-400 font-bold">{member.leveragePoints}pt</div>
+                          </div>
+
+                          {/* Interactive Lobby Action */}
+                          <div className="flex flex-col gap-1">
+                            <button
+                              onClick={() => lobbyMember(selectedBlocId, cid, 'AID')}
+                              className="bg-[#0c240c] border border-[#1b551b] hover:bg-[#164816] text-[8px] px-2 py-0.5 rounded text-white font-mono uppercase"
+                            >
+                              💸 Send Aid
+                            </button>
+                            <button
+                              onClick={() => lobbyMember(selectedBlocId, cid, 'PRESSURE')}
+                              className="bg-[#1e0a0a] border border-[#4a1a1a] hover:bg-[#3a1111] text-[8px] px-2 py-0.5 rounded text-red-400 font-mono uppercase"
+                            >
+                              ⚡ Pressure
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Burden Sharing disputes & Mediation ledger */}
+              <div className="border border-[#0f3d0f] bg-black p-4 rounded">
+                <h2 className="text-[11px] uppercase text-gray-400 font-mono tracking-widest mb-4 flex justify-between">
+                  <span>BURDEN-SHARING DISPUTES LEDGER</span>
+                  <button
+                    onClick={() => auditContributions(selectedBlocId)}
+                    className="text-[9px] bg-red-950/40 border border-red-500/40 text-red-400 px-2 rounded hover:bg-red-900/30 transition-all uppercase font-mono"
+                  >
+                    🔍 Audit compliance
+                  </button>
+                </h2>
+
+                {selectedBloc.burdenSharingDisputes.length === 0 ? (
+                  <p className="text-xs text-gray-500 font-mono">No active disputes registered inside {selectedBlocId}. Strategic consensus maintains.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {selectedBloc.burdenSharingDisputes.map(dispute => {
+                      const initiatorC = countries[dispute.initiatingCountryId];
+                      const defendantC = countries[dispute.targetCountryId];
+                      if (!initiatorC || !defendantC) return null;
+
+                      // Check if there is an active mediation process for this dispute
+                      const mediation = Object.values(mediationProcesses).find(
+                        m => m.disputeId === dispute.id && m.status === 'ONGOING'
+                      );
+
+                      return (
+                        <div key={dispute.id} className="border border-red-900 bg-[#140505] p-3 rounded font-mono text-xs">
+                          <div className="flex justify-between items-start mb-2">
+                            <span className="text-red-400 font-bold bg-red-950 px-1 text-[9px] border border-red-800/60 uppercase">
+                              DISPUTE: {dispute.disputeType.replace(/_/g, ' ')}
+                            </span>
+                            <div className="text-red-500 text-[10px] font-bold">INTENSITY: {dispute.intensity}%</div>
+                          </div>
+
+                          <p className="text-[11px] text-gray-300 leading-normal mb-3">
+                            {dispute.narrative} <span className="text-red-600">(Unresolved {dispute.unresolvedTicks} ticks)</span>
+                          </p>
+
+                          <div className="flex flex-wrap justify-between items-center gap-2 border-t border-red-900/40 pt-2.5">
+                            <div className="flex items-center gap-1.5 text-[10px]">
+                              <span>Accuser: {initiatorC.flagEmoji} {dispute.initiatingCountryId}</span>
+                              <span>↔</span>
+                              <span>Target: {defendantC.flagEmoji} {dispute.targetCountryId}</span>
+                            </div>
+
+                            <div className="flex gap-1.5">
+                              {mediation ? (
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[9px] text-cyan-400 animate-pulse font-bold">MEDIATION ONGOING ({Math.round(mediation.successProbability)}%)</span>
+                                  <button
+                                    onClick={() => tickMediation(mediation.id)}
+                                    className="bg-[#102425] border border-cyan-500 text-[8px] px-1.5 py-0.5 rounded text-white"
+                                  >
+                                    Step
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => proposeMediation(selectedBlocId, dispute.id, playerCountryId)}
+                                  className="bg-[#0b1b1d] border border-cyan-500/60 hover:bg-[#0f2d30] text-[9.5px] px-2 py-0.5 rounded text-cyan-400"
+                                >
+                                  🤝 Propose Mediation
+                                </button>
+                              )}
+
                               <button
-                                onClick={() => tickMediation(mediation.id)}
-                                className="bg-[#102425] border border-cyan-500 text-[8px] px-1.5 py-0.5 rounded text-white"
+                                onClick={() => resolveBurdenSharingDispute(selectedBlocId, dispute.id, true)}
+                                className="bg-[#0c240c] border border-[#1b551b] hover:bg-[#164816] text-[9.5px] px-2 py-0.5 rounded text-green-400"
                               >
-                                Step
+                                💳 Fund Side-payment ($800M)
+                              </button>
+                              <button
+                                onClick={() => resolveBurdenSharingDispute(selectedBlocId, dispute.id, false)}
+                                className="bg-[#1a0a0a] border border-[#4a1a1a] hover:bg-[#3a1111] text-[9.5px] px-2 py-0.5 rounded text-red-500"
+                              >
+                                ⚠️ Terminate Unilaterally
                               </button>
                             </div>
-                          ) : (
-                            <button
-                              onClick={() => proposeMediation(selectedBlocId, dispute.id, playerCountryId)}
-                              className="bg-[#0b1b1d] border border-cyan-500/60 hover:bg-[#0f2d30] text-[9.5px] px-2 py-0.5 rounded text-cyan-400"
-                            >
-                              🤝 Propose Mediation
-                            </button>
-                          )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
 
-                          <button
-                            onClick={() => resolveBurdenSharingDispute(selectedBlocId, dispute.id, true)}
-                            className="bg-[#0c240c] border border-[#1b551b] hover:bg-[#164816] text-[9.5px] px-2 py-0.5 rounded text-green-400"
-                          >
-                            💳 Fund Side-payment ($800M)
-                          </button>
-                          <button
-                            onClick={() => resolveBurdenSharingDispute(selectedBlocId, dispute.id, false)}
-                            className="bg-[#1a0a0a] border border-[#4a1a1a] hover:bg-[#3a1111] text-[9.5px] px-2 py-0.5 rounded text-red-500"
-                          >
-                            ⚠️ Terminate Unilaterally
-                          </button>
+                {/* Lodge a New Burden sharing Dispute (Player sandbox tool!) */}
+                <div className="mt-4 border-t border-[#113011]/50 pt-4 text-xs font-mono">
+                  <h3 className="text-gray-400 mb-2 uppercase text-[10px]">Lodge formal burden-sharing audit complaint</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <select
+                      value={disputeDefendant}
+                      onChange={e => setDisputeDefendant(e.target.value)}
+                      className="bg-black border border-[#113011] text-[#4af626] rounded px-2.5 py-1"
+                    >
+                      {Object.keys(selectedBloc.members).map(cid => (
+                        <option key={cid} value={cid}>{cid} - {countries[cid]?.name}</option>
+                      ))}
+                    </select>
+
+                    <select
+                      value={disputeType}
+                      onChange={e => setDisputeType(e.target.value as any)}
+                      className="bg-black border border-[#113011] text-[#4af626] rounded px-2.5 py-1"
+                    >
+                      <option value="MILITARY_UNDERFUNDING">Military Underfunding</option>
+                      <option value="REFUSION_OF_BASES">Refusing Bases deployment</option>
+                      <option value="EXCESSIVE_REFUGEE_EXPOSURE">Refuger logistics asymmetry</option>
+                      <option value="SANCTIONS_EVASION">Sanctions Evasion</option>
+                      <option value="FINANCIAL_UNDERCONTRIBUTION">Development default</option>
+                    </select>
+
+                    <button
+                      onClick={() => lodgeBurdenSharingComplaint(selectedBlocId, playerCountryId, disputeDefendant, disputeType)}
+                      className="bg-red-950/60 border border-red-500 text-red-400 rounded px-3 py-1 font-bold uppercase text-[10px]"
+                    >
+                      ⚡ Execute Audit complaint
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* ACTIVE ARTICLE-5 COLLECTIVE DEFENSE GUARANTEES */}
+              <div className="border border-[#0f3d0f] bg-black p-4 rounded">
+                <h2 className="text-[11px] uppercase text-gray-400 font-mono tracking-widest mb-4">COLLECTIVE DEFENSE TRIGGER ROOM</h2>
+
+                {selectedBloc.activeCollectiveDefenseTriggers.length === 0 ? (
+                  <p className="text-xs text-gray-500 font-mono mb-4">No military trigger events reported. Extended security deterrence active.</p>
+                ) : (
+                  <div className="space-y-4 mb-4">
+                    {selectedBloc.activeCollectiveDefenseTriggers.map(trig => {
+                      return (
+                        <div key={trig.id} className="border border-red-600 bg-[#250707] p-4 rounded font-mono text-xs">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-[#18ed10] font-bold">ARTICLE 5 FILE: {trig.id}</span>
+                            <span className="text-white text-[10px] bg-red-800 px-1 uppercase">{trig.status}</span>
+                          </div>
+
+                          <div className="mb-3 text-[11px] text-gray-300">
+                            Pact member state <strong className="text-white">{trig.victimId}</strong> came under kinetic strike by non-pact actor <strong className="text-white">{trig.attackerId}</strong>. 
+                            Mobilization Confidence Index: <strong className="text-[#18ed10]">{trig.confidenceIndex}%</strong>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 text-[10px]">
+                            <div className="bg-black/40 p-2 border border-[#1b551b]/40 rounded text-green-300">
+                              <strong>COORDINATED UNITS FOR MOBILISATION:</strong>
+                              <div className="mt-1">{trig.contributingNations.join(', ') || 'None'}</div>
+                            </div>
+                            <div className="bg-black/40 p-2 border border-red-500/20 rounded text-red-400">
+                              <strong>NATIONS REFUSING RESPONSES (OPT-OUTS):</strong>
+                              <div className="mt-1">{trig.refusingNations.join(', ') || 'None'}</div>
+                            </div>
+                          </div>
+
+                          {trig.status === 'PENDING_CONSULTATION' && (
+                            <div className="flex gap-2 justify-end border-t border-red-800/40 pt-3">
+                              <button
+                                onClick={() => respondToArticle5(selectedBlocId, trig.id, playerCountryId, 'JOIN')}
+                                className="bg-green-700 hover:bg-green-600 text-white font-bold px-3 py-1 rounded text-[10px]"
+                              >
+                                🟢 COMMIT BATTLE GROUP
+                              </button>
+                              <button
+                                onClick={() => respondToArticle5(selectedBlocId, trig.id, playerCountryId, 'REFUSE')}
+                                className="bg-red-800 hover:bg-red-700 text-white font-bold px-3 py-1 rounded text-[10px]"
+                              >
+                                🔴 EVADE / EXERCISE OPT-OUT
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Manual Article 5 Simulator button (sandbox tool) */}
+                <div className="border-t border-[#113011]/30 pt-3 flex flex-wrap justify-between items-center gap-2">
+                  <span className="text-[10px] text-gray-400 font-mono">Simulate a kinetic attack to test Article 5 limits:</span>
+                  <button
+                    onClick={() => {
+                      const targetM = Object.keys(selectedBloc.members).find(c => c !== 'US') || 'DE';
+                      triggerArticle5(selectedBlocId, 'RU', targetM);
+                    }}
+                    className="bg-black border border-red-500/70 hover:bg-red-950/20 px-3 py-1 text-[9px] uppercase font-bold text-red-400 tracking-wider rounded"
+                  >
+                    💥 Trigger Kinetic Attack Drill
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col gap-6 font-sans">
+              
+              {/* SECTION 1: SHARED ALLIANCE OBJECTIVES */}
+              <div className="border border-[#0f3d0f] bg-black p-4 rounded">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-xs font-bold font-mono text-white tracking-wider uppercase">🎯 SHARED ALLIANCE OBJECTIVES COORDINATION</h3>
+                  <span className="text-[9px] text-green-400 bg-green-950/40 px-1.5 border border-green-800 uppercase font-mono">
+                    Last evaluation: Tick {selectedBloc.objectives?.lastEvaluationTick || 0}
+                  </span>
+                </div>
+                
+                <p className="text-[10px] text-gray-400 font-mono leading-relaxed mb-4">
+                  {selectedBloc.objectives?.globalPrioritiesDescription || 'No priority briefs compiled.'}
+                </p>
+
+                {/* Objectives list */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                  {selectedBloc.objectives?.objectives?.map(obj => (
+                    <div key={obj.id} className="border border-[#113011] bg-[#020a02] p-3 rounded flex flex-col justify-between">
+                      <div>
+                        <div className="flex justify-between items-start mb-1 text-[10px]">
+                          <span className="text-cyan-400 font-bold">{obj.id}</span>
+                          <span className="text-[#18ed10] bg-[#102a10] px-1 uppercase font-mono">{obj.status}</span>
+                        </div>
+                        <h4 className="text-white font-bold leading-tight mb-2 text-xs">{obj.name}</h4>
+                        <div className="space-y-1 text-[10px] text-gray-500 font-mono mb-2">
+                          <div>Category: <span className="text-yellow-400">{obj.category.replace(/_/g, ' ')}</span></div>
+                          <div className="truncate">Constraints: <span className="text-gray-300">{obj.domesticConstraints}</span></div>
+                        </div>
+                      </div>
+
+                      <div className="border-t border-[#113011]/50 pt-2 flex justify-between items-center text-[10px] font-mono mt-2">
+                        <div>Priority Score: <span className="text-white font-bold">{obj.priority}/10</span></div>
+                        <div>Cost: <span className="text-[#18ed10] font-bold">${obj.costFinancialB}B</span> ({obj.costAP} AP)</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Propose Objective Form */}
+                <div className="bg-[#030903] border border-[#113c11] p-3 rounded">
+                  <span className="text-[10px] text-gray-400 font-mono block mb-2 uppercase select-none">Outline shared alliance objective</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2 font-mono text-[11px]">
+                    <input
+                      type="text"
+                      placeholder="Objective Statement (e.g. South sea logistics safeguarding)"
+                      value={newObjName}
+                      onChange={e => setNewObjName(e.target.value)}
+                      className="w-full bg-black border border-[#113011] text-[#4af626] rounded px-2.5 py-1 text-xs sm:col-span-2"
+                    />
+                    <select
+                      value={newObjCategory}
+                      onChange={e => setNewObjCategory(e.target.value as any)}
+                      className="bg-black border border-[#113011] text-[#4af626] rounded px-2.5 py-1 text-xs"
+                    >
+                      <option value="MILITARY_CONTAINMENT">Military Containment</option>
+                      <option value="REGIONAL_DETERRENCE">Regional Deterrence</option>
+                      <option value="TRADE_PROTECTION">Trade Protection</option>
+                      <option value="INTELLIGENCE_INTEGRATION">Intelligence Integration</option>
+                      <option value="SANCTIONS_SYNCHRONIZATION">Sanctions Sync</option>
+                    </select>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-gray-500 uppercase">Priority:</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="10"
+                        value={newObjPriority}
+                        onChange={e => setNewObjPriority(Number(e.target.value))}
+                        className="w-12 bg-black border border-[#113011] text-[#4af626] rounded px-1.5 py-0.5"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-gray-400 uppercase">AP cost:</span>
+                      <input
+                        type="number"
+                        value={newObjAP}
+                        onChange={e => setNewObjAP(Number(e.target.value))}
+                        className="w-16 bg-black border border-[#113011] text-[#4af626] rounded px-1.5 py-0.5"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-gray-450 uppercase">Treasury cost (B):</span>
+                      <input
+                        type="number"
+                        step="0.5"
+                        value={newObjCostFinance}
+                        onChange={e => setNewObjCostFinance(Number(e.target.value))}
+                        className="w-16 bg-black border border-[#113011] text-[#4af626] rounded px-1.5 py-0.5"
+                      />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Domestic legislative barriers..."
+                      value={newObjConstraints}
+                      onChange={e => setNewObjConstraints(e.target.value)}
+                      className="w-full bg-black border border-[#113011] text-[#4af626] rounded px-2.5 py-1 text-xs sm:col-span-2"
+                    />
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (!newObjName) return;
+                      proposeAllianceObjective(selectedBlocId, {
+                        name: newObjName,
+                        category: newObjCategory,
+                        priority: newObjPriority,
+                        costAP: newObjAP,
+                        costFinancialB: newObjCostFinance,
+                        confidenceRating: {},
+                        politicalPressure: Math.round(newObjPriority * 8 + Math.random() * 20),
+                        domesticConstraints: newObjConstraints
+                      });
+                      setNewObjName('');
+                    }}
+                    className="w-full bg-[#0b240b] border border-[#18ed10] hover:bg-[#18ed10]/10 text-[#18ed10] py-1 text-[11px] font-mono font-bold uppercase rounded transition-all"
+                  >
+                    🚀 RATIFY COALITION OBJECTIVE
+                  </button>
+                </div>
+              </div>
+
+              {/* SECTION 2: COALITION TASKING & BURDEN PERFORMANCE */}
+              <div className="border border-[#0f3d0f] bg-black p-4 rounded">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-xs font-bold font-mono text-white tracking-wider uppercase">📋 COALITION TASKING & BURDEN SHARING</h3>
+                  <button
+                    onClick={() => auditFreeRiders(selectedBlocId)}
+                    className="text-[9.5px] bg-red-950/40 border border-red-500/65 text-red-400 px-2.5 py-1 rounded hover:bg-red-900/30 font-mono uppercase font-bold"
+                  >
+                    ⚡ Audit Free Riders
+                  </button>
+                </div>
+
+                <div className="space-y-3 mb-4">
+                  {selectedBloc.coalitionTasking?.activeTasks.map(t => {
+                    const country = countries[t.assigneeCountryId];
+                    return (
+                      <div key={t.id} className="border border-cyan-900/40 bg-[#020c0f] p-3 rounded font-mono text-xs">
+                        <div className="flex justify-between items-center mb-1.5">
+                          <div>
+                            <span className="text-cyan-400 font-bold">TASK {t.id}</span>
+                            <span className="text-gray-400 ml-2 uppercase text-[9px]">({t.taskType.replace(/_/g, ' ')})</span>
+                          </div>
+                          <span className={`text-[8px] px-1 font-bold rounded uppercase ${
+                            t.complianceStatus === 'FULL' ? 'bg-green-950 text-green-300' :
+                            t.complianceStatus === 'PARTIAL' ? 'bg-yellow-950 text-yellow-300' : 'bg-red-950 text-red-400'
+                          }`}>
+                            {t.complianceStatus} COMPLIANCE
+                          </span>
+                        </div>
+
+                        <p className="text-[10px] text-gray-300 mb-2 leading-relaxed">
+                          Assigned state: <strong>{country?.flagEmoji} {country?.name}</strong>. {t.narrative}
+                        </p>
+
+                        <div className="mb-3.5">
+                          <div className="flex justify-between mb-1 text-[9px] text-[#56b149]">
+                            <span>Task Progress:</span>
+                            <span>{t.actualProgress}%</span>
+                          </div>
+                          <div className="w-full bg-[#112d11] h-1 rounded overflow-hidden">
+                            <div className="bg-[#18ed10] h-full" style={{ width: `${t.actualProgress}%` }}></div>
+                          </div>
+                        </div>
+
+                        {/* Interactive solve interface */}
+                        {t.complianceStatus !== 'FULL' && (
+                          <div className="flex gap-1.5 justify-end">
+                            <span className="text-[9px] text-gray-500 pt-1">Resolve Sandbox:</span>
+                            <button
+                              onClick={() => resolveCoalitionTask(selectedBlocId, t.id, 'FULL')}
+                              className="bg-green-950 text-green-400 border border-green-800 text-[9px] px-2 rounded font-bold"
+                            >
+                              FULL
+                            </button>
+                            <button
+                              onClick={() => resolveCoalitionTask(selectedBlocId, t.id, 'QUIET_RESISTANCE')}
+                              className="bg-red-950 text-red-400 border border-red-800 text-[9px] px-2 rounded font-bold"
+                            >
+                              RESIST
+                            </button>
+                            <button
+                              onClick={() => resolveCoalitionTask(selectedBlocId, t.id, 'OVERT_DEFECTION')}
+                              className="bg-red-900 text-white text-[9px] px-2 rounded font-bold"
+                            >
+                              DEFECT
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Delegate active chore form */}
+                <div className="bg-[#030903] border border-[#113c11] p-3 rounded mb-4">
+                  <span className="text-[10px] text-gray-400 font-mono block mb-2 uppercase">Outsource task to alliance member</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2 font-mono text-xs">
+                    <select
+                      value={newTaskAssignee}
+                      onChange={e => setNewTaskAssignee(e.target.value)}
+                      className="bg-black border border-[#113011] text-[#4af626] rounded px-2.5 py-1 text-xs"
+                    >
+                      {Object.keys(selectedBloc.members).map(cid => (
+                        <option key={cid} value={cid}>{cid} - {countries[cid]?.name}</option>
+                      ))}
+                    </select>
+
+                    <select
+                      value={newTaskType}
+                      onChange={e => setNewTaskType(e.target.value as any)}
+                      className="bg-black border border-[#113011] text-[#4af626] rounded px-2.5 py-1 text-xs"
+                    >
+                      <option value="INTELLIGENCE_DRILL">Joint Cyber Intel Drill</option>
+                      <option value="PATROL_ZONE">Defense patrol corridor</option>
+                      <option value="ECONOMIC_COMPAK">Economic aid allocation</option>
+                      <option value="SYNCHRONIZE_SANCTION">Synchronize trade embargo</option>
+                    </select>
+                  </div>
+                  <button
+                    onClick={() => assignCoalitionTask(selectedBlocId, newTaskAssignee, newTaskType)}
+                    className="w-full bg-cyan-950 border border-cyan-800 hover:bg-cyan-900 text-cyan-300 py-1 text-[11px] font-mono font-bold uppercase rounded"
+                  >
+                    🛰️ DELEGATE TASK TO MEMBER
+                  </button>
+                </div>
+
+                {/* Sub-Roster Reliability Matrix */}
+                <div className="border border-[#113011]/60 bg-black/60 p-3 rounded">
+                  <h4 className="text-[9.5px] uppercase text-gray-400 tracking-wider mb-2 font-mono">ALLIANCE MEMBER RELIABILITY DOSSIERS</h4>
+                  <div className="space-y-3 font-mono text-[10.5px]">
+                    {Object.keys(selectedBloc.members).map(cid => {
+                      const prof = selectedBloc.memberProfiles?.[cid];
+                      const country = countries[cid];
+                      if (!prof) return null;
+                      return (
+                        <div key={cid} className="border-b border-[#222]/30 pb-2.5">
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-white font-bold">{country?.flagEmoji} {country?.name} ({cid})</span>
+                            <span className="text-gray-500 uppercase text-[9px]">
+                              Auditing: <span className={prof.freeRidePressure.activeAuditing ? 'text-red-400' : 'text-green-400'}>
+                                {prof.freeRidePressure.activeAuditing ? 'Active Audit' : 'Excused'}
+                              </span>
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 text-[9px]">
+                            <div className="bg-[#111] p-1 border border-[#333]/30 rounded text-center">
+                              <div className="text-gray-500 font-bold uppercase text-[7px]">Mil Reliance</div>
+                              <span className="text-white">{prof.reliability.military}%</span>
+                            </div>
+                            <div className="bg-[#111] p-1 border border-[#333]/30 rounded text-center">
+                              <div className="text-gray-500 font-bold uppercase text-[7px]">Dipl Treaty</div>
+                              <span className="text-white">{prof.reliability.diplomatic}%</span>
+                            </div>
+                            <div className="bg-[#111] p-1 border border-[#333]/30 rounded text-center">
+                              <div className="text-gray-500 font-bold uppercase text-[7px]">Intel Share</div>
+                              <span className="text-white">{prof.reliability.intelligence}%</span>
+                            </div>
+                            <div className="bg-[#111] p-1 border border-[#333]/30 rounded text-center">
+                              <div className="text-gray-500 font-bold uppercase text-[7px]">Sanc Compliance</div>
+                              <span className="text-white">{prof.reliability.sanctions}%</span>
+                            </div>
+                            <div className="bg-[#111] p-1 border border-[#333]/30 rounded text-center">
+                              <div className="text-gray-500 font-bold uppercase text-[7px]">Pay Willingness</div>
+                              <span className="text-yellow-400">{prof.burdenShare.willingnessToPay}%</span>
+                            </div>
+                            <div className="bg-[#111] p-1 border border-[#333]/30 rounded text-center">
+                              <div className="text-gray-500 font-bold uppercase text-[7px]">FreeRide Rating</div>
+                              <span className="text-red-400">{prof.freeRidePressure.currentFreeRideIndex}%</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 3: PIVOT STATE COMPETITION MATRIX */}
+              <div className="border border-[#0f3d0f] bg-black p-4 rounded">
+                <h3 className="text-xs font-bold font-mono text-white tracking-wider mb-2 uppercase">🎯 PIVOT STATES & UNALIGNED POWER COURT ROOM</h3>
+                <p className="text-[10px] text-gray-400 mb-4 font-mono leading-relaxed">
+                  Geopolitical competition targets unaligned pivot states. Secure strategic leverage, transfer aid payments, or expand military ties to out-maneuver rival blocs.
+                </p>
+
+                {/* Pivot states mapping */}
+                <div className="space-y-4 mb-4">
+                  {Object.keys(pivotStates).map(pid => {
+                    const p = pivotStates[pid];
+                    const comp = influenceCompetition[pid];
+                    const country = countries[pid];
+                    return (
+                      <div key={pid} className="border border-yellow-500/15 bg-[#090802] p-3 rounded font-mono text-xs">
+                        <div className="flex justify-between items-center mb-2">
+                          <strong className="text-yellow-400 text-xs">{country?.flagEmoji} {country?.name} (Pivot State)</strong>
+                          <span className="text-[9px] bg-yellow-950 border border-yellow-800 text-yellow-300 px-1 uppercase">
+                            STABILITY: {p.neutralityStability}%
+                          </span>
+                        </div>
+
+                        <div className="text-[10px] text-gray-400 mb-2 leading-relaxed">
+                          <strong>LOCATION:</strong> {p.strategicLocationDescription}
+                        </div>
+
+                        {/* Trade & Defense Weight Indicators */}
+                        <div className="grid grid-cols-2 gap-3 mb-3 text-[10px]">
+                          <div className="bg-black/60 p-2 rounded border border-[#222]">
+                            <div className="text-[#18ed10] font-bold text-[8.5px] uppercase tracking-wider mb-1">Western Ties</div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-500">Influence:</span>
+                              <span className="text-white">{comp?.influenceWeightWest}%</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-500">Trade share:</span>
+                              <span className="text-white">{p.tradeDependencyWest}%</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-500">Security links:</span>
+                              <span className="text-white">{p.securityDependencyWest}%</span>
+                            </div>
+                          </div>
+
+                          <div className="bg-black/60 p-2 rounded border border-[#222]">
+                            <div className="text-red-400 font-bold text-[8.5px] uppercase tracking-wider mb-1">Eastern Ties</div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-500">Influence:</span>
+                              <span className="text-white">{comp?.influenceWeightEast}%</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-500">Trade share:</span>
+                              <span className="text-white">{p.tradeDependencyEast}%</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-500">Security links:</span>
+                              <span className="text-white">{p.securityDependencyEast}%</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Elite balance */}
+                        <div className="bg-[#112] p-2 rounded text-[9.5px] mb-3 outline outline-blue-900/40">
+                          <strong>Elite balance:</strong> Pro-West: <span className="text-white">{p.eliteFactionBalance.proWestPercent}%</span> // Pro-East: <span className="text-white">{p.eliteFactionBalance.proEastPercent}%</span> // Neutral: <span className="text-gray-400">{p.eliteFactionBalance.neutralPercent}%</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Court dynamic form */}
+                <div className="bg-[#030903] border border-[#113c11] p-3 rounded">
+                  <span className="text-[10px] text-gray-400 font-mono block mb-2 uppercase">Lauch courting operations targeting Pivot state</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono mb-3">
+                    <select
+                      value={courtPivotId}
+                      onChange={e => setCourtPivotId(e.target.value)}
+                      className="bg-black border border-[#113011] text-[#4af626] rounded px-2.5 py-1 text-xs"
+                    >
+                      {Object.keys(pivotStates).map(pid => (
+                        <option key={pid} value={pid}>{pid} - {countries[pid]?.name}</option>
+                      ))}
+                    </select>
+
+                    <select
+                      value={courtActionType}
+                      onChange={e => setCourtActionType(e.target.value as any)}
+                      className="bg-black border border-[#113011] text-[#4af626] rounded px-2.5 py-1 text-xs"
+                    >
+                      <option value="SECURITY_GUARANTEE">Deploy security guarantees</option>
+                      <option value="ARMS_SALE">Authorize precision Arms Sale</option>
+                      <option value="TRADE_DEAL">Implement Bilateral Trade Pact</option>
+                      <option value="INFRASTRUCTURE">Fund Corridor Corridors</option>
+                      <option value="COVERT_OPS">Launch covert campaign</option>
+                    </select>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-gray-500 uppercase">AP leverage:</span>
+                      <input
+                        type="number"
+                        value={courtCostAP}
+                        onChange={e => setCourtCostAP(Number(e.target.value))}
+                        className="w-16 bg-black border border-[#113011] text-[#4af626] rounded px-1.5 py-0.5 text-xs"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-gray-500 uppercase">Cost (B Cash):</span>
+                      <input
+                        type="number"
+                        step="0.5"
+                        value={courtCostFinanceB}
+                        onChange={e => setCourtCostFinanceB(Number(e.target.value))}
+                        className="w-16 bg-black border border-[#113011] text-[#4af626] rounded px-1.5 py-0.5 text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => courtPivotState(courtPivotId, selectedBlocId, courtActionType, courtCostAP, courtCostFinanceB)}
+                    className="w-full bg-[#0b240b] border border-[#18ed10] hover:bg-[#18ed10]/15 text-[#18ed10] font-bold py-1.5 rounded uppercase font-mono text-[11px]"
+                  >
+                    🤝 COMMENCE ACTIVE COURTING INITIATIVE
+                  </button>
+                </div>
+              </div>
+
+              {/* SECTION 4: UNALIGNED POWERS BID ROOM */}
+              <div className="border border-[#0f3d0f] bg-black p-4 rounded font-mono text-xs">
+                <h3 className="text-xs font-bold font-mono text-white tracking-wider mb-2 uppercase">🎁 UNALIGNED POWERS BIDDING EXCHANGE</h3>
+                <p className="text-[10px] text-gray-400 mb-4 leading-normal">
+                  Genuine non-aligned nations offer strategic access options to the highest bidder. Transfer cash side-payments to buy diplomatic alignment or close port corridor options.
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                  {Object.keys(unalignedPowers).map(unid => {
+                    const u = unalignedPowers[unid];
+                    return (
+                      <div key={unid} className="border border-[#113011] bg-[#020a02] p-3 rounded">
+                        <div className="flex justify-between items-center mb-1.5">
+                          <span className="text-white font-bold">{u.name} ({unid})</span>
+                          <span className="text-yellow-400 font-bold bg-yellow-950 px-1 text-[8px] uppercase rounded">
+                            {u.governanceStance.replace(/_/g, ' ')}
+                          </span>
+                        </div>
+
+                        <div className="space-y-1.5 text-[9.5px] text-gray-300">
+                          <div>Sovereign Strength Score: <span className="text-cyan-400 font-bold">{u.strengthIndex}/100</span></div>
+                          <div>Payments Demanded: <span className="text-green-400 font-bold">${u.sidePaymentsDemandedB.toFixed(1)}B</span></div>
+                          <div className="text-gray-500 mt-1 uppercase text-[8px]">AVAILABLE ACCESS OPTIONS:</div>
+                          <ul className="list-disc pl-3 text-[8.5px] text-yellow-105">
+                            {u.accessSellingOptions.map((opt, id) => <li key={id}>{opt}</li>)}
+                          </ul>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="bg-[#030903] border border-[#113c11] p-3 rounded">
+                  <span className="text-[10px] text-gray-400 block mb-2 uppercase">Lauch side-payment bid for power alignment</span>
+                  <div className="flex gap-2 mb-2">
+                    <select
+                      value={courtUnalignedId}
+                      onChange={e => setCourtUnalignedId(e.target.value)}
+                      className="bg-black border border-[#113011] text-[#4af626] rounded px-2.5 py-1 text-xs flex-grow"
+                    >
+                      {Object.keys(unalignedPowers).map(unid => (
+                        <option key={unid} value={unid}>{unid} - {countries[unid]?.name}</option>
+                      ))}
+                    </select>
+
+                    <div className="flex items-center gap-1.5 bg-black/60 px-2.5 border border-[#113011] rounded text-[10px] text-[#18ed10]">
+                      <span>Offer (Billions Cash):</span>
+                      <input
+                        type="number"
+                        step="0.5"
+                        value={courtBidB}
+                        onChange={e => setCourtBidB(Number(e.target.value))}
+                        className="w-16 bg-black border-none text-[#18ed10] text-center"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => courtUnalignedPower(courtUnalignedId, selectedBlocId, courtBidB)}
+                    className="w-full bg-[#0b240b] border border-[#18ed10] hover:bg-[#18ed10]/15 text-[#18ed10] font-bold py-1.5 rounded uppercase font-mono text-[11px]"
+                  >
+                    💸 DISPATCH AID BID TRANSFER
+                  </button>
+                </div>
+              </div>
+
+              {/* SECTION 5: COHESION MODEL & STRUCTURAL FRICTION */}
+              <div className="border border-red-950/40 bg-black p-4 rounded font-mono text-xs">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-xs font-bold text-red-400 tracking-wider">⚡ ALLIANCE COHESION & FRACTURE MODEL</h3>
+                  <button
+                    onClick={() => reconcileFracture(selectedBlocId)}
+                    className="bg-green-950 text-green-300 border border-green-800 text-[10px] px-2.5 py-1 rounded hover:bg-green-900/30 uppercase font-bold"
+                  >
+                    🤝 Reconcile Fracture Lines
+                  </button>
+                </div>
+
+                {selectedBloc.cohesionModel && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-[10px] text-gray-300">
+                    <div className="bg-[#050505] p-3 rounded border border-red-900/20">
+                      <div className="text-white font-bold mb-2 uppercase text-[9px]">COHESION STRUCTURAL MULTIPLIERS</div>
+                      <div className="space-y-1">
+                        <div className="flex justify-between">
+                          <span>Ideal Proximity bonus:</span>
+                          <span className="text-green-400">+{selectedBloc.cohesionModel.ideologicalProximityBonus}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Shared Threat multiplier:</span>
+                          <span className="text-green-400">+{selectedBloc.cohesionModel.sharedThreatCohesionBonus}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Trade interdependence:</span>
+                          <span className="text-green-400">+{selectedBloc.cohesionModel.tradeInterdependenceFactor}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Unresolved disputes drag:</span>
+                          <span className="text-red-400">-{selectedBloc.cohesionModel.unresolvedDisputesPenalty}</span>
                         </div>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
 
-            {/* Lodge a New Burden sharing Dispute (Player sandbox tool!) */}
-            <div className="mt-4 border-t border-[#113011]/50 pt-4 text-xs font-mono">
-              <h3 className="text-gray-400 mb-2 uppercase text-[10px]">Lodge formal burden-sharing audit complaint</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <select
-                  value={disputeDefendant}
-                  onChange={e => setDisputeDefendant(e.target.value)}
-                  className="bg-black border border-[#113011] text-[#4af626] rounded px-2.5 py-1"
-                >
-                  {Object.keys(selectedBloc.members).map(cid => (
-                    <option key={cid} value={cid}>{cid} - {countries[cid]?.name}</option>
-                  ))}
-                </select>
-
-                <select
-                  value={disputeType}
-                  onChange={e => setDisputeType(e.target.value as any)}
-                  className="bg-black border border-[#113011] text-[#4af626] rounded px-2.5 py-1"
-                >
-                  <option value="MILITARY_UNDERFUNDING">Military Underfunding</option>
-                  <option value="REFUSION_OF_BASES">Refusing Bases deployment</option>
-                  <option value="EXCESSIVE_REFUGEE_EXPOSURE">Refuger logistics asymmetry</option>
-                  <option value="SANCTIONS_EVASION">Sanctions Evasion</option>
-                  <option value="FINANCIAL_UNDERCONTRIBUTION">Development default</option>
-                </select>
-
-                <button
-                  onClick={() => lodgeBurdenSharingComplaint(selectedBlocId, playerCountryId, disputeDefendant, disputeType)}
-                  className="bg-red-950/60 border border-red-500 text-red-400 rounded px-3 py-1 font-bold uppercase text-[10px]"
-                >
-                  ⚡ Execute Audit complaint
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* ACTIVE ARTICLE-5 COLLECTIVE DEFENSE GUARANTEES */}
-          <div className="border border-[#0f3d0f] bg-black p-4 rounded">
-            <h2 className="text-[11px] uppercase text-gray-400 font-mono tracking-widest mb-4">COLLECTIVE DEFENSE TRIGGER ROOM</h2>
-
-            {selectedBloc.activeCollectiveDefenseTriggers.length === 0 ? (
-              <p className="text-xs text-gray-500 font-mono mb-4">No military trigger events reported. Extended security deterrence active.</p>
-            ) : (
-              <div className="space-y-4 mb-4">
-                {selectedBloc.activeCollectiveDefenseTriggers.map(trig => {
-                  return (
-                    <div key={trig.id} className="border border-red-600 bg-[#250707] p-4 rounded font-mono text-xs">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-[#18ed10] font-bold">ARTICLE 5 FILE: {trig.id}</span>
-                        <span className="text-white text-[10px] bg-red-800 px-1 uppercase">{trig.status}</span>
-                      </div>
-
-                      <div className="mb-3 text-[11px] text-gray-300">
-                        Pact member state <strong className="text-white">{trig.victimId}</strong> came under kinetic strike by non-pact actor <strong className="text-white">{trig.attackerId}</strong>. 
-                        Mobilization Confidence Index: <strong className="text-[#18ed10]">{trig.confidenceIndex}%</strong>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 text-[10px]">
-                        <div className="bg-black/40 p-2 border border-[#1b551b]/40 rounded text-green-300">
-                          <strong>COORDINATED UNITS FOR MOBILISATION:</strong>
-                          <div className="mt-1">{trig.contributingNations.join(', ') || 'None'}</div>
+                    <div className="bg-[#050505] p-3 rounded border border-red-900/20 flex flex-col justify-between">
+                      <div>
+                        <div className="text-red-400 font-bold mb-2 uppercase text-[9px]">FRACTURE STATE RISK</div>
+                        <div className="flex justify-between items-center mb-2">
+                          <span>Fracture Core Risk index:</span>
+                          <span className="text-red-500 font-bold text-sm">{selectedBloc.fractureModel?.fractureRiskIndex || 10}%</span>
                         </div>
-                        <div className="bg-black/40 p-2 border border-red-500/20 rounded text-red-400">
-                          <strong>NATIONS REFUSING RESPONSES (OPT-OUTS):</strong>
-                          <div className="mt-1">{trig.refusingNations.join(', ') || 'None'}</div>
+                        <div className="text-[9px] text-gray-500 uppercase leading-snug">
+                          CRITICAL STRESS VECTOR: <span className="text-red-400 font-bold">{selectedBloc.fractureModel?.primaryStressSource}</span>
                         </div>
                       </div>
 
-                      {trig.status === 'PENDING_CONSULTATION' && (
-                        <div className="flex gap-2 justify-end border-t border-red-800/40 pt-3">
-                          <button
-                            onClick={() => respondToArticle5(selectedBlocId, trig.id, playerCountryId, 'JOIN')}
-                            className="bg-green-700 hover:bg-green-600 text-white font-bold px-3 py-1 rounded text-[10px]"
-                          >
-                            🟢 COMMIT BATTLE GROUP
-                          </button>
-                          <button
-                            onClick={() => respondToArticle5(selectedBlocId, trig.id, playerCountryId, 'REFUSE')}
-                            className="bg-red-800 hover:bg-red-700 text-white font-bold px-3 py-1 rounded text-[10px]"
-                          >
-                            🔴 EVADE / EXERCISE OPT-OUT
-                          </button>
+                      {selectedBloc.fractureModel?.splinterFactionCountryIds && selectedBloc.fractureModel.splinterFactionCountryIds.length > 0 && (
+                        <div className="text-[9px] bg-red-950/20 border border-red-900/40 p-1.5 rounded text-red-400 mt-2">
+                          Splintering pair alignment risk: <strong>{selectedBloc.fractureModel.splinterFactionCountryIds.join(', ')}</strong>
                         </div>
                       )}
                     </div>
-                  );
-                })}
+                  </div>
+                )}
               </div>
-            )}
-
-            {/* Manual Article 5 Simulator button (sandbox tool) */}
-            <div className="border-t border-[#113011]/30 pt-3 flex flex-wrap justify-between items-center gap-2">
-              <span className="text-[10px] text-gray-400 font-mono">Simulate a kinetic attack to test Article 5 limits:</span>
-              <button
-                onClick={() => {
-                  const targetM = Object.keys(selectedBloc.members).find(c => c !== 'US') || 'DE';
-                  triggerArticle5(selectedBlocId, 'RU', targetM);
-                }}
-                className="bg-black border border-red-500/70 hover:bg-red-950/20 px-3 py-1 text-[9px] uppercase font-bold text-red-400 tracking-wider rounded"
-              >
-                💥 Trigger Kinetic Attack Drill
-              </button>
+              
             </div>
-          </div>
+          )}
 
         </div>
 

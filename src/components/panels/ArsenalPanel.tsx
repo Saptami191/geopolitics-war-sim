@@ -8,6 +8,7 @@ import { calculateHaversineDistanceKm } from '../../utils/routeMath';
 import { WeaponType, CarrierGroupUnit, ICBMSiloUnit, SubmarineUnit, AirWingUnit, SpecForceUnit } from '../../types';
 import { audio } from '../../utils/audio';
 import AnimatedValue from '../shared/AnimatedValue';
+import { useMirrorStore } from '../../store/mirrorStore';
 import {
   Anchor,
   Compass,
@@ -154,6 +155,9 @@ export default function ArsenalPanel() {
         lWeapon.operational = lWeapon.count;
       }
     });
+
+    // Record Military player action for Mirror Adaptation
+    useMirrorStore.getState().recordPlayerAction('MILITARY', 25, currentTick);
 
     // Update specific silo state
     setStrikeMission(siloId, targetCountry.name, ty, tx, targetId);

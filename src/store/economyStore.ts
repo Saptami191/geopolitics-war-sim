@@ -3,6 +3,7 @@ import { produce } from 'immer';
 import { ArmsDeal, CommodityType } from '../types';
 import { useWorldStore } from './worldStore';
 import { usePlayerStore } from './playerStore';
+import { useMirrorStore } from './mirrorStore';
 
 interface LedgerEntry {
   id: string;
@@ -99,6 +100,9 @@ export const useEconomyStore = create<EconomyState & EconomyStoreActions>((set, 
       }
     });
     useWorldStore.getState().registerConsequenceChain('IMPOSE_SANCTIONS', { sourceCountryId: sourceId, targetCountryId: targetId });
+    if (sourceId === usePlayerStore.getState().countryId) {
+      useMirrorStore.getState().recordPlayerAction('SANCTIONS', 15, useWorldStore.getState().currentTick);
+    }
     useWorldStore.getState().addGlobalEvent(`Sanctions: ${sourceId} imposes strict trade embargo on all imports/exports with ${targetId}.`, 'WARNING');
   },
 

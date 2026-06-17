@@ -7,6 +7,7 @@ import { useUIStore } from '../../store/uiStore';
 import AnimatedValue from '../shared/AnimatedValue';
 import ArachnePanel from './ArachnePanel';
 import LeaderDossiersView from './LeaderDossiersView';
+import { useMirrorStore } from '../../store/mirrorStore';
 
 export default function IntelPanel() {
   const countryId = usePlayerStore((s) => s.countryId);
@@ -145,6 +146,9 @@ export default function IntelPanel() {
         blowbackRisk: spec.blowback,
       });
     });
+
+    // Record Covert player action for Mirror Adaptation
+    useMirrorStore.getState().recordPlayerAction('COVERT', 15, useWorldStore.getState().currentTick);
 
     useWorldStore.getState().addGlobalEvent(`COVERT SECTOR: Logged operative vectors against ${selectedTargetId}.`, 'WARNING');
     

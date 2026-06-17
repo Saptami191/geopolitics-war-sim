@@ -13,6 +13,8 @@ import { useSanctionsStore } from '../store/sanctionsStore';
 import { useUNStore } from '../store/unStore';
 import { useBlocStore } from '../store/blocStore';
 import { useSoftPowerStore } from '../store/softPowerStore';
+import { useMirrorStore } from '../store/mirrorStore';
+import { useInfluenceStore } from '../store/influenceStore';
 import { pollScenarioStatus } from './scenarioEngine';
 import { processFactions } from './factionEngine';
 import { processFiscal } from './fiscalEngine';
@@ -22,6 +24,7 @@ import { processRelations } from './diplomaticEngine';
 import { processSentiment } from './propagandaEngine';
 import { processAllAI } from './aiDecisionEngine';
 import { processComplexPhase2Geopolitics } from './geopoliticalEngine';
+import { tickLeadersAndPsychology } from './leaderPsychologyEngine';
 import { CovertOp, WorldState } from '../types';
 import { dampenOpinionDelta } from '../utils/pacing';
 import { ConsequenceEngine } from './consequenceEngine';
@@ -108,6 +111,9 @@ export function executeSimulationStep() {
     // 10. Process Phase 2 evolved Geopolitical, Population, Cabinet, Sectors, and Provinces systems
     processComplexPhase2Geopolitics(draft, player.countryId);
 
+    // 11. Run Leader Psychological drift, event decays, stress, and succession assessments
+    tickLeadersAndPsychology(draft);
+
     // T3.5 Consequence core engine tick integration
     ConsequenceEngine.tick(draft.currentTick, draft);
   });
@@ -155,6 +161,12 @@ export function executeSimulationStep() {
   // Synchronize Soft Power and Symbolic Influence System
   useSoftPowerStore.getState().tickSoftPowerSystem(useWorldStore.getState().currentTick);
 
+  // Synchronize Mirror Adaptation Profiling and Strategic Counters
+  useMirrorStore.getState().tickMirrorState(useWorldStore.getState().currentTick);
+
+  // Synchronize Adversarial Influence Behavior and Cognitive Warfare (Module 4.5)
+  useInfluenceStore.getState().tickInfluenceSystem(useWorldStore.getState().currentTick);
+
   // Regularly save a checkpoint if there is no ongoing nuclear exchange or active aftermath
   const currentWorld = useWorldStore.getState();
   const currentPlayer = usePlayerStore.getState();
@@ -176,9 +188,21 @@ function advanceCovertIntelligenceOps(draft: WorldState, playerCountryId: string
 
       if (op.remainingTicks <= 0) {
         // Resolve mission
+        let successProbability = op.successProbability;
+        let blowbackRisk = op.blowbackRisk;
+
+        const mirrorState = useMirrorStore.getState();
+        if (mirrorState.activeCounterCommitment?.activeStrategyId === 'COUNTER_INTEL_HULL') {
+          successProbability = Math.max(5, successProbability - 35);
+          blowbackRisk = Math.min(95, blowbackRisk + 30);
+        } else if (mirrorState.activeCounterCommitment?.activeStrategyId === 'FIREWALL_QUARANTINE') {
+          successProbability = Math.max(10, successProbability - 25);
+          blowbackRisk = Math.min(95, blowbackRisk + 15);
+        }
+
         const successRoll = Math.random() * 100;
 
-        if (successRoll < op.successProbability) {
+        if (successRoll < successProbability) {
           op.status = 'SUCCESS';
 
           const target = draft.countries[op.targetCountryId];
@@ -227,7 +251,7 @@ function advanceCovertIntelligenceOps(draft: WorldState, playerCountryId: string
 
           // Roll for blowback risk
           const blowbackRoll = Math.random() * 100;
-          if (blowbackRoll < op.blowbackRisk) {
+          if (blowbackRoll < blowbackRisk) {
             op.status = 'BLOWN';
 
             const target = draft.countries[op.targetCountryId];
