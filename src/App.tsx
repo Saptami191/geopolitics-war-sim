@@ -8,6 +8,8 @@ import { restartTickTimer, stopTickTimer, executeSimulationStep } from './sim/ti
 import { ScenarioId } from './types';
 import { playGlobeTransition } from './utils/transition';
 import { audio } from './utils/audio';
+import { useFxStore } from './store/fxStore';
+import GlobalFXLayer from './components/fx/GlobalFXLayer';
 
 // Components
 import WorldMap from './components/map/WorldMap';
@@ -250,6 +252,59 @@ export default function App() {
   
   const personaDef = PERSONAS[activePersona];
   const availablePanels = getAvailablePanels(currentDefconLevel, personaDef.authorityTier);
+
+  const globalEventLog = useWorldStore((s) => s.globalEventLog);
+  const prevLogLengthRef = React.useRef(globalEventLog.length);
+
+  useEffect(() => {
+    if (globalEventLog.length > prevLogLengthRef.current) {
+      // Find newly added events. Since they are unshifted to the front:
+      const addedCount = globalEventLog.length - prevLogLengthRef.current;
+      const newEvents = globalEventLog.slice(0, addedCount);
+      
+      newEvents.forEach((ev) => {
+        const text = ev.text.toLowerCase();
+        if (text.includes('thermonuclear') || text.includes('nuclear exchange') || text.includes('nuclear') || text.includes('detonation')) {
+          useFxStore.getState().triggerFx({
+            type: 'NUCLEAR_DETONATION',
+            severity: 'CATASTROPHIC',
+            triggerTick: currentTick,
+            expiryTick: currentTick + 8,
+            durationMs: 3800,
+            payload: { message: ev.text }
+          });
+        } else if (text.includes('declared war') || text.includes('war clerk') || text.includes('declared war')) {
+          useFxStore.getState().triggerFx({
+            type: 'WAR_DECLARED',
+            severity: 'HIGH',
+            triggerTick: currentTick,
+            expiryTick: currentTick + 5,
+            durationMs: 2000,
+            payload: { message: ev.text }
+          });
+        } else if (text.includes('coup') || text.includes('regime')) {
+          useFxStore.getState().triggerFx({
+            type: 'COUP_SUCCESS',
+            severity: 'HIGH',
+            triggerTick: currentTick,
+            expiryTick: currentTick + 4,
+            durationMs: 1800,
+            payload: { message: ev.text }
+          });
+        } else if (text.includes('ceasefire')) {
+          useFxStore.getState().triggerFx({
+            type: 'CEASEFIRE_SIGNED',
+            severity: 'MEDIUM',
+            triggerTick: currentTick,
+            expiryTick: currentTick + 5,
+            durationMs: 2500,
+            payload: { message: ev.text }
+          });
+        }
+      });
+    }
+    prevLogLengthRef.current = globalEventLog.length;
+  }, [globalEventLog, currentTick]);
 
   useEffect(() => {
     // If the active panel is no longer available due to DEFCON or persona changes, reset it.
@@ -870,6 +925,18 @@ export default function App() {
           // Record Military player action for Mirror Adaptation
           useMirrorStore.getState().recordPlayerAction('MILITARY', 20, currentTick);
 
+          // Trigger cinematic FX in unified store Bus
+          useFxStore.getState().triggerFx({
+            type: 'MISSILE_LAUNCH',
+            severity: 'HIGH',
+            triggerTick: currentTick,
+            expiryTick: currentTick + 3,
+            durationMs: 1200,
+            sourceCountryId: playerCountryId,
+            targetCountryId: targetId,
+            payload: { weaponType: pickedWeaponModule }
+          });
+
           useUIStore.getState().pushAlert({
             title: 'RAPID MISSILE DEPLOYED (ALT+L)',
             message: `1x Operational "${pickedWeaponModule.replace('_', ' ')}" launched out of silos, targeting [${targetId}]. ETA: ${tickDist} T.`,
@@ -939,6 +1006,18 @@ export default function App() {
           
           useWorldStore.getState().addGlobalEvent(`BLOCKADE DECREE: Placed aggregate sanctions on ${targetId} via Rapid Command [Alt+S].`, 'WARNING');
           
+          // Trigger sanctions ESCALATION in cinematic fxStore Bus
+          useFxStore.getState().triggerFx({
+            type: 'SANCTIONS_ESCALATION',
+            severity: 'MEDIUM',
+            triggerTick: currentTick,
+            expiryTick: currentTick + 4,
+            durationMs: 1800,
+            sourceCountryId: playerCountryId,
+            targetCountryId: targetId,
+            payload: {}
+          });
+
           useUIStore.getState().pushAlert({
             title: 'TRADE EMBARGO RATIFIED (ALT+S)',
             message: `Sovereign trade block imposed blockades on all import tech-transfers involving [${targetId}].`,
@@ -1062,11 +1141,13 @@ export default function App() {
   // 4. Main Dashboard Simulation View
   return (
     <div className="h-screen w-screen flex flex-col bg-[#030503] relative text-xs font-mono overflow-hidden">
-      {/* Popups, Alerts & Bazaar overlays */}
-      <WhiteFlashOverlay />
-      <CountryInspector />
-      <AlertBanner />
-      <OnboardingHints />
+      <div id="sovereign-fx-shake-root" className="w-full h-full flex flex-col relative" style={{ willChange: 'transform' }}>
+        {/* Popups, Alerts & Bazaar overlays */}
+        <WhiteFlashOverlay />
+        <GlobalFXLayer />
+        <CountryInspector />
+        <AlertBanner />
+        <OnboardingHints />
       {showBazaar && <BlackMarketBazaar onClose={() => setShowBazaar(false)} />}
       <CommsSyncController />
       <CommsPanel isOpen={commsOpen} onClose={() => setCommsOpen(false)} />
@@ -1198,6 +1279,7 @@ export default function App() {
                   stopTickTimer();
                 }
                 executeSimulationStep();
+                useFxStore.getState().clearExpiredFx(useWorldStore.getState().currentTick);
               }}
               className="px-2 py-0.5 border border-[#1a5c1a]/45 bg-[#0c180c] hover:bg-[#1a5c1a]/30 text-white hover:text-[#00ff44] text-[8.5px] uppercase font-bold cursor-pointer transition-all rounded-sm hover:border-[#00ff44]"
               title="Manual Step +1 Tick"
@@ -1214,6 +1296,7 @@ export default function App() {
                 for (let i = 0; i < 5; i++) {
                   executeSimulationStep();
                 }
+                useFxStore.getState().clearExpiredFx(useWorldStore.getState().currentTick);
               }}
               className="px-2 py-0.5 border border-[#1a5c1a]/45 bg-[#0c180c] hover:bg-[#1a5c1a]/30 text-white hover:text-[#00ff44] text-[8.5px] uppercase font-bold cursor-pointer transition-all rounded-sm hover:border-[#00ff44]"
               title="Manual Step +5 Ticks"
@@ -1414,6 +1497,7 @@ export default function App() {
 
       {/* Presidential Daily Briefing Card Stack Overlay */}
       <ArachneBriefingModal />
+      </div>
     </div>
   );
 }

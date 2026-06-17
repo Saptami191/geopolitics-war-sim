@@ -1395,6 +1395,243 @@ input[type='range'].sovereign-slider::-webkit-slider-thumb:active {
   transform: rotateY(180deg);
 }
 
+/* ========================================================
+   SOVEREIGN CINEMATIC EVENT BUS & FX ANIMATION LIBRARY
+   ======================================================== */
+
+/* DEFCON BODY LEVEL ANIMATION CLASSES */
+body.defcon-5 {
+  animation: none;
+}
+body.defcon-4 {
+  animation: defconWatchPulse 4s ease-in-out infinite;
+}
+body.defcon-3 {
+  animation: defconElevatedFlicker 2s ease-in-out infinite;
+}
+body.defcon-2 {
+  animation: defconArmedPulse 1s ease-in-out infinite;
+}
+body.defcon-1 {
+  animation: defconNuclearFlicker 0.4s steps(2) infinite;
+}
+
+/* SOVEREIGN STATUS PULSE KEYFRAMES */
+@keyframes defconWatchPulse {
+  0%, 100% { box-shadow: none; }
+  50% { box-shadow: inset 0 0 45px rgba(255, 193, 7, 0.12); }
+}
+
+@keyframes defconElevatedFlicker {
+  0%, 100% { opacity: 1; }
+  30% { opacity: 0.96; }
+  32% { opacity: 1; }
+  72% { opacity: 0.96; }
+  74% { opacity: 1; }
+}
+
+@keyframes defconArmedPulse {
+  0%, 100% { filter: brightness(1) sepia(0.14) saturate(1.1) contrast(1.06) hue-rotate(14deg); }
+  50% { filter: brightness(1.06) sepia(0.18) saturate(1.22) contrast(1.08) hue-rotate(14deg); }
+}
+
+@keyframes defconNuclearFlicker {
+  0%, 100% {
+    filter: sepia(0.2) saturate(1.3) contrast(1.10) hue-rotate(20deg) brightness(0.96);
+  }
+  50% {
+    filter: sepia(0.35) saturate(1.7) contrast(1.18) hue-rotate(28deg) brightness(0.85);
+  }
+}
+
+/* FULL VIEWPORT SHAKE SYSTEM (NUCLEAR IMPACT) */
+@keyframes sovereignShake {
+  0%   { transform: translate(0px, 0px) rotate(0deg); }
+  10%  { transform: translate(-8px, -5px) rotate(-0.4deg); }
+  20%  { transform: translate(7px, 4px) rotate(0.3deg); }
+  30%  { transform: translate(-6px, 6px) rotate(0.5deg); }
+  40%  { transform: translate(8px, -3px) rotate(-0.3deg); }
+  50%  { transform: translate(-4px, 5px) rotate(0.4deg); }
+  60%  { transform: translate(6px, -6px) rotate(-0.5deg); }
+  70%  { transform: translate(-7px, 3px) rotate(0.2deg); }
+  80%  { transform: translate(5px, -4px) rotate(-0.4deg); }
+  90%  { transform: translate(-3px, 6px) rotate(0.3deg); }
+  100% { transform: translate(0px, 0px) rotate(0deg); }
+}
+
+.shake-active {
+  animation: sovereignShake 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+/* RADIAL THERMONUCLEAR FLASH */
+@keyframes nuclearFlashIn {
+  0% {
+    opacity: 1;
+    background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,240,225,1) 35%, rgba(255,180,60,1) 100%);
+  }
+  40% {
+    opacity: 0.92;
+    background: radial-gradient(circle, rgba(255,140,50,0.9) 0%, rgba(180,25,0,0.6) 55%, rgba(0,0,0,0) 100%);
+  }
+  100% {
+    opacity: 0;
+    background: radial-gradient(circle, rgba(180,25,0,0.4) 0%, rgba(0,0,0,0) 100%);
+  }
+}
+
+.animate-nuke-flash {
+  animation: nuclearFlashIn 2.8s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+}
+
+/* CRT GLITCH SLIDING BAR SYSTEM */
+@keyframes scanlineSlide1 {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(1100%); }
+}
+@keyframes scanlineSlide2 {
+  0% { transform: translateY(-200%); }
+  100% { transform: translateY(1200%); }
+}
+@keyframes scanlineSlide3 {
+  0% { transform: translateY(-50%); }
+  100% { transform: translateY(1050%); }
+}
+
+.animate-scanline-bar-1 {
+  animation: scanlineSlide1 0.4s linear infinite;
+}
+.animate-scanline-bar-2 {
+  animation: scanlineSlide2 0.3s linear infinite;
+}
+.animate-scanline-bar-3 {
+  animation: scanlineSlide3 0.6s linear infinite;
+}
+
+@keyframes crtFlicker {
+  0%, 100% { opacity: 0.95; }
+  12.5% { opacity: 0.6; }
+  25% { opacity: 0.9; }
+  37.5% { opacity: 0.65; }
+  50% { opacity: 0.92; }
+  62.5% { opacity: 0.7; }
+  75% { opacity: 0.95; }
+  87.5% { opacity: 0.6; }
+}
+
+.animate-crt-flicker {
+  animation: crtFlicker 0.5s ease-in-out infinite;
+}
+
+/* CEASEFIRE PEACE ACCORD ACCENTS */
+@keyframes ceasefireGlow {
+  0%, 100% { transform: scale(1.0); opacity: 0.75; }
+  50% { transform: scale(1.03); opacity: 1.0; }
+}
+
+@keyframes peaceBannerFade {
+  0% { opacity: 0; transform: scale(0.9); }
+  12% { opacity: 1; transform: scale(1.0); }
+  88% { opacity: 1; transform: scale(1.0); }
+  100% { opacity: 0; transform: scale(0.95); }
+}
+
+.animate-peace-glow {
+  animation: ceasefireGlow 3.5s ease-in-out infinite;
+}
+
+.animate-peace-banner {
+  animation: peaceBannerFade 5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* CHIP SLIDE SLIDER */
+@keyframes slideInFx {
+  0% { transform: translateX(-105%); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+.animate-slide-in-fx {
+  animation: slideInFx 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+/* HIGHEST SEVERITY RADIAL HUD INDICATORS */
+@keyframes pulseFxExtreme {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1.0; }
+}
+
+@keyframes pulseFxSlow {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.75; }
+}
+
+.animate-pulse-fx-extreme {
+  animation: pulseFxExtreme 0.8s ease-in-out infinite;
+}
+
+.animate-pulse-fx-slow {
+  animation: pulseFxSlow 1.8s ease-in-out infinite;
+}
+
+/* NUCLEAR MARQUEE RUNNERS */
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-100%); }
+}
+
+.animate-marquee {
+  display: inline-block;
+  animation: marquee 16s linear infinite;
+}
+
+/* RADAR SCAN APERTURE LOOP */
+@keyframes spinSlow {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.animate-spin-slow {
+  animation: spinSlow 40s linear infinite;
+}
+
+/* SLIDE DOWN CARDS FOR PERSONA RATIFICATION */
+@keyframes slideInPersona {
+  0% { transform: translateY(-100%); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.animate-slide-in-persona {
+  animation: slideInPersona 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes bounceFx {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.animate-bounce-fx {
+  animation: bounceFx 1.6s ease-in-out infinite;
+}
+
+@keyframes pingFast {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+.animate-ping-fast {
+  animation: pingFast 0.65s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* THERMONUCLEAR REACTOR PULSES */
+@keyframes corePulseFast {
+  0%, 100% { opacity: 0.5; transform: scale(0.92); }
+  50% { opacity: 1; transform: scale(1.08); }
+}
+
+.animate-pulse-fx-fast {
+  animation: corePulseFast 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+
 
 
 
