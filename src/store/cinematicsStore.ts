@@ -17,7 +17,11 @@ export type CinematicSceneType =
   | 'OPERATIVE_BURNED_REPORT'// Deep cover agent compromised
   | 'NUCLEAR_DETERRENCE_WIN' // MAD achieved, war prevented
   | 'GAME_OVER_DEFEAT'      // Total collapse ending
-  | 'GAME_OVER_VICTORY';    // Sovereign dominance achieved
+  | 'GAME_OVER_VICTORY'     // Sovereign dominance achieved
+  | 'MIRROR_AI_WARNING'     // AI Warning notification
+  | 'LEADER_BREAKDOWN'      // Leader psychological breakdown
+  | 'NATION_AGENDA_EXPOSED' // Hidden agenda exposed
+  | 'MIRROR_AI_CONFRONTATION'; // AI confronts player
 
 export interface CinematicScene {
   id: string;

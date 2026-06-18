@@ -6,6 +6,8 @@ import { PDBSciRenderer } from './renderers/pdb';
 import { OperativeBurnedRenderer as ExtOperativeBurnedRenderer } from './renderers/operative';
 import { GameOverSceneRenderer } from './renderers/gameover';
 import { CinematicsSyncController } from './CinematicsSyncController';
+import { MirrorAIConfrontationScene } from './renderers/mirror';
+import { LeaderBreakdownScene, MirrorAiWarningScene, NationAgendaExposedScene } from './renderers/leader';
 
 // === HELPER FOR SKIP BUTTON ===
 function SkipButton({ onClick, isSkippable }: { onClick: () => void, isSkippable: boolean }) {
@@ -875,6 +877,10 @@ export default function CinematicsManager() {
       case 'NUCLEAR_DETERRENCE_WIN': return <NuclearDeterrenceRenderer scene={activeScene} />;
       case 'GAME_OVER_DEFEAT': return <GameOverSceneRenderer scene={activeScene} onComplete={completeScene} isVictory={false} />;
       case 'GAME_OVER_VICTORY': return <GameOverSceneRenderer scene={activeScene} onComplete={completeScene} isVictory={true} />;
+      case 'MIRROR_AI_CONFRONTATION': return <MirrorAIConfrontationScene scene={activeScene} onComplete={completeScene} />;
+      case 'MIRROR_AI_WARNING': return <MirrorAiWarningScene scene={activeScene} onComplete={completeScene} />;
+      case 'LEADER_BREAKDOWN': return <LeaderBreakdownScene scene={activeScene} onComplete={completeScene} />;
+      case 'NATION_AGENDA_EXPOSED': return <NationAgendaExposedScene scene={activeScene} onComplete={completeScene} />;
       default: return null;
     }
   };

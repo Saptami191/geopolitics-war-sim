@@ -98,6 +98,9 @@ import NewspaperFeed from './components/reactive/NewspaperFeed';
 import UnSecurityCouncil from './components/reactive/UnSecurityCouncil';
 import BlackMarketBazaar from './components/blackmarket/BlackMarketBazaar';
 import { useBlackMarketStore } from './store/blackMarketStore';
+import { MirrorIntelPanel } from './components/panels/MirrorIntelPanel';
+import { LeaderDossierPanel } from './components/panels/LeaderDossierPanel';
+import { NationSovereignPanel } from './components/panels/NationSovereignPanel';
 import CommandLogPanel from './components/hud/CommandLogPanel';
 import DefconBar from './components/hud/DefconBar';
 import FlashPrecedenceBanner from './components/hud/FlashPrecedenceBanner';
@@ -257,6 +260,12 @@ export default function App() {
 
   const globalEventLog = useWorldStore((s) => s.globalEventLog);
   const prevLogLengthRef = React.useRef(globalEventLog.length);
+
+  const [mirrorIntelOpen, setMirrorIntelOpen] = React.useState(false);
+  const [dossierOpen, setDossierOpen] = React.useState(false);
+  const [sovereignOpen, setSovereignOpen] = React.useState(false);
+  
+  const mirrorWarningLevel = useMirrorStore((s) => (s as any).warningLevel || 'LOW');
 
   useEffect(() => {
     if (globalEventLog.length > prevLogLengthRef.current) {
@@ -1158,6 +1167,9 @@ export default function App() {
       {showBazaar && <BlackMarketBazaar onClose={() => setShowBazaar(false)} />}
       <CommsSyncController />
       <CommsPanel isOpen={commsOpen} onClose={() => setCommsOpen(false)} />
+      <MirrorIntelPanel isOpen={mirrorIntelOpen} onClose={() => setMirrorIntelOpen(false)} />
+      <LeaderDossierPanel isOpen={dossierOpen} onClose={() => setDossierOpen(false)} />
+      <NationSovereignPanel isOpen={sovereignOpen} onClose={() => setSovereignOpen(false)} />
       <CinematicsManager />
 
       {/* Top command status HUD bar */}
@@ -1226,6 +1238,37 @@ export default function App() {
               <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${unreadCommsCount > 0 ? 'bg-red-500' : 'bg-green-500'}`}></span>
             </span>
             📡 COMMS PORT {unreadCommsCount > 0 ? `(${unreadCommsCount})` : ''}
+          </button>
+
+          <div className="h-4 w-[1px] bg-[#1a3a1a]" />
+
+          <button
+            onClick={() => { audio.sfxKeyClick(); setMirrorIntelOpen(true); }}
+            className={`px-2.5 py-1 border text-[9px] uppercase font-bold cursor-pointer transition-all flex items-center gap-1.5 ${
+              mirrorWarningLevel !== 'LOW'
+                ? 'border-amber-500 text-amber-500 bg-amber-950/25'
+                : 'border-blue-500/60 text-blue-500 bg-blue-500/5 hover:bg-blue-500/15'
+            }`}
+          >
+            <span className="relative flex h-1.5 w-1.5">
+              <span className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${mirrorWarningLevel !== 'LOW' ? 'animate-ping bg-amber-400' : 'bg-blue-400'}`}></span>
+              <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${mirrorWarningLevel !== 'LOW' ? 'bg-amber-500' : 'bg-blue-500'}`}></span>
+            </span>
+            👁️ MIRROR INTEL
+          </button>
+
+          <button
+            onClick={() => { audio.sfxKeyClick(); setDossierOpen(true); }}
+            className="px-2.5 py-1 border border-indigo-800 text-indigo-400 bg-indigo-950/10 hover:bg-indigo-900/40 text-[9px] uppercase font-bold cursor-pointer transition-all"
+          >
+            WORLD LEADERS
+          </button>
+
+          <button
+            onClick={() => { audio.sfxKeyClick(); setSovereignOpen(true); }}
+            className="px-2.5 py-1 border border-emerald-800 text-emerald-400 bg-emerald-950/10 hover:bg-emerald-900/40 text-[9px] uppercase font-bold cursor-pointer transition-all"
+          >
+            SOVEREIGN STATE
           </button>
 
           <div className="h-4 w-[1px] bg-[#1a3a1a]" />
