@@ -16,6 +16,7 @@ import { useHumintStore } from './humintStore';
 import { useLeaderStore } from './leaderStore';
 import { useNationIdentityStore } from './nationIdentityStore';
 import { audio } from '../utils/audio';
+import { tickNuclearAI } from '../sim/nuclearAI';
 
 import { 
   NuclearTriadLeg, 
@@ -37,7 +38,8 @@ import {
   FalseAlarmEvent,
   DeadHandState,
   NuclearDetonationConsequences,
-  NuclearScar
+  NuclearScar,
+  AdversaryPosture
 } from '../types';
 
 // Read initial values from localStorage for persistent preservation across reloads
@@ -359,6 +361,11 @@ interface NuclearState {
   startDecisionClock: (expiryTick: number) => void;
   expireDecisionClock: (currentTick: number) => void;
 
+  // Adversary Nuclear AI integration
+  adversaryPosture: Record<string, AdversaryPosture>;
+  updateAdversaryPosture: (countryId: string, updates: Partial<AdversaryPosture>) => void;
+  getAdversaryPosture: (countryId: string) => AdversaryPosture | undefined;
+
   tickNuclear: (currentTick: number) => void;
 }
 
@@ -408,6 +415,12 @@ export const useNuclearStore = create<NuclearState>((set, get) => ({
   detonationConsequences: [],
   decisionClockActive: false,
   decisionClockExpiryTick: null,
+
+  adversaryPosture: {
+    RU: { countryId: 'RU', posture: 'PEACETIME', retaliationPressure: 0, lastEscalationTick: null, launchCommitted: false },
+    CN: { countryId: 'CN', posture: 'PEACETIME', retaliationPressure: 0, lastEscalationTick: null, launchCommitted: false },
+    KP: { countryId: 'KP', posture: 'PEACETIME', retaliationPressure: 0, lastEscalationTick: null, launchCommitted: false }
+  },
 
   addScar: (lat, lon, megatons) => {
     const newScar: NuclearScar = {
@@ -1227,6 +1240,21 @@ export const useNuclearStore = create<NuclearState>((set, get) => ({
     }
   },
 
+  updateAdversaryPosture: (countryId, updates) => {
+    set(produce((draft: NuclearState) => {
+      if (draft.adversaryPosture && draft.adversaryPosture[countryId]) {
+        draft.adversaryPosture[countryId] = {
+          ...draft.adversaryPosture[countryId],
+          ...updates
+        };
+      }
+    }));
+  },
+
+  getAdversaryPosture: (countryId) => {
+    return get().adversaryPosture[countryId];
+  },
+
   tickNuclear: (currentTick) => {
     const self = get();
 
@@ -1284,6 +1312,9 @@ export const useNuclearStore = create<NuclearState>((set, get) => ({
       const perceived = 'RU';
       self.triggerFalseAlarm('COMPUTER_ERROR', perceived, currentTick);
     }
+
+    // 5. Run adversary nuclear AI decision tree
+    tickNuclearAI(currentTick);
   }
 }));
 

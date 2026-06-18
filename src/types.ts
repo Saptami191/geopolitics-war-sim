@@ -3027,6 +3027,15 @@ export interface NuclearScar {
   timestamp: number;
 }
 
+// ── ADVERSARY POSTURE TYPE ──────────────────────────────────────────────────
+export interface AdversaryPosture {
+  countryId: string;
+  posture: TriadPostureLevel;
+  retaliationPressure: number;
+  lastEscalationTick: number | null;
+  launchCommitted: boolean;
+}
+
 
 
 

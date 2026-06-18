@@ -69,6 +69,7 @@ export const PANEL_REGISTRY: Record<number, PanelRegistryDef> = {
   
   // Virtual panels for nuclear/command
   100: { id: 100, name: 'NUCLEAR POSTURE', category: 'NUCLEAR', primaryPurpose: 'Strategic deterrence', minDefconAvailability: 3, minPersonaTier: 4, layoutPriority: 'PRIMARY', isNuclearRestricted: true },
+  101: { id: 101, name: 'NC3 COMMUNICATIONS', category: 'NUCLEAR', primaryPurpose: 'System command link checks', minDefconAvailability: 3, minPersonaTier: 4, layoutPriority: 'SECONDARY', isNuclearRestricted: true },
 };
 
 export function getAvailablePersonas(defcon: DefconLevel): PersonaDef[] {

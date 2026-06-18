@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useWorldStore } from './store/worldStore';
 import { usePlayerStore } from './store/playerStore';
+import { useNuclearStore } from './store/nuclearStore';
 import { usePropagandaStore } from './store/propagandaStore';
 import { SCENARIOS } from './data/scenarios';
 import { initScenario } from './sim/scenarioEngine';
@@ -64,6 +65,8 @@ import SigintHUD from './components/panels/SigintHUD';
 import { useSigintStore } from './store/sigintStore';
 import PoliticalCapitalBar from './components/panels/PoliticalCapitalBar';
 import NuclearPosturePanel from './components/panels/NuclearPosturePanel';
+import NC3SystemPanel from './components/panels/NC3SystemPanel';
+import FalseAlarmDecisionPanel from './components/panels/FalseAlarmDecisionPanel';
 import { useOperativeStore } from './store/operativeStore';
 import { checkAndRestoreSharedScenario, hydrateScenario, ScenarioPackage } from './utils/persistence';
 
@@ -247,6 +250,7 @@ function ActivePanelWrapper({ activeTab, getTabClassification }: { activeTab: nu
       {activeTab === 25 && <RegimePressurePanel />}
       {activeTab === 26 && <PSYOPCommandPanel />}
       {activeTab === 100 && <NuclearPosturePanel />}
+      {activeTab === 101 && <NC3SystemPanel />}
     </div>
   );
 }
@@ -264,6 +268,7 @@ export default function App() {
 
   const playerCountryId = usePlayerStore((s) => s.countryId);
   const playerState = usePlayerStore();
+  const nc3System = useNuclearStore((s) => s.nc3System);
   const worldState = useWorldStore();
   const setTickSpeed = usePlayerStore((s) => s.setTickSpeed);
   const activePersona = useDefconStore((s) => s.activePersona);
@@ -1209,6 +1214,7 @@ export default function App() {
       {humintOpen && <HumintPenetrationSuite onClose={() => setHumintOpen(false)} />}
       {deceptionOpen && <DeceptionOperationsSuite onClose={() => setDeceptionOpen(false)} />}
       {counterProliferationOpen && <CounterProliferationSuite onClose={() => setCounterProliferationOpen(false)} />}
+      <FalseAlarmDecisionPanel />
       <CinematicsManager />
 
       {/* Top command status HUD bar */}
@@ -1247,6 +1253,19 @@ export default function App() {
             <div className="ml-2 flex items-center gap-2">
               <PoliticalCapitalBar onClick={() => setOversightOpen(!oversightOpen)} />
               <SigintHUD onClick={() => setSigintOpen(!sigintOpen)} />
+              <button
+                onClick={() => {
+                  audio.sfxKeyClick();
+                  playerState.setActiveTab(101);
+                }}
+                className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-950 border border-gray-800 rounded hover:border-gray-500 transition-all text-[10px] select-none text-gray-400 font-mono tracking-wide"
+                title="NC3 System Status Link Checks"
+              >
+                <div className={`w-1.5 h-1.5 rounded-full ${
+                  nc3System.overallIntegrity >= 70 ? 'bg-emerald-500 shadow-[0_0_5px_#10b981]' : nc3System.overallIntegrity >= 40 ? 'bg-amber-400 animate-pulse' : 'bg-red-500 animate-ping'
+                }`} />
+                <span>NC3: <strong className={nc3System.overallIntegrity < 40 ? 'text-red-500' : nc3System.overallIntegrity < 70 ? 'text-amber-400' : 'text-emerald-400'}>{nc3System.overallIntegrity}%</strong></span>
+              </button>
             </div>
             <span>GLOBAL STATUS: ACTIVE</span>
           </div>
