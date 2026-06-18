@@ -6,7 +6,7 @@ export interface NationMemoryEntry {
   id: string;
   nationId: string;
   tick: number;
-  type: 'STRIKE' | 'SANCTION' | 'COVERT_OP' | 'DIPLOMACY' | 
+  type: 'STRIKE' | 'SANCTION' | 'COVERT_OP' | 'HOSTILE_COVERT_OP' | 'DIPLOMACY' | 
         'ALLIANCE_OFFER' | 'THREAT' | 'CONCESSION' | 'BETRAYAL' | 
         'AID' | 'INTEL_EXPOSURE';
   description: string;

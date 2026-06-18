@@ -34,6 +34,9 @@ import EnergyPanel from './components/panels/EnergyPanel';
 import { useEnergyStore } from './store/energyStore';
 import SanctionsPanel from './components/panels/SanctionsPanel';
 import { useSanctionsStore } from './store/sanctionsStore';
+import { usePsyopStore } from './store/psyopStore';
+import { PSYOPCommandPanel } from './components/panels/PSYOPCommandPanel';
+import { GlobalDisinfoTicker } from './components/reactive/GlobalDisinfoTicker';
 import CommandEventBusPanel from './components/panels/CommandEventBusPanel';
 import ScenarioPersistencePanel from './components/panels/ScenarioPersistencePanel';
 import EconomicForecastPanel from './components/panels/EconomicForecastPanel';
@@ -101,6 +104,7 @@ import { useBlackMarketStore } from './store/blackMarketStore';
 import { MirrorIntelPanel } from './components/panels/MirrorIntelPanel';
 import { LeaderDossierPanel } from './components/panels/LeaderDossierPanel';
 import { NationSovereignPanel } from './components/panels/NationSovereignPanel';
+import { useRegimePressureStore } from './store/regimePressureStore';
 import CommandLogPanel from './components/hud/CommandLogPanel';
 import DefconBar from './components/hud/DefconBar';
 import FlashPrecedenceBanner from './components/hud/FlashPrecedenceBanner';
@@ -140,6 +144,7 @@ const getTabClassification = (tabId: number): string => {
     case 23: return "COGNITIVE SHIELD & DECEPTION (Shift+F11)"; // Adversarial influence & CI
     case 24: return "NETWORK COMMAND CELL"; // Operative Network Management (Shift+F12)
     case 25: return "REGIME PRESSURE TOOLKIT";
+    case 26: return "INFLUENCE & PSYOP";
     case 100: return "NUCLEAR STRATEGIC DETERRENCE EXTREME CLASSIFIED";
     default: return "CONFIDENTIAL";
   }
@@ -229,6 +234,7 @@ function ActivePanelWrapper({ activeTab, getTabClassification }: { activeTab: nu
       {activeTab === 23 && <AdversarialInfluencePanel />}
       {activeTab === 24 && <OperativeNetworkPanel />}
       {activeTab === 25 && <RegimePressurePanel />}
+      {activeTab === 26 && <PSYOPCommandPanel />}
       {activeTab === 100 && <NuclearPosturePanel />}
     </div>
   );
@@ -255,7 +261,7 @@ export default function App() {
   const suspicion = useBlackMarketStore((s) => s.internationalSuspicion);
   
   const personaDef = PERSONAS[activePersona];
-  const availablePanels = getAvailablePanels(currentDefconLevel, personaDef.authorityTier);
+  const availablePanels = React.useMemo(() => getAvailablePanels(currentDefconLevel, personaDef.authorityTier), [currentDefconLevel, personaDef.authorityTier]);
   const isInputBlocked = useCinematicsStore((s) => s.isInputBlocked);
 
   const globalEventLog = useWorldStore((s) => s.globalEventLog);
@@ -369,12 +375,15 @@ export default function App() {
   // Floating modules
   const [showBazaar, setShowBazaar] = useState(false);
   const [commsOpen, setCommsOpen] = useState(false);
+  const [covertOpsOpen, setCovertOpsOpen] = useState(false);
   const unreadCommsCount = useCommsStore((s) => s.unreadCount);
 
   // Aftermath states
   const [aftermathCountdown, setAftermathCountdown] = useState<number | null>(null);
   const [showChoices, setShowChoices] = useState(false);
   const [spectatingAftermath, setSpectatingAftermath] = useState(false);
+  
+  const playerExposureScore = useRegimePressureStore(s => s.playerExposureScore);
 
   useEffect(() => {
     if (playerState.aftermathActive) {
@@ -515,6 +524,10 @@ export default function App() {
       }
       case 25: { // REGIME PRESSURE
         return `toolkit:online`;
+      }
+      case 26: { // INFLUENCE & PSYOP
+        const activeCamps = Object.keys(usePsyopStore.getState().narrativeCampaigns).length;
+        return `camps:${activeCamps}`;
       }
       default:
         return '';
@@ -1170,6 +1183,7 @@ export default function App() {
       <MirrorIntelPanel isOpen={mirrorIntelOpen} onClose={() => setMirrorIntelOpen(false)} />
       <LeaderDossierPanel isOpen={dossierOpen} onClose={() => setDossierOpen(false)} />
       <NationSovereignPanel isOpen={sovereignOpen} onClose={() => setSovereignOpen(false)} />
+      {covertOpsOpen && <RegimePressurePanel onClose={() => setCovertOpsOpen(false)} />}
       <CinematicsManager />
 
       {/* Top command status HUD bar */}
@@ -1193,6 +1207,15 @@ export default function App() {
                 <div 
                   className={`h-full transition-all duration-300 ${suspicion > 80 ? 'bg-red-500 animate-pulse' : suspicion > 60 ? 'bg-orange-400' : 'bg-yellow-500'}`} 
                   style={{ width: `${suspicion}%` }}
+                />
+              </div>
+            </span>
+            <span className="flex items-center gap-1.5 border-l border-[#1a3a1a] pl-3">
+              EXPOSURE: <span className={`font-bold ${playerExposureScore > 75 ? 'text-red-500 animate-pulse' : playerExposureScore > 50 ? 'text-orange-400' : playerExposureScore > 25 ? 'text-yellow-500' : 'text-green-500'}`}>{Math.floor(playerExposureScore)}</span>
+              <div className="w-12 bg-gray-950 h-1.5 border border-[#1a3a1a] overflow-hidden rounded relative">
+                <div 
+                  className={`h-full transition-all duration-300 ${playerExposureScore > 75 ? 'bg-red-500 animate-pulse' : playerExposureScore > 50 ? 'bg-orange-400' : playerExposureScore > 25 ? 'bg-yellow-500' : 'bg-green-500'}`} 
+                  style={{ width: `${playerExposureScore}%` }}
                 />
               </div>
             </span>
@@ -1272,6 +1295,14 @@ export default function App() {
           </button>
 
           <div className="h-4 w-[1px] bg-[#1a3a1a]" />
+
+          <button
+            onClick={() => { audio.sfxKeyClick(); setCovertOpsOpen(!covertOpsOpen); }}
+            className={`px-2.5 py-1 border border-red-800 text-red-500 hover:bg-red-950/30 text-[9px] uppercase font-bold cursor-pointer transition-all flex items-center gap-1.5 ${covertOpsOpen ? 'bg-red-950' : 'bg-red-950/10'}`}
+          >
+             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+             COVERT OPS
+          </button>
 
           <button
             onClick={() => { audio.sfxKeyClick(); setShowBazaar(true); }}
@@ -1432,6 +1463,7 @@ export default function App() {
 
           {/* Scrolling ticker tape */}
           <StockMarketTicker />
+          <GlobalDisinfoTicker />
 
           {/* Satellite live feeds matrix row */}
           <div className="h-[220px] grid grid-cols-4 gap-1.5 p-1 bg-[#010301] shrink-0 select-none overflow-hidden border-t border-[#1a5c1a]">

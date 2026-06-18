@@ -1085,7 +1085,7 @@ export const useSovereignStore = create<Record<string, any> & SovereignStoreActi
               console.warn("Memory store not yet mounted during sim tick");
             }
             try {
-              useMirrorStore.getState().recordAction(worldDraft.currentTick, countryId, eventType);
+              useMirrorStore.getState().recordPlayerAction('MILITARY', 1, worldDraft.currentTick);
             } catch (e) {
               console.warn("Mirror store not yet mounted during sim tick");
             }

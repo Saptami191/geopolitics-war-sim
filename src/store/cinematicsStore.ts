@@ -16,12 +16,30 @@ export type CinematicSceneType =
   | 'CYBER_WAR_DECLARATION' // Full-scale cyber war begins
   | 'OPERATIVE_BURNED_REPORT'// Deep cover agent compromised
   | 'NUCLEAR_DETERRENCE_WIN' // MAD achieved, war prevented
+  // PSYOP & INFLUENCE EFFECTS
+  | 'NARRATIVE_GOES_MAINSTREAM'
+  | 'BOTNET_EXPOSED'
+  | 'KOMPROMAT_DETONATES'
+  | 'DEEPFAKE_DEBUNKED'
+  | 'PSYOP_EXPOSED'
+  | 'CUTOUT_EXPOSED'
+  | 'NARRATIVE_CRYSTALLIZED'
+  // Existing 5.2 Effects
   | 'GAME_OVER_DEFEAT'      // Total collapse ending
   | 'GAME_OVER_VICTORY'     // Sovereign dominance achieved
   | 'MIRROR_AI_WARNING'     // AI Warning notification
   | 'LEADER_BREAKDOWN'      // Leader psychological breakdown
   | 'NATION_AGENDA_EXPOSED' // Hidden agenda exposed
-  | 'MIRROR_AI_CONFRONTATION'; // AI confronts player
+  | 'MIRROR_AI_CONFRONTATION' // AI confronts player
+  | 'COUP_EXECUTED'         // 4 phases: conspiracy revealed, troops moving, palace seized, new leader address to nation
+  | 'COUP_FAILED'           // 3 phases: plotters arrested, target leader appears on state TV triumphant, mass purge begins
+  | 'ELECTION_STOLEN'       // 3 phases: vote count manipulation, results announced, international condemnation
+  | 'TARGETED_REMOVAL'      // 3 phases: covert op briefing, execution moment, aftermath and cover
+  | 'BLOWBACK_CRISIS'       // 3 phases: media bombshell, diplomatic response, player must choose response type
+  | 'OPPOSITION_COMPROMISED' // 2 phases: asset handler discovers compromise, urgent recall order
+  | 'ELITE_DEFECTION'       // 2 phases: faction breaks publicly, regime visibly destabilized
+  | 'CIVILIAN_CASUALTY_EVENT'; 
+
 
 export interface CinematicScene {
   id: string;

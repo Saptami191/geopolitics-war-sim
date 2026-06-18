@@ -9,6 +9,7 @@ import { useWorldStore } from '../../store/worldStore';
 import { usePlayerStore } from '../../store/playerStore';
 import { useUIStore } from '../../store/uiStore';
 import { useLinkedAnalysisStore } from '../../store/linkedAnalysisStore';
+import { useRegimePressureStore } from '../../store/regimePressureStore';
 import { useCanonicalMapState } from './mapSelectors';
 import { useUnitStore } from '../../store/unitStore';
 import { SEEDED_HOTSPOTS } from '../../data/hotspots';
@@ -800,6 +801,55 @@ export function GeoMap({ mode: initialMode, layers: localLayers, theme = 'dark' 
         }
       })
     );
+
+    // --- COVERT OPS ELITE FRACTURE LAYER ---
+    const eliteFactionsState = useRegimePressureStore.getState().eliteFactions;
+    const fracturePoints = Object.entries(eliteFactionsState).map(([countryId, factions]) => {
+      // Find countries with weak loyalty elites
+      const hasDissent = factions.some(f => f.loyaltyToLeader < f.defectionThreshold);
+      const isPlayerHandling = factions.some(f => f.contactOperativeId);
+      if (!hasDissent && !isPlayerHandling) return null;
+      
+      const centroid = getCentroid(countryId);
+      return {
+        countryId,
+        coordinates: centroid,
+        hasDissent,
+        isPlayerHandling
+      };
+    }).filter(d => d !== null);
+
+    if (fracturePoints.length > 0) {
+      activeDeckLayers.push(
+        new ScatterplotLayer({
+          id: 'elite-fracture-indicators-outer',
+          data: fracturePoints,
+          getPosition: (d: any) => d.coordinates,
+          getRadius: () => 180000 / (mapZoom * 0.45),
+          getFillColor: (d: any) => d.isPlayerHandling ? [59, 130, 246, 50] : [234, 88, 12, 50],
+          getLineColor: (d: any) => d.isPlayerHandling ? [96, 165, 250, 180] : [249, 115, 22, 180],
+          lineWidthMinPixels: 2,
+          stroked: true,
+          pickable: false,
+          updateTriggers: {
+            getRadius: [mapZoom]
+          }
+        }),
+        new ScatterplotLayer({
+          id: 'elite-fracture-indicators-inner',
+          data: fracturePoints,
+          getPosition: (d: any) => d.coordinates,
+          getRadius: () => 60000 / (mapZoom * 0.45),
+          getFillColor: (d: any) => d.isPlayerHandling ? [96, 165, 250, 255] : [249, 115, 22, 255],
+          lineWidthMinPixels: 0,
+          stroked: false,
+          pickable: false,
+          updateTriggers: {
+            getRadius: [mapZoom]
+          }
+        })
+      );
+    }
 
     deckRef.current.setProps({ layers: activeDeckLayers });
   }, [activeMode, countries, activeStrikes, localLayers, playerCountryId, targetCountryId, animationTick, units, selectedUnitId, selectedHotspotId, mapZoom]);

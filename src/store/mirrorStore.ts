@@ -121,6 +121,7 @@ interface MirrorActions {
   triggerDriftRecalibration: () => void;
   tickMirrorState: (currentTick: number) => void;
   injectBait: (bait: HoneypotOpportunity) => void;
+  registerInfluenceOp: (campaignId: string) => void;
 }
 
 const initialProfile = (): PlayerProfileVector => ({
@@ -587,6 +588,15 @@ export const useMirrorStore = create<MirrorAdaptationState & MirrorActions>()(
         set(produce((draft: MirrorAdaptationState) => {
           draft.honeypots.push(hp);
         }));
+      },
+
+      registerInfluenceOp: (campaignId: string) => {
+         // Mirror records that player is running PSYOP influence
+         get().recordPlayerAction('COVERT', 3);
+         set(produce((draft: MirrorAdaptationState) => {
+            // Build counter-profiling or awareness of player's narrative strategy
+            // e.g. increase difficulty or counter-measures
+         }));
       }
     }),
     {

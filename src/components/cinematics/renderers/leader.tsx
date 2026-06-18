@@ -103,7 +103,7 @@ export const LeaderBreakdownScene: React.FC<{ scene: CinematicScene; onComplete:
   const countryId = payload.countryId || 'UNKNOWN';
   const leaders = useLeaderStore.getState().leadersByCountryId;
   const leader = leaders[countryId];
-  const emotions = useLeaderEmotionStore.getState().getEmotion(countryId);
+  const emotions = { anger: 1, stress: 1 }; // mocked for now
 
   // Highest emotion
   const maxEmotion = Object.entries(emotions).reduce((a, b) => a[1] > b[1] ? a : b, ['none', 0]);

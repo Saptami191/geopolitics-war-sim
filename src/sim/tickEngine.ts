@@ -26,7 +26,8 @@ import { processSentiment } from './propagandaEngine';
 import { processAllAI } from './aiDecisionEngine';
 import { processComplexPhase2Geopolitics } from './geopoliticalEngine';
 import { tickLeadersAndPsychology } from './leaderPsychologyEngine';
-import { regimePressureEngine } from './regimePressureEngine';
+import { useRegimePressureStore } from '../store/regimePressureStore';
+import { usePsyopStore } from '../store/psyopStore';
 import { CovertOp, WorldState } from '../types';
 import { dampenOpinionDelta } from '../utils/pacing';
 import { ConsequenceEngine } from './consequenceEngine';
@@ -118,7 +119,10 @@ export function executeSimulationStep() {
     tickLeadersAndPsychology(draft);
 
     // 12. Run Regime Pressure strategies
-    regimePressureEngine(draft);
+    useRegimePressureStore.getState().tickRegimePressure();
+
+    // 13. Run PSYOP and Influence Operations strategies
+    usePsyopStore.getState().tickPSYOP();
 
     // T3.5 Consequence core engine tick integration
     ConsequenceEngine.tick(draft.currentTick, draft);

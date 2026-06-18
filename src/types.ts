@@ -1,5 +1,178 @@
-import { RegimePressureState } from './types/regimePressure';
 import { BusEvent } from './sim/eventBus/types';
+
+// ─── REGIME PRESSURE CORE TYPES ─────────────────────────────────────
+
+export type RegimePressureOp =
+  | 'PROTEST_ENGINEERING'
+  | 'COUP_ARCHITECTURE'
+  | 'ELECTION_INTERFERENCE'
+  | 'OPPOSITION_FUNDING'
+  | 'ELITE_SPLIT_OPERATION'
+  | 'TARGETED_REMOVAL';
+
+export type RegimePressurePhase =
+  | 'PLANNING'       // op designed, not yet initiated — no risk
+  | 'PREPARATION'    // assets deployed in country — low risk of detection
+  | 'EXECUTION'      // op running — full risk active
+  | 'CONSOLIDATION'  // op succeeded, locking in outcome — medium risk
+  | 'COVER'          // cleaning up evidence — low risk, blowback window
+  | 'COMPLETE'       // op closed out, outcomes applied
+  | 'BLOWN'          // op exposed — blowback triggers
+  | 'PARTIAL_FAIL';  // op failed without full exposure — partial damage
+
+export type RegimePressureOutcome =
+  | 'REGIME_COLLAPSED'
+  | 'LEADER_REMOVED'
+  | 'ELECTION_STOLEN'
+  | 'OPPOSITION_EMPOWERED'
+  | 'ELITE_FRACTURED'
+  | 'COUP_SUCCEEDED'
+  | 'COUP_FAILED'
+  | 'OP_EXPOSED'
+  | 'PARTIAL_SUCCESS'
+  | 'BLOWBACK_TRIGGERED';
+
+export type BlowbackSeverity = 'WHISPER' | 'RUMOR' | 'ACCUSATION' | 'PROOF' | 'CRISIS';
+
+export interface EliteFaction {
+  id: string;
+  name: string;                          // "Military Council", "Business Oligarchs", "Religious Establishment"
+  countryId: string;
+  powerShare: number;                    // 0-100: % of effective state power this faction holds
+  loyaltyToLeader: number;               // 0-100: current loyalty to sitting head of state
+  corruptibilityScore: number;           // 0-100: susceptibility to bribery/defection
+  grievanceLevel: number;                // 0-100: accumulated resentment
+  playerContactEstablished: boolean;     // has a back-channel been opened?
+  contactOperativeId: string | null;     // which operative runs this relationship
+  defectionThreshold: number;            // loyaltyToLeader score at which they flip
+  publiclyVisible: boolean;              // does the world know about this faction?
+}
+
+export interface ProtestCampaign {
+  id: string;
+  countryId: string;
+  turnLaunched: number;
+  phase: RegimePressurePhase;
+  currentIntensity: number;              // 0-100: crowd size / media coverage
+  grievanceIssue: string;                // "food prices" | "election fraud" | "corruption" | "foreign occupation"
+  playerFunded: boolean;
+  playerFundingAmount: number;           // $B invested
+  detectionRisk: number;                 // 0-100: chance per tick of exposure
+  playerFingerprint: number;             // 0-100: how much forensic evidence links to player
+  suppressionStrength: number;           // 0-100: regime crackdown force applied
+  internationalCoverage: number;         // 0-100: global media attention
+  casualtyCount: number;                 // civilian deaths from suppression
+  turnsSinceLastEscalation: number;
+}
+
+export interface CoupOperation {
+  id: string;
+  targetCountryId: string;
+  targetLeaderId: string;
+  turnPlanned: number;
+  phase: RegimePressurePhase;
+  conspiratorFactionIds: string[];       // EliteFaction ids committed to coup
+  requiredPowerShareForSuccess: number;  // min % of state power held by conspirators
+  currentDetectionRisk: number;
+  operativeIds: string[];                // operatives coordinating
+  executionWindowTick: number | null;    // planned tick for coup attempt
+  hasPlayerDeniability: boolean;         // false = player fingerprints on coup
+  fundingCommitted: number;              // $B committed to coup plotters
+  militaryCommitted: boolean;            // has a military faction joined?
+  alternateLeaderDesignated: string | null; // proposed replacement leader id
+}
+
+export interface ElectionOp {
+  id: string;
+  countryId: string;
+  electionTick: number;                  // scheduled tick when election occurs
+  phase: RegimePressurePhase;
+  targetCandidateId: string;             // leader id of preferred candidate
+  oppositionCandidateId: string;         // leader id of candidate to suppress
+  methods: ElectionInterferenceMethod[];
+  fundingDeployed: number;               // $B in dark money
+  disinfoIntensity: number;              // 0-100
+  voteSuppressionActive: boolean;
+  electoralSystemHacked: boolean;
+  detectionRisk: number;
+  projectedMarginShift: number;          // +/- percentage points shifted toward preferred candidate
+  internationalObserversPresent: boolean; // raises exposure risk significantly
+}
+
+export type ElectionInterferenceMethod =
+  | 'DARK_MONEY_FUNDING'
+  | 'DISINFORMATION_CAMPAIGN'
+  | 'OPPOSITION_SUPPRESSION'
+  | 'ELECTORAL_SYSTEM_HACK'
+  | 'VOTER_INTIMIDATION'
+  | 'MEDIA_CAPTURE'
+  | 'CANDIDATE_BLACKMAIL';
+
+export interface OppositionAsset {
+  id: string;
+  countryId: string;
+  assetName: string;                     // "Democratic Alliance Party" | "Free Press Collective"
+  assetType: 'POLITICAL_PARTY' | 'MEDIA_OUTLET' | 'CIVIL_SOCIETY_ORG' | 'EXILE_NETWORK';
+  turnEstablished: number;
+  fundingReceived: number;               // total $B from player
+  capacityScore: number;                 // 0-100: organizational strength
+  publicProfile: number;                 // 0-100: how visible they are domestically
+  playerFingerprint: number;             // 0-100: how evident foreign backing is
+  regimeSuspicion: number;               // 0-100: target regime awareness
+  isCompromised: boolean;                // regime has penetrated this org
+  compromisedSinceTick: number | null;
+  operativeHandlerId: string | null;
+}
+
+export interface BlowbackMemoryEntry {
+  id: string;
+  opType: RegimePressureOp;
+  targetCountryId: string;
+  targetLeaderId: string | null;
+  tickOccurred: number;
+  severity: BlowbackSeverity;
+  isPubliclyKnown: boolean;
+  isAttributedToPlayer: boolean;
+  playerCountryId: string;
+  opName: string;                        // human-readable op codename
+  diplomaticDamage: Record<string, number>; // countryId → relationship damage
+  sanctionsThreat: boolean;
+  iccReferralRisk: boolean;
+  affectedAlliances: string[];           // alliance ids that took damage
+  mediaStormActive: boolean;
+  mediaStormTicksRemaining: number;
+  worldReactionText: string;             // procedurally generated summary line
+  hasBeenAddressedByPlayer: boolean;     // player denied/acknowledged/blamed
+}
+
+export interface RegimePressureState {
+  // Active operations
+  activeProtestCampaigns: Record<string, ProtestCampaign>;
+  activeCoupOps: Record<string, CoupOperation>;
+  activeElectionOps: Record<string, ElectionOp>;
+  activeOppositionAssets: Record<string, OppositionAsset>;
+
+  // Elite faction modeling (per country)
+  eliteFactions: Record<string, EliteFaction[]>;   // countryId → factions
+
+  // Blowback memory system
+  blowbackLog: BlowbackMemoryEntry[];
+  activeBlowbackCrises: string[];        // blowbackMemoryEntry ids currently active
+
+  // Global exposure tracking
+  playerExposureScore: number;           // 0-100: global awareness that player runs covert ops
+  currentlyTargetedCountries: string[];  // countries with active ops against them
+
+  // Historical record
+  completedOps: {
+    opId: string;
+    opType: RegimePressureOp;
+    targetCountryId: string;
+    outcome: RegimePressureOutcome;
+    tick: number;
+    blowbackId: string | null;
+  }[];
+}
 
 export type Ideology = 'DEMOCRACY' | 'AUTOCRACY' | 'MILITARY_JUNTA' | 'THEOCRACY' | 'TECHNOCRACY' | 'OLIGARCHY' | 'COMMUNISM' | 'MONARCHY';
 
@@ -798,6 +971,7 @@ export interface Leader {
   installedAtTick: number;
   source: 'INITIAL' | 'ELECTION' | 'COUP';
   psychology?: LeaderPsychologyState;
+  playerInstalled?: boolean;
 }
 
 // ==========================================
@@ -1154,4 +1328,220 @@ export interface CanonicalWorld {
   scenarioMeta: Record<string, any>;
   busEventQueue?: BusEvent[];
   busEventHistory?: BusEvent[];
+}
+
+// ─── PSYOP & INFLUENCE OPERATIONS CORE TYPES ─────────────────────────
+
+export type NarrativeTheme =
+  | 'REGIME_CORRUPTION'
+  | 'FOREIGN_THREAT_INFLATION'
+  | 'ECONOMIC_GRIEVANCE'
+  | 'ETHNIC_NATIONALIST'
+  | 'RELIGIOUS_PERSECUTION'
+  | 'DEMOCRATIC_LEGITIMACY'
+  | 'MILITARY_GLORIFICATION'
+  | 'ENVIRONMENTAL_FEAR'
+  | 'ANTI_PLAYER_REVERSAL'
+  | 'PEACE_NARRATIVE'
+  | 'ALLY_BETRAYAL';
+
+export type NarrativePhase =
+  | 'SEEDING'
+  | 'AMPLIFICATION'
+  | 'SATURATION'
+  | 'CRYSTALLIZATION'
+  | 'WEAPONIZATION'
+  | 'DORMANT'
+  | 'BURNED'
+  | 'COMPLETE';
+
+export type DistributionChannel =
+  | 'SOCIAL_MEDIA_ORGANIC'
+  | 'BOT_NETWORK'
+  | 'STATE_MEDIA_CUTOUT'
+  | 'INFLUENCER_LAUNDERING'
+  | 'ACADEMIC_CITATION'
+  | 'LEAKED_DOCUMENT'
+  | 'ENCRYPTED_CHANNEL'
+  | 'DIPLOMATIC_WHISPERING';
+
+export type KomprómatType =
+  | 'FINANCIAL_CORRUPTION'
+  | 'SEXUAL_SCANDAL'
+  | 'IDEOLOGICAL_BETRAYAL'
+  | 'WAR_CRIMES'
+  | 'HEALTH_INCAPACITY'
+  | 'FAMILY_CRIMINALITY'
+  | 'DEEPFAKE_VIDEO'
+  | 'FABRICATED_INTERCEPT';
+
+export type DiscoveryVector =
+  | 'METADATA_TRACE'
+  | 'LINGUISTIC_ANALYSIS'
+  | 'SOURCE_FOLLOW_MONEY'
+  | 'WHISTLEBLOWER'
+  | 'COUNTER_INTEL'
+  | 'PLATFORM_TAKEDOWN'
+  | 'FORENSIC_VIDEO_ANALYSIS'
+  | 'DIPLOMATIC_EXPOSE';
+
+export interface NarrativeCampaign {
+  id: string;
+  codename: string;
+  targetCountryId: string;
+  theme: NarrativeTheme;
+  phase: NarrativePhase;
+  turnLaunched: number;
+  turnPhaseChanged: number;
+
+  coreMessage: string;
+  supportingNarratives: string[];
+  targetDemographic: string;
+  emotionalRegister: 'FEAR' | 'ANGER' | 'PRIDE' | 'HOPE' | 'DISGUST' | 'GRIEF';
+
+  activeChannels: DistributionChannel[];
+  botNetworkIds: string[];
+  cutoutIds: string[];
+  totalFundingDeployed: number;
+
+  narrativePenetration: number;
+  beliefAdoption: number;
+  organicSpreadMultiplier: number;
+  viralMomentCount: number;
+  counterNarrativeStrength: number;
+
+  discoveryRisk: number;
+  playerFingerprint: number;
+  platformSuspicion: number;
+  targetIntelAwareness: number;
+
+  legitimacyDamage: number;
+  socialCohesionDamage: number;
+  targetDefconInfluence: number;
+}
+
+export interface BotNetwork {
+  id: string;
+  codename: string;
+  ownerCountryId: string;
+  targetCountryId: string;
+  size: number;
+  sophisticationLevel: number;
+  activityLevel: number;
+  detectability: number;
+  platformDistribution: Record<string, number>;
+  assignedCampaignId: string | null;
+  isActive: boolean;
+  isBurned: boolean;
+  burnedTick: number | null;
+  accountsRemaining: number;
+  operativeHandlerId: string | null;
+
+  metadataConsistency: number;
+  behavioralConsistency: number;
+  linguisticAuthenticity: number;
+}
+
+export interface MediaCutout {
+  id: string;
+  outletName: string;
+  registrationCountry: string;
+  appearsAs: 'NEWS_OUTLET' | 'THINK_TANK' | 'ACADEMIC_JOURNAL' | 'BLOG_NETWORK' | 'NGO';
+  credibilityScore: number;
+  reachScore: number;
+  playerFingerprint: number;
+  registrationCoverStrength: number;
+  assignedCampaignIds: string[];
+  isExposed: boolean;
+  exposedTick: number | null;
+  totalArticlesPublished: number;
+  citedByMainstreamMedia: boolean;
+  citedByMainstreamSinceTick: number | null;
+}
+
+export interface KomprómatOperation {
+  id: string;
+  codename: string;
+  targetLeaderId: string;
+  targetCountryId: string;
+  komprómatType: KomprómatType;
+  phase: 'PRODUCTION' | 'VALIDATION' | 'PLACEMENT' | 'DETONATION' | 'AFTERMATH' | 'DEFUSED' | 'BLOWN';
+  turnInitiated: number;
+
+  isFabricated: boolean;
+  fabricationQuality: number;
+  evidenceStrength: number;
+  targetVulnerabilityScore: number;
+
+  placementChannels: DistributionChannel[];
+  primaryOutletId: string | null;
+  embeddedJournalistId: string | null;
+
+  productionDiscoveryRisk: number;
+  validationDiscoveryRisk: number;
+  placementDiscoveryRisk: number;
+  detonationDiscoveryRisk: number;
+
+  projectedLegitimacyDamage: number;
+  projectedApprovalDrop: number;
+  internationalCondemnationRisk: number;
+  iccReferralRisk: boolean;
+
+  forensicTraceLevel: number;
+  debunkProbability: number;
+  isDebunked: boolean;
+  debunkedTick: number | null;
+  debunkedBy: string | null;
+}
+
+export interface PublicOpinionPoll {
+  id: string;
+  countryId: string;
+  tick: number;
+  leaderApprovalRating: number;
+  leaderApprovalTrend: number;
+  governmentTrustScore: number;
+  foreignPolicyApproval: number;
+  warSupportIndex: number;
+  economicOptimism: number;
+  nationalPrideScore: number;
+  activeNarrativeBeliefScores: Record<string, number>;
+  socialCohesionIndex: number;
+  polarizationIndex: number;
+  protestLikelihood: number;
+  coupLikelihood: number;
+  pollConfidence: number;
+  isManipulatedPoll: boolean;
+}
+
+export interface PSYOPState {
+  narrativeCampaigns: Record<string, NarrativeCampaign>;
+  botNetworks: Record<string, BotNetwork>;
+  mediaCutouts: Record<string, MediaCutout>;
+  komprómatOps: Record<string, KomprómatOperation>;
+
+  publicOpinionData: Record<string, PublicOpinionPoll>;
+  pollHistory: Record<string, PublicOpinionPoll[]>;
+
+  globalDisinfoIndex: number;
+  playerInfoWarReputation: number;
+  counterNarrativeResistance: Record<string, number>;
+
+  activeDiscoveryInvestigations: {
+    investigationId: string;
+    targetOpId: string;
+    opType: 'NARRATIVE' | 'BOT_NETWORK' | 'CUTOUT' | 'KOMPROMAT';
+    progressPercent: number;
+    investigatingEntity: string;
+    ticksUntilResolution: number;
+  }[];
+
+  completedCampaigns: {
+    campaignId: string;
+    targetCountryId: string;
+    outcome: 'SUCCESS' | 'PARTIAL' | 'FAILURE' | 'BLOWN';
+    tick: number;
+    finalBeliefAdoption: number;
+    wasExposed: boolean;
+  }[];
 }
