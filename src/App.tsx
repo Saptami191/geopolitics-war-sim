@@ -1172,7 +1172,6 @@ export default function App() {
     <div className="h-screen w-screen flex flex-col bg-[#030503] relative text-xs font-mono overflow-hidden">
       <div id="sovereign-fx-shake-root" className="w-full h-full flex flex-col relative" style={{ willChange: 'transform', pointerEvents: isInputBlocked ? 'none' : 'auto' }}>
         {/* Popups, Alerts & Bazaar overlays */}
-        <WhiteFlashOverlay />
         <GlobalFXLayer />
         <CountryInspector />
         <AlertBanner />

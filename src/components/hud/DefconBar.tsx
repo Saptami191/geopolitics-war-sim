@@ -4,6 +4,7 @@ import { useWorldStore } from '../../store/worldStore';
 import { usePlayerStore } from '../../store/playerStore';
 import { audio } from '../../utils/audio';
 import { PersonaId } from '../../types/defconPersona';
+import { restartTickTimer, stopTickTimer } from '../../sim/tickEngine';
 
 export default function DefconBar() {
   const defconLevel = useDefconStore((s) => s.currentDefconLevel);
@@ -13,7 +14,10 @@ export default function DefconBar() {
   const activePersona = useDefconStore((s) => s.activePersona);
   const setPersona = useDefconStore((s) => s.setPersona);
   
-  const tick = useWorldStore(s => s.currentTick);
+  const tickSpeed = usePlayerStore((s) => s.tickSpeed);
+  const setTickSpeed = usePlayerStore((s) => s.setTickSpeed);
+  const tick = useWorldStore((s) => s.currentTick);
+  
   const [localTime, setLocalTime] = useState('');
 
   // Clock
@@ -62,6 +66,16 @@ export default function DefconBar() {
       case 1: return "!!! MAXIMUM READINESS !!! // NUCLEAR WAR IMMINENT OBTAIN COMMAND CODES // !!! STANDBY LAUNCH !!!";
       default: return "";
     }
+  };
+
+  const isCrisis = defconLevel <= 2;
+
+  const getSpeedSec = () => {
+    if (tickSpeed === 'SLOW') return '12.0';
+    if (tickSpeed === 'NORMAL') return '8.0';
+    if (tickSpeed === 'FAST') return '4.0';
+    if (tickSpeed === 'ULTRA') return '3.0';
+    return '--';
   };
 
   return (
@@ -118,6 +132,70 @@ export default function DefconBar() {
 
         {/* RIGHT COMPARTMENT */}
         <div className="flex-1 flex flex-col justify-center px-6 py-2 relative gap-1 border-l border-[#333]">
+          
+          {/* ROW 1: CONTROLS */}
+          <div className="flex justify-between items-center w-full">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => {
+                  audio.sfxKeyClick();
+                  if (tickSpeed === 'PAUSED') {
+                    setTickSpeed('NORMAL');
+                    restartTickTimer();
+                  } else {
+                    setTickSpeed('PAUSED');
+                    stopTickTimer();
+                  }
+                }}
+                className={`bg-[#1a1a1a] border ${tickSpeed === 'PAUSED' ? 'border-[#444] text-amber-400' : 'border-[#444] text-gray-200'} text-[10px] font-mono px-3 py-0.5 hover:border-cyan-600 hover:text-cyan-400 transition-colors`}
+              >
+                {tickSpeed === 'PAUSED' ? '▶ PLAY' : '⏸ PAUSE'}
+              </button>
+
+              <div className="flex items-center">
+                <button
+                  onClick={() => {
+                    audio.sfxKeyClick();
+                    setTickSpeed('SLOW');
+                    restartTickTimer();
+                  }}
+                  className={`px-2 py-0.5 text-[9px] font-mono border transition-colors ${tickSpeed === 'SLOW' ? 'bg-[#222] text-white border-[#666]' : 'text-gray-500 border-[#333] hover:text-gray-300 hover:border-[#555]'}`}
+                >
+                  ◀ SLOW
+                </button>
+                <button
+                  onClick={() => {
+                    audio.sfxKeyClick();
+                    setTickSpeed('NORMAL');
+                    restartTickTimer();
+                  }}
+                  className={`px-2 py-0.5 text-[9px] font-mono border-y border-r transition-colors ${tickSpeed === 'NORMAL' ? 'bg-[#222] text-white border-[#666]' : 'text-gray-500 border-[#333] hover:text-gray-300 hover:border-[#555]'}`}
+                >
+                  ■ NORM
+                </button>
+                <button
+                  onClick={() => {
+                    audio.sfxKeyClick();
+                    setTickSpeed('FAST');
+                    restartTickTimer();
+                  }}
+                  className={`px-2 py-0.5 text-[9px] font-mono border-y border-r transition-colors ${tickSpeed === 'FAST' ? 'bg-[#222] text-white border-[#666]' : 'text-gray-500 border-[#333] hover:text-gray-300 hover:border-[#555]'}`}
+                >
+                  FAST ▶
+                </button>
+              </div>
+            </div>
+
+            <div className="text-[9px] text-gray-500 font-mono">
+              {isCrisis ? (
+                <span className="text-red-400">⚠ CRISIS PACE</span>
+              ) : (
+                <span>{getSpeedSec()}s/TICK</span>
+              )}
+            </div>
+          </div>
+
+          {/* ROW 2: EXISTING T-TICK & PERSONA */}
           <div className="flex justify-between items-center text-[10px] tracking-wide text-gray-400">
             <span>T-TICK <span className="text-white">{tick}</span></span>
             <div className="flex gap-2">
@@ -147,3 +225,4 @@ export default function DefconBar() {
     </div>
   );
 }
+

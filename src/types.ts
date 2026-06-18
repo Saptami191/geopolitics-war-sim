@@ -598,7 +598,7 @@ export interface PlayerState {
   activeScenario: ScenarioId;
   scenarioStartTick: number;
   totalTicks: number;
-  tickSpeed: 'PAUSED' | 'NORMAL' | 'FAST' | 'ULTRA';
+  tickSpeed: 'PAUSED' | 'SLOW' | 'NORMAL' | 'FAST' | 'ULTRA';
   selectedTargetCountryId?: string;
   pendingStrike?: Partial<BallisticStrike>;
   gameOver: boolean;

@@ -62,6 +62,7 @@ export function restartTickTimer() {
 
   let delay = 8000; // NORMAL
 
+  if (speed === 'SLOW') delay = 12000; // SLOW
   if (speed === 'FAST') delay = 4000; // FAST
   if (speed === 'ULTRA') delay = 3000; // CRISIS/HYPER manually triggered
 
