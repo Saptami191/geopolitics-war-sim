@@ -40,6 +40,7 @@ import { useDefconStore } from '../store/defconStore';
 import { useTargetedOperationsStore } from '../store/targetedOperationsStore';
 import { useHumintStore } from '../store/humintStore';
 import { useDeceptionStore } from '../store/deceptionStore';
+import { useNuclearStore } from '../store/nuclearStore';
 
 export const TICK_INTERVALS: Record<"day" | "week" | "month", number> = {
   day: 2000,
@@ -175,6 +176,9 @@ export function executeSimulationStep() {
   useClockStore.getState().advanceTick();
 
   const activeTick = useWorldStore.getState().currentTick;
+  
+  // Tick nuclear simulation system
+  useNuclearStore.getState().tickNuclear(activeTick);
   
   Object.keys(world.countries).forEach(id => {
     useLeaderMemoryStore.getState().forgiveMemories(id, activeTick);

@@ -1285,6 +1285,35 @@ class AudioEngine {
   playCinematicCue(sceneType: string, phase: number) {
     if (!this.ctx) return;
     switch (sceneType) {
+      case 'NUCLEAR_LAUNCH_AUTHORIZATION':
+        if (phase === 0) this.sfxNuclearAlarm();
+        if (phase === 2) this.sfxWarKlaxon();
+        break;
+      case 'NUCLEAR_AUTHENTICATION':
+        if (phase === 0) this.sfxRadioIntercept();
+        if (phase === 1) this.sfxSuccessConfirmation();
+        break;
+      case 'NUCLEAR_LAUNCH_EXECUTION':
+        if (phase === 0) this.sfxMissileLaunch();
+        if (phase === 2) this.sfxWarKlaxon();
+        break;
+      case 'NUCLEAR_DETONATION_SEQUENCE':
+        if (phase === 0) this.sfxWhiteout();
+        if (phase === 1) this.sfxMissileImpact();
+        if (phase === 2) this.sfxEMPBurst();
+        break;
+      case 'NUCLEAR_TABOO_BREACH':
+        if (phase === 0) this.sfxNuclearAlarm();
+        break;
+      case 'PERIMETER_ACTIVATION':
+        if (phase === 0) this.sfxWarKlaxon();
+        break;
+      case 'NC3_DEGRADED':
+        if (phase === 0) this.sfxEMPBurst();
+        break;
+      case 'FALSE_ALARM_AVERTED':
+        if (phase === 0) this.sfxPeaceResolution();
+        break;
       case 'SCENARIO_BOOT':
         if (phase === 0) this.startIntroDrone();
         if (phase === 2) this.playPhaseReveal();

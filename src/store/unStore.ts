@@ -58,6 +58,7 @@ interface UNStoreActions {
   triggerEmergencySpecialSession: (resolutionId: string) => string;
   fileLegalReferral: (applicantId: string, respondentId: string, claimType: ICJCaseRecord['claimType'], evidence: LegalEvidenceBundle) => string;
   escalateCaseToTribunal: (caseId: string, namedResponsibilitySubject: string) => string;
+  triggerNuclearCondemnation: (initiatorCountryId: string, targetCountryId: string, yieldKt: number) => string;
   applyReputationShift: (countryId: string, dimension: ReputationDimension, delta: number, reason: string) => void;
   triggerUNSCReformCrisis: () => void;
   voteInReformCrisis: (countryId: string, voteFor: boolean) => void;
@@ -819,6 +820,118 @@ export const useUNStore = create<UNStoreState & UNStoreActions>((set, get) => ({
 
     useWorldStore.getState().addGlobalEvent(`TRIBUNAL CONVENED: International prosecutors open inquiry targeting "${namedResponsibilitySubject}" in ${icjCase.respondentId}.`, 'WARNING');
     return id;
+  },
+
+  triggerNuclearCondemnation: (initiatorCountryId, targetCountryId, yieldKt) => {
+    const currentTick = useWorldStore.getState().currentTick;
+    const resId = `UNSC-NUKE-${initiatorCountryId}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+    
+    const res: UNSCResolution = {
+      id: resId,
+      title: `SPECIAL UNSC RESOLUTION: CONDEMNATION OF DETONATION BY ${initiatorCountryId.toUpperCase()}`,
+      preambularRationale: `Gravely concerned by the catastrophic detonation of a nuclear weapon yielding ${yieldKt}kt in/near ${targetCountryId}.`,
+      creatorId: 'UN',
+      sponsors: ['UN', 'US', 'GB', 'FR', 'DE', 'JP', 'KR'].filter(c => c !== initiatorCountryId),
+      coSponsors: [],
+      quietBackers: [],
+      clauses: [
+        { 
+          id: 'clause-1', 
+          category: 'CONDEMN', 
+          description: 'Demand immediate military stand-down and nuclear inspections.', 
+          targetCountryId: initiatorCountryId, 
+          severityWeight: 80, 
+          reputationalRiskWeight: 10 
+        },
+        { 
+          id: 'clause-2', 
+          category: 'ECONOMIC_SANCTIONS', 
+          description: 'Impose comprehensive military trade embargoes and strategic sanctions.', 
+          targetCountryId: initiatorCountryId, 
+          severityWeight: 90, 
+          reputationalRiskWeight: 20 
+        }
+      ],
+      status: 'ACTIVE_VOTE',
+      targetCountryId: initiatorCountryId,
+      roundIntroduced: 1,
+      tickIntroduced: currentTick,
+      enforcementStrength: 95,
+      reviewWindowTicks: 10,
+      legalBasisStyle: 'CHARTER_CHAP_VII'
+    };
+
+    const votesFor = ['US', 'GB', 'FR', 'DE', 'JP', 'KR', 'IN', 'BR', 'CA', 'AU', 'UA'].filter(c => c !== initiatorCountryId);
+    const votesAgainst = ['KP', 'IR', 'BY'].filter(c => c !== initiatorCountryId);
+    
+    // Check if RU/CN are P5 and whether they support or stand with the using state
+    if (initiatorCountryId !== 'RU') {
+      if (['CN', 'KP', 'IR'].includes(initiatorCountryId)) {
+        votesAgainst.push('RU');
+      } else {
+        votesFor.push('RU');
+      }
+    }
+    if (initiatorCountryId !== 'CN') {
+      if (['RU', 'KP'].includes(initiatorCountryId)) {
+         votesAgainst.push('CN');
+      } else {
+         votesFor.push('CN');
+      }
+    }
+
+    const isP5 = ['US', 'RU', 'CN', 'GB', 'FR'].includes(initiatorCountryId);
+    const vetoingP5s: string[] = [];
+    if (isP5) {
+      vetoingP5s.push(initiatorCountryId);
+      if (!votesAgainst.includes(initiatorCountryId)) {
+        votesAgainst.push(initiatorCountryId);
+      }
+    }
+
+    const finalStatus: 'VETOED' | 'PASSED' = vetoingP5s.length > 0 ? 'VETOED' : 'PASSED';
+
+    res.voteRecord = {
+      resolutionId: resId,
+      votesFor,
+      votesAgainst,
+      votesAbstain: ['SA', 'ZA', 'EG', 'PK'].filter(c => c !== initiatorCountryId),
+      passed: finalStatus === 'PASSED',
+      vetoed: finalStatus === 'VETOED',
+      vetoingP5s,
+      tickHeld: currentTick
+    };
+    res.status = finalStatus;
+
+    set(produce((s: UNStoreState) => {
+      s.resolutions[resId] = res;
+    }));
+
+    let comment = '';
+    if (finalStatus === 'VETOED') {
+      comment = `UNSC GRIDLOCK: Resolution to condemn nuclear use by ${initiatorCountryId} was BLOCKED by its P5 veto.`;
+      useWorldStore.getState().addGlobalEvent(comment, 'WARNING');
+      // GA special bypass
+      setTimeout(() => {
+        get().triggerEmergencySpecialSession(resId);
+      }, 500);
+    } else {
+      comment = `UNSC CONDEMNATION PASSED: UNSC overwhelmingly condemns nuclear use by ${initiatorCountryId}.`;
+      useWorldStore.getState().addGlobalEvent(comment, 'CRITICAL');
+      // Inflict huge reputation shifts
+      set(produce((s: UNStoreState) => {
+        s.reputationShifts.push({
+          id: `REP-${initiatorCountryId}-nuke-${currentTick}`,
+          countryId: initiatorCountryId,
+          dimension: 'humanitarianCredibility',
+          delta: -50,
+          reason: `UN Security Council Resolution passed condemning rogue nuclear usage.`,
+          tickIncurred: currentTick
+        });
+      }));
+    }
+
+    return resId;
   },
 
   applyReputationShift: (countryId, dimension, delta, reason) => set(produce(s => {

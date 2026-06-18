@@ -2761,5 +2761,272 @@ export type InterdictionCase = {
   active: boolean;
 };
 
+// ── NUCLEAR WEAPON INVENTORY ──────────────────────────────────────────────────
+
+export type NuclearTriadLeg = 'ICBM' | 'SLBM' | 'BOMBER';
+
+export type NuclearWeaponStatus =
+  | 'STORED'          // Warhead de-mated, in depot
+  | 'MATED'           // Warhead mated to delivery vehicle
+  | 'ON_ALERT'        // PAL unlocked, crew at station
+  | 'AIRBORNE'        // Bomber aloft with weapon
+  | 'LAUNCHED'        // In flight — irreversible
+  | 'DETONATED'       // Impact confirmed
+  | 'INTERCEPTED'     // Destroyed by ABM
+  | 'FAILED'          // Malfunction
+  | 'DESTROYED';      // Killed by first strike
+
+export type NuclearWeaponClass =
+  | 'ICBM_MINUTEMAN'    // ~300-475 kt, silo-based, 30-min flight time
+  | 'ICBM_SARMAT'       // ~750 kt–10 Mt, Russian RS-28 Sarmat
+  | 'ICBM_DF5'          // ~3 Mt, Chinese DF-5B
+  | 'SLBM_TRIDENT'      // ~100-475 kt, US Trident II D5
+  | 'SLBM_BULAVA'       // ~100-150 kt, Russian R-30 Bulava
+  | 'SLBM_JL2'          // ~250-1000 kt, Chinese JL-2
+  | 'BOMBER_B52'        // ~170 kt B61 gravity bomb or ALCM
+  | 'BOMBER_B2'         // ~360 kt B83 or B61-12
+  | 'BOMBER_TU95'       // ~200 kt Kh-55 ALCM
+  | 'TACTICAL_W76'      // ~100 kt, submarine-launched tactical option
+  | 'TACTICAL_B61_12'   // ~0.3-50 kt dial-a-yield, most modern NATO tactical
+  | 'TACTICAL_ISKANDER' // ~10-50 kt, Russian theater nuclear
+  | 'TACTICAL_DF26'     // ~200-1200 kt, Chinese anti-carrier
+  | 'EMP_HIGH_ALTITUDE'; // ~1 Mt, detonated at 400km altitude, no blast kill
+
+export interface NuclearWeapon {
+  id: string;
+  class: NuclearWeaponClass;
+  leg: NuclearTriadLeg;
+  countryId: string;
+  status: NuclearWeaponStatus;
+  yieldKt: number;
+  canReach: string[];          // list of country IDs within range
+  deploymentBase: string;      // base or submarine hull ID
+  isOnAlert: boolean;
+  palUnlocked: boolean;
+  authenticationComplete: boolean;
+  createdTick: number;
+  launchedTick: number | null;
+  targetCountryId: string | null;
+  targetLat: number | null;
+  targetLon: number | null;
+  flightTimeMinutes: number;
+  isRecallable: boolean;       // bombers yes, missiles no
+  survivabilityScore: number;  // 0-100, reduced if known to adversary SIGINT
+}
+
+// ── TRIAD POSTURE ─────────────────────────────────────────────────────────────
+
+export type TriadPostureLevel =
+  | 'PEACETIME'         // Normal readiness, warheads de-mated or in depot
+  | 'ELEVATED'          // Increased monitoring, crews on heightened standby
+  | 'STRIP_ALERT'       // Bombers on strip alert, able to launch in minutes
+  | 'SURGE'             // Submarines dispersed, ICBMs on alert, PALs ready
+  | 'HAIR_TRIGGER'      // Maximum readiness, launch decision can be delegated
+  | 'LAUNCH_AUTHORIZED'; // Authorization granted, awaiting execution order
+
+export interface TriadPostureConfig {
+  bomberPosture: TriadPostureLevel;
+  icbmPosture: TriadPostureLevel;
+  slbmPosture: TriadPostureLevel;
+  escalationRisk: number;        // 0-100: higher = more accident probability
+  accidentProbability: number;   // per-tick probability of unauthorized event
+  survivabilityBonus: number;    // SLBM survivability boost from dispersal
+  recallWindowMinutes: number;   // for bombers only — 0 once past recall point
+}
+
+// ── NC3 COMMUNICATIONS INTEGRITY ─────────────────────────────────────────────
+
+export type NC3Channel =
+  | 'NMCC_LANDLINE'       // National Military Command Center ground lines
+  | 'STRATCOM_BROADCAST'  // US STRATCOM broadcast network
+  | 'AEHF_SATELLITE'      // Advanced Extremely High Frequency satellite
+  | 'VLF_SUBMARINE'       // Very Low Frequency for submarine communication
+  | 'TACAMO_AIRCRAFT'     // Take Charge and Move Out — E-6B airborne relay
+  | 'EMP_HARDENED_WIRE'   // Hardened ground-burst survivable links
+  | 'DEAD_HAND_AUTO';     // Russian automated launch detection circuit
+
+export interface NC3ChannelStatus {
+  channel: NC3Channel;
+  integrity: number;           // 0-100
+  isActive: boolean;
+  degradedByEW: boolean;       // electronic warfare interference
+  degradedByCyber: boolean;
+  degradedByNuclearEMP: boolean;
+  lastSuccessfulTransmissionTick: number;
+  reliabilityPct: number;      // probability any given EAM gets through
+}
+
+export interface NC3SystemState {
+  overallIntegrity: number;    // 0-100: weighted average of all channels
+  channels: Record<NC3Channel, NC3ChannelStatus>;
+  eamQueueLength: number;      // number of Emergency Action Messages pending
+  lastEAMDeliveredTick: number;
+  communicationsRedundancyScore: number;
+  isDecapitationRisk: boolean; // true if national command authority unreachable
+}
+
+// ── LAUNCH AUTHORITY ─────────────────────────────────────────────────────────
+
+export type AuthorityStatus =
+  | 'DORMANT'           // No nuclear crisis, no authority chain active
+  | 'MONITORING'        // Watch posture, authority chain assembled
+  | 'WARNING_RECEIVED'  // Detection event received, assessment underway
+  | 'ASSESSMENT'        // Intelligence corroboration phase
+  | 'CONSULTATION'      // Civilian + military consultation underway
+  | 'PRE_DELEGATION'    // Authority delegated to field commanders
+  | 'AUTHORIZED'        // Presidential authorization obtained
+  | 'AUTHENTICATED'     // PAL codes validated, two-man rule met
+  | 'EXECUTION_ORDER'   // EAM transmitted to forces
+  | 'LAUNCHED'          // Weapons in flight
+  | 'STAND_DOWN';       // False alarm or order rescinded
+
+export interface LaunchAuthorityState {
+  status: AuthorityStatus;
+  initiatedByWarning: string | null;    // what triggered the sequence
+  warningConfidence: number;            // 0-100: how certain the attack warning is
+  assessmentTick: number | null;        // when assessment phase started
+  assessmentComplete: boolean;
+  consultationComplete: boolean;
+  authorizationGranted: boolean;
+  authorizationGrantedTick: number | null;
+  authorizationCode: string | null;     // the Gold Codes — generated on authorization
+  twoManRuleComplete: boolean;
+  palUnlockComplete: boolean;
+  selectedOption: NuclearLaunchOption | null;
+  executionOrderSent: boolean;
+  executionOrderTick: number | null;
+  decisionDeadlineTick: number | null;  // for LUA: when missiles arrive
+  timeRemainingToDecisionSeconds: number;
+  preDelegationActive: boolean;
+  preDelegationCountryIds: string[];    // field commanders who hold authority
+}
+
+// ── LAUNCH OPTIONS ────────────────────────────────────────────────────────────
+
+export type NuclearLaunchOption =
+  | 'ABSORB_AND_RESPOND'        // Ride out attack, launch from survivors
+  | 'LAUNCH_UNDER_ATTACK'       // Launch before warheads arrive
+  | 'LAUNCH_ON_WARNING'         // Launch on sensor warning, not confirmed impact
+  | 'DEMONSTRATION_SHOT'        // Single detonation at sea / remote area
+  | 'LIMITED_NUCLEAR_OPTION'    // Counterforce strike, military targets only
+  | 'MAJOR_ATTACK_OPTION'       // Full counterforce exchange
+  | 'COUNTERVALUE_STRIKE'       // Deliberately target civilian infrastructure
+  | 'EMP_FIRST_STRIKE'          // High-altitude EMP to disable adversary NC3
+  | 'WITHHOLD';                  // Explicit decision not to use
+
+export interface NuclearLaunchOptionSpec {
+  option: NuclearLaunchOption;
+  label: string;
+  description: string;
+  weaponsRequired: number;
+  estimatedCasualties: number;     // rough order of magnitude
+  escalationProbability: number;   // 0-1: chance adversary retaliates
+  tabooErosionDelta: number;       // how much it shifts global taboo state
+  allianceCohesionDelta: number;
+  politicalCapitalCost: number;
+  isRecallable: boolean;
+  requiresPresidentialConsent: boolean;
+  requiresCongressionalConsult: boolean;
+  minimumDefconLevel: number;      // can only execute at this DEFCON or lower
+  legalStatusUnderIHL: 'CLEARLY_PROHIBITED' | 'CONTESTED' | 'ARGUABLY_LAWFUL';
+}
+
+// ── NUCLEAR TABOO ─────────────────────────────────────────────────────────────
+
+export interface NuclearTabooState {
+  globalTabooIntactness: number;     // 0-100: 100 = no use ever, 0 = normalized
+  firstUseOccurred: boolean;
+  firstUseTick: number | null;
+  firstUseCountryId: string | null;
+  useEvents: NuclearUseEvent[];
+  adversaryWillingnessMultiplier: number;  // AI adversary nuclear use threshold modifier
+  un_condemnationCount: number;
+  allianceTabooErosion: Record<string, number>;  // per-country taboo erosion
+}
+
+export interface NuclearUseEvent {
+  id: string;
+  tick: number;
+  initiatingCountryId: string;
+  targetCountryId: string;
+  option: NuclearLaunchOption;
+  yieldKt: number;
+  lat: number;
+  lon: number;
+  estimatedCasualties: number;
+  tabooErosionDelta: number;
+  wasRetaliatory: boolean;
+  wasFirstUse: boolean;
+}
+
+// ── FALSE ALARM & MISCALCULATION ──────────────────────────────────────────────
+
+export type FalseAlarmType =
+  | 'SENSOR_MALFUNCTION'      // satellite or radar glitch
+  | 'COMPUTER_ERROR'          // NORAD-style software bug
+  | 'EXERCISE_CONFUSION'      // training exercise misread as real (Able Archer)
+  | 'WEATHER_ARTIFACT'        // solar flare / atmospheric reflection
+  | 'ADVERSARY_DECEPTION'     // deliberate spoof of launch signature
+  | 'INTELLIGENCE_ERROR';     // HUMINT or SIGINT misattribution
+
+export interface FalseAlarmEvent {
+  id: string;
+  type: FalseAlarmType;
+  tick: number;
+  detectedByCountryId: string;
+  perceivedThreatFromCountryId: string;
+  confidenceAtDetection: number;
+  wasCorrectlyResolved: boolean;
+  resolutionTick: number | null;
+  nearLaunchReached: boolean;   // did authority chain progress to AUTHORIZED?
+  worldEventGenerated: boolean;
+}
+
+// ── DEAD HAND / PERIMETER ─────────────────────────────────────────────────────
+
+export interface DeadHandState {
+  isActive: boolean;            // Russian Perimeter system — active?
+  activationCondition: string | null;
+  triggerThreshold: number;     // seismic + radiation + comms-loss threshold
+  activatedTick: number | null;
+  launchAuthorizedBySystem: boolean;
+  countermeasuresAvailable: boolean;
+}
+
+// ── NUCLEAR CONSEQUENCE PROFILE ───────────────────────────────────────────────
+
+export interface NuclearDetonationConsequences {
+  detonationId: string;
+  countryId: string;
+  lat: number;
+  lon: number;
+  yieldKt: number;
+  immediateDeaths: number;
+  injuredCasualties: number;
+  radiationDeathsPerTick: number;
+  permanentInfrastructureLoss: number;   // % GDP loss
+  nuclearFalloutRadiusKm: number;
+  electromagneticPulseRadiusKm: number;
+  economicShockMultiplier: number;
+  allianceCohesionImpact: number;
+  globalTradeImpact: number;
+  tabooErosionDelta: number;
+  nuclearWinterProbability: number;      // if total megatons exceed threshold
+  climateShockOnset: boolean;
+  triggeredRetaliationFrom: string[];
+}
+
+// ── NUCLEAR SCAR FOR RENDERING / VISUALS ──────────────────────────────
+
+export interface NuclearScar {
+  id: string;
+  lat: number;
+  lon: number;
+  radius: number;
+  megatons: number;
+  timestamp: number;
+}
+
+
 
 

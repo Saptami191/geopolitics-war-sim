@@ -45,6 +45,7 @@ interface TreatyStoreActions {
   removeConcessionItem: (sessionId: string, concessionId: string, category: 'OFFERED' | 'DEMANDED') => void;
   violateTreatyClause: (treatyId: string, countryId: string, clauseId: string, breachType: string) => void;
   terminateTreaty: (treatyId: string, exitMethod: 'OPPORTUNISTIC_EXIT' | 'HONORABLE_EXIT') => void;
+  suspendNuclearTreaties: () => void;
   tickTreatySimulation: (currentTick: number) => void;
   setActiveSessionId: (id: string | null) => void;
 }
@@ -894,6 +895,38 @@ export const useTreatyStore = create<TreatyStoreState & TreatyStoreActions>((set
       title: 'TREATY TERMINATED',
       message: `Accord dissolved. Trust penalties applied according to protocol.`,
       type: 'WARNING'
+    });
+  },
+
+  suspendNuclearTreaties: () => {
+    useWorldStore.getState().applyTickDelta((draft) => {
+      if (!draft.world || !draft.world.treatiesById) return;
+      Object.keys(draft.world.treatiesById).forEach((treatyId) => {
+        const treaty = draft.world.treatiesById[treatyId];
+        if (treaty && treaty.status === 'ACTIVE') {
+          const nameLower = treaty.name.toLowerCase();
+          const isNuclearRelated = 
+            treaty.type === 'DENUCLEARIZATION' ||
+            nameLower.includes('nuclear') ||
+            nameLower.includes('arms reduction') ||
+            nameLower.includes('npt') ||
+            nameLower.includes('first use') ||
+            nameLower.includes('arms_reduction') ||
+            nameLower.includes('free_zone') ||
+            (treaty.tags && treaty.tags.some(tag => {
+              const tLower = tag.toLowerCase();
+              return tLower.includes('nuclear') || tLower.includes('npt') || tLower.includes('first_use') || tLower.includes('free_zone') || tLower.includes('arms_reduction');
+            }));
+          if (isNuclearRelated) {
+            treaty.status = 'SUSPENDED';
+            draft.globalEventLog.unshift({
+              tick: draft.currentTick,
+              text: `TREATY SUSPENDED: Unilateral suspension of ${treaty.name} because nuclear taboo was violated.`,
+              severity: 'CRITICAL'
+            });
+          }
+        }
+      });
     });
   },
 
