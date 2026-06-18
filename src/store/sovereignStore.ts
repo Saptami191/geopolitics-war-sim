@@ -1061,6 +1061,35 @@ export const useSovereignStore = create<Record<string, any> & SovereignStoreActi
                 decayRateIndex: 0.1
               });
             }
+            
+            try {
+              const { useLeaderEmotionStore } = require('./leaderEmotionStore');
+              useLeaderEmotionStore.getState().updateEmotion(countryId, 'anger', penalty / 2);
+              useLeaderEmotionStore.getState().updateEmotion(countryId, 'fear', penalty / 3);
+            } catch (e) {
+              console.warn("Emotion store not yet mounted during sim tick");
+            }
+            try {
+              const { useLeaderMemoryStore } = require('./leaderMemoryStore');
+              useLeaderMemoryStore.getState().addMemory({
+                nationId: countryId,
+                tick: worldDraft.currentTick,
+                type: 'THREAT',
+                description: interruptionText,
+                playerInitiated: actorCountryId === 'US', // assuming US is player
+                emotionalImpact: { anger: penalty / 2, fear: penalty / 3 },
+                resentmentDelta: penalty / 2,
+                trustDelta: -penalty
+              });
+            } catch (e) {
+              console.warn("Memory store not yet mounted during sim tick");
+            }
+            try {
+              const { useMirrorStore } = require('./mirrorStore');
+              useMirrorStore.getState().recordAction(worldDraft.currentTick, countryId, eventType);
+            } catch (e) {
+              console.warn("Mirror store not yet mounted during sim tick");
+            }
           }
         }
       });

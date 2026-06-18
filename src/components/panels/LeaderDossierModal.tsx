@@ -86,12 +86,72 @@ export const LeaderDossierModal: React.FC<{ countryId: string; onClose: () => vo
                  <div className="w-2/3">
                     <div className="text-xl font-bold border-b border-zinc-800 pb-2 mb-6">PSYCHOLOGICAL TRAIT ASSESSMENT</div>
                     <div className="text-zinc-500 text-sm mb-4">Baseline values abstracted from behavioral history.</div>
-                    {/* Placeholder for exactly rendering 15 traits */}
-                    <div className="grid grid-cols-2 gap-x-12 gap-y-4">
-                       <div className="flex items-center gap-4"><span className="w-32 text-xs">HAWKISHNESS</span><div className="flex-1 h-3 bg-zinc-900 border border-zinc-800"><div className="h-full bg-red-600" style={{ width: '80%' }}/></div><span className="w-6 text-xs text-right">80</span></div>
-                       <div className="flex items-center gap-4"><span className="w-32 text-xs">PARANOIA</span><div className="flex-1 h-3 bg-zinc-900 border border-zinc-800"><div className="h-full bg-amber-600" style={{ width: '65%' }}/></div><span className="w-6 text-xs text-right">65</span></div>
-                       <div className="flex items-center gap-4"><span className="w-32 text-xs">RIGIDITY</span><div className="flex-1 h-3 bg-zinc-900 border border-zinc-800"><div className="h-full bg-zinc-500" style={{ width: '45%' }}/></div><span className="w-6 text-xs text-right">45</span></div>
-                       <div className="flex items-center gap-4"><span className="w-32 text-xs">RISK TOLERANCE</span><div className="flex-1 h-3 bg-zinc-900 border border-zinc-800"><div className="h-full bg-red-600" style={{ width: `${leader.riskTolerance}%` }}/></div><span className="w-6 text-xs text-right">{leader.riskTolerance}</span></div>
+                    
+                    <div className="flex justify-center items-center h-[300px] relative mt-8">
+                       <svg width="300" height="300" className="opacity-80">
+                         {/* Background Grids */}
+                         {[0.2, 0.4, 0.6, 0.8, 1].map(scale => (
+                           <polygon key={scale} points={`
+                             150,${150 - scale * 120}
+                             ${150 + scale * 120 * Math.cos(Math.PI/6)},${150 - scale * 120 * Math.sin(Math.PI/6)}
+                             ${150 + scale * 120 * Math.cos(Math.PI/6)},${150 + scale * 120 * Math.sin(Math.PI/6)}
+                             150,${150 + scale * 120}
+                             ${150 - scale * 120 * Math.cos(Math.PI/6)},${150 + scale * 120 * Math.sin(Math.PI/6)}
+                             ${150 - scale * 120 * Math.cos(Math.PI/6)},${150 - scale * 120 * Math.sin(Math.PI/6)}
+                           `} fill="none" stroke="#27272a" strokeWidth="1" />
+                         ))}
+                         
+                         {/* Center Crosshairs */}
+                         <line x1="150" y1="30" x2="150" y2="270" stroke="#27272a" />
+                         <line x1="46" y1="90" x2="254" y2="210" stroke="#27272a" />
+                         <line x1="254" y1="90" x2="46" y2="210" stroke="#27272a" />
+
+                         {/* Data Polygon */}
+                         {(() => {
+                           const traits = [
+                             leader.psychology?.personality.traits.hawkishness || 50,
+                             leader.psychology?.personality.traits.paranoia || 50,
+                             leader.psychology?.personality.traits.rigidity || 50,
+                             leader.riskTolerance || 50,
+                             leader.psychology?.personality.traits.prestigeHunger || 50,
+                             leader.psychology?.personality.traits.crisisComposure || 50
+                           ];
+                           const angles = [
+                             -Math.PI / 2,         
+                             -Math.PI / 2 + (Math.PI / 3),  
+                             -Math.PI / 2 + (2 * Math.PI / 3), 
+                             Math.PI / 2,          
+                             Math.PI / 2 + (Math.PI / 3),  
+                             Math.PI / 2 + (2 * Math.PI / 3)   
+                           ];
+                           const points = traits.map((val, i) => {
+                             const r = Math.max(0, Math.min(100, val)) / 100 * 120;
+                             const x = 150 + r * Math.cos(angles[i]);
+                             const y = 150 + r * Math.sin(angles[i]);
+                             return `${x},${y}`;
+                           }).join(' ');
+                           
+                           return (
+                             <motion.polygon 
+                               points={points} 
+                               fill="rgba(220, 38, 38, 0.3)" 
+                               stroke="#dc2626" 
+                               strokeWidth="2" 
+                               initial={{ opacity: 0 }}
+                               animate={{ opacity: 1 }}
+                               transition={{ duration: 0.8 }}
+                             />
+                           );
+                         })()}
+                       </svg>
+
+                       {/* Labels */}
+                       <div className="absolute top-0 text-[10px] text-red-500 font-bold tracking-widest">HAWKISHNESS</div>
+                       <div className="absolute top-[60px] right-0 text-[10px] text-zinc-400 font-bold tracking-widest">PARANOIA</div>
+                       <div className="absolute bottom-[60px] right-0 text-[10px] text-zinc-400 font-bold tracking-widest">RIGIDITY</div>
+                       <div className="absolute bottom-0 text-[10px] text-zinc-400 font-bold tracking-widest">RISK TOLERANCE</div>
+                       <div className="absolute bottom-[60px] left-0 text-[10px] text-zinc-400 font-bold tracking-widest">PRESTIGE</div>
+                       <div className="absolute top-[60px] left-0 text-[10px] text-zinc-400 font-bold tracking-widest">COMPOSURE</div>
                     </div>
                  </div>
               </div>

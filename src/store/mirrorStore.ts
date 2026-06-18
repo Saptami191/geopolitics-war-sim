@@ -116,6 +116,7 @@ interface MirrorActions {
   deployCounterStrategy: (candidateId: string) => void;
   interactWithBait: (baitId: string, playerActionType: string, isSIGINTHigh: boolean) => { triggered: boolean, feedback: string, success: boolean };
   setDifficulty: (level: 'EASY' | 'MEDIUM' | 'HARD' | 'NIGHTMARE') => void;
+  setConfrontationPlayed: (val: boolean) => void;
   resetMirrorStore: () => void;
   triggerDriftRecalibration: () => void;
   tickMirrorState: (currentTick: number) => void;
@@ -188,7 +189,7 @@ export const useMirrorStore = create<MirrorAdaptationState & MirrorActions>()(
       exploitWindows: [],
       memories: [],
       confidence: {
-        generalConfidence: 20,
+        generalConfidence: 0,
         historyScaleTicks: 1,
         relearningActive: false,
       },
@@ -205,6 +206,7 @@ export const useMirrorStore = create<MirrorAdaptationState & MirrorActions>()(
       warningLevel: 'LOW',
       learningSpeedMultiplier: 1.0,
       difficultySetting: 'MEDIUM',
+      confrontationPlayed: false,
 
       // Actions & Methods
       setDifficulty: (level) => {
@@ -213,6 +215,10 @@ export const useMirrorStore = create<MirrorAdaptationState & MirrorActions>()(
         if (level === 'HARD') mult = 1.6;
         if (level === 'NIGHTMARE') mult = 2.4;
         set({ difficultySetting: level, learningSpeedMultiplier: mult });
+      },
+
+      setConfrontationPlayed: (val) => {
+        set({ confrontationPlayed: val });
       },
 
       resetMirrorStore: () => {
@@ -227,7 +233,7 @@ export const useMirrorStore = create<MirrorAdaptationState & MirrorActions>()(
           exploitWindows: [],
           memories: [],
           confidence: {
-            generalConfidence: 20,
+            generalConfidence: 0,
             historyScaleTicks: 1,
             relearningActive: false,
           },
@@ -602,6 +608,7 @@ export const useMirrorStore = create<MirrorAdaptationState & MirrorActions>()(
         warningLevel: state.warningLevel,
         difficultySetting: state.difficultySetting,
         learningSpeedMultiplier: state.learningSpeedMultiplier,
+        confrontationPlayed: state.confrontationPlayed,
       }),
     }
   )

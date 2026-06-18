@@ -201,4 +201,6 @@ export interface MirrorAdaptationState {
 
   learningSpeedMultiplier: number; // e.g. 1.0, 1.5, 2.0 based on difficulty
   difficultySetting: 'EASY' | 'MEDIUM' | 'HARD' | 'NIGHTMARE';
+  confrontationPlayed: boolean;
 }
+

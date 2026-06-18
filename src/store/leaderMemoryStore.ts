@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { LeaderEmotionalState } from './leaderEmotionStore';
 
 export interface NationMemoryEntry {
@@ -27,49 +28,56 @@ interface LeaderMemoryStoreActions {
   forgiveMemories: (nationId: string, currentTick: number) => void;
 }
 
-export const useLeaderMemoryStore = create<LeaderMemoryStoreState & LeaderMemoryStoreActions>((set, get) => ({
-  nationMemories: {},
+export const useLeaderMemoryStore = create<LeaderMemoryStoreState & LeaderMemoryStoreActions>()(
+  persist(
+    (set, get) => ({
+      nationMemories: {},
 
-  addMemory: (entry) => set((state) => {
-    const id = `MEM-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-    const current = state.nationMemories[entry.nationId] || [];
-    return {
-      nationMemories: {
-        ...state.nationMemories,
-        [entry.nationId]: [{ ...entry, id }, ...current].slice(0, 50) // keep last 50
-      }
-    };
-  }),
+      addMemory: (entry) => set((state) => {
+        const id = `MEM-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+        const current = state.nationMemories[entry.nationId] || [];
+        return {
+          nationMemories: {
+            ...state.nationMemories,
+            [entry.nationId]: [{ ...entry, id }, ...current].slice(0, 50) // keep last 50
+          }
+        };
+      }),
 
-  getMemoryWeight: (nationId) => {
-    const mems = get().nationMemories[nationId] || [];
-    let sum = 0;
-    // basic decay model based on index... newer memories hurt more
-    mems.forEach((m, idx) => {
-      if (!m.isForgivenAt) {
-        sum += m.resentmentDelta * Math.max(0.1, 1 - (idx * 0.05));
-      }
-    });
-    return Math.min(100, Math.max(0, Math.round(sum)));
-  },
+      getMemoryWeight: (nationId) => {
+        const mems = get().nationMemories[nationId] || [];
+        let sum = 0;
+        // basic decay model based on index... newer memories hurt more
+        mems.forEach((m, idx) => {
+          if (!m.isForgivenAt) {
+            sum += m.resentmentDelta * Math.max(0.1, 1 - (idx * 0.05));
+          }
+        });
+        return Math.min(100, Math.max(0, Math.round(sum)));
+      },
 
-  getTrustBalance: (nationId) => {
-    const mems = get().nationMemories[nationId] || [];
-    let sum = 0;
-    mems.forEach((m, idx) => {
-      sum += m.trustDelta * Math.max(0.1, 1 - (idx * 0.05));
-    });
-    return Math.min(100, Math.max(0, Math.round(sum)));
-  },
+      getTrustBalance: (nationId) => {
+        const mems = get().nationMemories[nationId] || [];
+        let sum = 0;
+        mems.forEach((m, idx) => {
+          sum += m.trustDelta * Math.max(0.1, 1 - (idx * 0.05));
+        });
+        return Math.min(100, Math.max(0, Math.round(sum)));
+      },
 
-  forgiveMemories: (nationId, currentTick) => set((state) => {
-    const current = state.nationMemories[nationId] || [];
-    const forgiven = current.map(m => (!m.isForgivenAt && m.resentmentDelta > 0) ? { ...m, isForgivenAt: currentTick } : m);
-    return {
-      nationMemories: {
-        ...state.nationMemories,
-        [nationId]: forgiven
-      }
-    };
-  })
-}));
+      forgiveMemories: (nationId, currentTick) => set((state) => {
+        const current = state.nationMemories[nationId] || [];
+        const forgiven = current.map(m => (!m.isForgivenAt && m.resentmentDelta > 0) ? { ...m, isForgivenAt: currentTick } : m);
+        return {
+          nationMemories: {
+            ...state.nationMemories,
+            [nationId]: forgiven
+          }
+        };
+      })
+    }),
+    {
+      name: 'sc-leader-memory-store',
+    }
+  )
+);
