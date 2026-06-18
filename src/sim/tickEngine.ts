@@ -15,6 +15,7 @@ import { useBlocStore } from '../store/blocStore';
 import { useSoftPowerStore } from '../store/softPowerStore';
 import { useMirrorStore } from '../store/mirrorStore';
 import { useInfluenceStore } from '../store/influenceStore';
+import { useOversightStore } from '../store/oversightStore';
 import { useLeaderMemoryStore } from '../store/leaderMemoryStore';
 import { pollScenarioStatus } from './scenarioEngine';
 import { processFactions } from './factionEngine';
@@ -28,6 +29,7 @@ import { processComplexPhase2Geopolitics } from './geopoliticalEngine';
 import { tickLeadersAndPsychology } from './leaderPsychologyEngine';
 import { useRegimePressureStore } from '../store/regimePressureStore';
 import { usePsyopStore } from '../store/psyopStore';
+import { useCovertFinanceStore } from '../store/covertFinanceStore';
 import { CovertOp, WorldState } from '../types';
 import { dampenOpinionDelta } from '../utils/pacing';
 import { ConsequenceEngine } from './consequenceEngine';
@@ -149,6 +151,12 @@ export function executeSimulationStep() {
     // 13. Run PSYOP and Influence Operations strategies
     usePsyopStore.getState().tickPSYOP();
 
+    // 14. Run Covert Finance & Deniable Logistics Strategies
+    if (useCovertFinanceStore.getState().tickCovertFinance) {
+        useCovertFinanceStore.getState().tickCovertFinance(draft.currentTick);
+    }
+
+
     // T3.5 Consequence core engine tick integration
     ConsequenceEngine.tick(draft.currentTick, draft);
   });
@@ -210,6 +218,8 @@ export function executeSimulationStep() {
 
   // Synchronize Adversarial Influence Behavior and Cognitive Warfare (Module 4.5)
   useInfluenceStore.getState().tickInfluenceSystem(useWorldStore.getState().currentTick);
+
+  useOversightStore.getState().tickOversight(useWorldStore.getState().currentTick);
 
   // Regularly save a checkpoint if there is no ongoing nuclear exchange or active aftermath
   const currentWorld = useWorldStore.getState();

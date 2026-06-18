@@ -23,6 +23,7 @@ import { useLeaderMemoryStore } from './leaderMemoryStore';
 import { useUNStore } from './unStore';
 import { useBlocStore } from './blocStore';
 import { useMirrorStore } from './mirrorStore';
+import { useOversightStore } from './oversightStore';
 import { usePlayerStore } from './playerStore';
 
 const OP_ADJECTIVES = ['SILENT', 'IRON', 'CRIMSON', 'MIDNIGHT', 'SHATTERED', 'GOLDEN', 'RUSTED', 'HOLLOW', 'BROKEN', 'FRACTURED', 'VEILED', 'HIDDEN', 'WHISPERING', 'OBSIDIAN', 'GHOST', 'PHANTOM', 'COBALT', 'EMBER', 'FROST', 'ECHO'];
@@ -254,6 +255,14 @@ export const useRegimePressureStore = create<RegimePressureState & RegimePressur
       }),
 
       initiateCoupPlanning: (targetCountryId, targetLeaderId) => {
+        const { politicalCapitalCheck } = useOversightStore.getState();
+        const execCheck = politicalCapitalCheck('COUP_ARCHITECTURE', 'DOMESTIC_EXECUTIVE', 50);
+        const icCheck = politicalCapitalCheck('COUP_ARCHITECTURE', 'INTELLIGENCE_COMMUNITY', 35);
+        if (!execCheck.success || !icCheck.success) {
+           useWorldStore.getState().addGlobalEvent(`COUP AUTHORIZATION FAILED: ${execCheck.msg} ${icCheck.msg}`, 'WARNING');
+           return [];
+        }
+
         const factions = get().eliteFactions[targetCountryId] || [];
         get().initializeEliteFactions(targetCountryId); // Ensure initialized
         

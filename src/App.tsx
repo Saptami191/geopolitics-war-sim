@@ -52,6 +52,10 @@ import { useInfluenceStore } from './store/influenceStore';
 import AdversarialInfluencePanel from './components/panels/AdversarialInfluencePanel';
 import OperativeNetworkPanel from './components/panels/OperativeNetworkPanel';
 import { RegimePressurePanel } from './components/panels/RegimePressurePanel';
+import CovertFinancePanel from './components/panels/CovertFinancePanel';
+import { useCovertFinanceStore } from './store/covertFinanceStore';
+import OversightPanel from './components/panels/OversightPanel';
+import PoliticalCapitalBar from './components/panels/PoliticalCapitalBar';
 import NuclearPosturePanel from './components/panels/NuclearPosturePanel';
 import { useOperativeStore } from './store/operativeStore';
 import { checkAndRestoreSharedScenario, hydrateScenario, ScenarioPackage } from './utils/persistence';
@@ -376,6 +380,8 @@ export default function App() {
   const [showBazaar, setShowBazaar] = useState(false);
   const [commsOpen, setCommsOpen] = useState(false);
   const [covertOpsOpen, setCovertOpsOpen] = useState(false);
+  const [covertFinanceOpen, setCovertFinanceOpen] = useState(false);
+  const [oversightOpen, setOversightOpen] = useState(false);
   const unreadCommsCount = useCommsStore((s) => s.unreadCount);
 
   // Aftermath states
@@ -1183,6 +1189,8 @@ export default function App() {
       <LeaderDossierPanel isOpen={dossierOpen} onClose={() => setDossierOpen(false)} />
       <NationSovereignPanel isOpen={sovereignOpen} onClose={() => setSovereignOpen(false)} />
       {covertOpsOpen && <RegimePressurePanel onClose={() => setCovertOpsOpen(false)} />}
+      {covertFinanceOpen && <CovertFinancePanel onClose={() => setCovertFinanceOpen(false)} />}
+      {oversightOpen && <OversightPanel onClose={() => setOversightOpen(false)} />}
       <CinematicsManager />
 
       {/* Top command status HUD bar */}
@@ -1218,6 +1226,9 @@ export default function App() {
                 />
               </div>
             </span>
+            <div className="ml-2">
+              <PoliticalCapitalBar onClick={() => setOversightOpen(!oversightOpen)} />
+            </div>
             <span>GLOBAL STATUS: ACTIVE</span>
           </div>
         </div>
@@ -1302,6 +1313,23 @@ export default function App() {
              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
              COVERT OPS
           </button>
+
+          <button
+            onClick={() => { audio.sfxKeyClick(); setCovertFinanceOpen(!covertFinanceOpen); }}
+            className={`px-2.5 py-1 border border-purple-800 text-purple-400 hover:bg-purple-950/30 text-[9px] uppercase font-bold cursor-pointer transition-all flex items-center gap-1.5 ${covertFinanceOpen ? 'bg-purple-950/50' : 'bg-purple-950/10'}`}
+          >
+             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+             COVERT FIN
+          </button>
+
+          <button
+            onClick={() => { audio.sfxKeyClick(); setOversightOpen(!oversightOpen); }}
+            className={`px-2.5 py-1 border border-orange-800 text-orange-400 hover:bg-orange-950/30 text-[9px] uppercase font-bold cursor-pointer transition-all flex items-center gap-1.5 ${oversightOpen ? 'bg-orange-950/50' : 'bg-orange-950/10'}`}
+          >
+             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/></svg>
+             OVERSIGHT
+          </button>
+
 
           <button
             onClick={() => { audio.sfxKeyClick(); setShowBazaar(true); }}

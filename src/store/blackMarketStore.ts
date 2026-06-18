@@ -109,6 +109,7 @@ interface BlackMarketActions {
   resetMarket: () => void;
   bootstrapStarterLots: (currentTick: number) => void;
   runSingleAICounterBid: (lotId: string) => void;
+  confirmProcurementFunded: (orderId: string) => void;
 }
 
 export const useBlackMarketStore = create<BlackMarketState & BlackMarketActions>((set, get) => ({
@@ -677,6 +678,14 @@ export const useBlackMarketStore = create<BlackMarketState & BlackMarketActions>
         }
       }
     }));
+  },
+
+  confirmProcurementFunded: (orderId: string) => {
+    // A covert finance order has been funded. Black market store registers the inventory/availability.
+    useWorldStore.getState().addGlobalEvent(
+      `BLACK MARKET INTERNAL: Covert order [${orderId}] successfully funded and in transit.`,
+      'INFO'
+    );
   },
 
   resetMarket: () => set({

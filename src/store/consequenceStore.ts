@@ -36,10 +36,16 @@ interface ConsequenceStoreActions {
   decayScars: (currentTick: number) => void;
   removeScar: (id: string) => void;
   resetScars: () => void;
+  registerScandalConsequence: (scandalId: string, tier: string, pools: any) => void;
 }
 
 export const useConsequenceStore = create<{ scars: WorldScar[] } & ConsequenceStoreActions>((set) => ({
   scars: [],
+
+  registerScandalConsequence: (scandalId, tier, pools) => {
+    // Upstream triggers this, but blowback logic can be routed to the ConsequenceEngine here if needed.
+    // For now, this placeholder accepts the pipeline from Module 5.5 to prevent compilation errors and provide integration hook.
+  },
 
   addScar: (scar) => set(produce((draft: { scars: WorldScar[] }) => {
     draft.scars.push(scar);

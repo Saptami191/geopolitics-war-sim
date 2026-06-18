@@ -11,6 +11,12 @@ export type CinematicSceneType =
   | 'COUP_NARRATIVE'        // Successful coup cinematic
   | 'CEASEFIRE_EPILOGUE'    // War ends, nations stand down
   | 'PEACE_TREATY_CEREMONY' // Full treaty ratification moment
+  | 'SCANDAL_BREAKING'
+  | 'SCANDAL_ESCALATION'
+  | 'HEARING_TESTIMONY'
+  | 'WHISTLEBLOWER_SURFACES'
+  | 'POLITICAL_COLLAPSE'
+  | 'INTERNATIONAL_CONDEMNATION'
   | 'ALLIANCE_SUMMIT'       // New bloc or pact formed
   | 'MARKET_CRASH_BROADCAST'// Economic collapse broadcast
   | 'CYBER_WAR_DECLARATION' // Full-scale cyber war begins
@@ -38,7 +44,12 @@ export type CinematicSceneType =
   | 'BLOWBACK_CRISIS'       // 3 phases: media bombshell, diplomatic response, player must choose response type
   | 'OPPOSITION_COMPROMISED' // 2 phases: asset handler discovers compromise, urgent recall order
   | 'ELITE_DEFECTION'       // 2 phases: faction breaks publicly, regime visibly destabilized
-  | 'CIVILIAN_CASUALTY_EVENT'; 
+  | 'CIVILIAN_CASUALTY_EVENT'
+  | 'SHELL_COMPANY_SEIZED'
+  | 'CARGO_INTERDICTION'
+  | 'FINANCIAL_EXPOSURE'
+  | 'FATF_BLACKLISTED'
+  | 'HAWALA_NETWORK_BURNED';
 
 
 export interface CinematicScene {
@@ -71,6 +82,7 @@ export interface CinematicsStoreState {
   pauseScene: () => void;
   resumeScene: () => void;
   clearAllScenes: () => void;
+  triggerCinematic: (type: CinematicSceneType, payload: Record<string, any>) => void;
 }
 
 // Module-level timer reference for scheduling auto-advances cleanly
@@ -259,5 +271,17 @@ export const useCinematicsStore = create<CinematicsStoreState>((set, get) => {
         isInputBlocked: false,
       });
     },
+
+    triggerCinematic: (type, payload) => {
+      get().queueScene({
+        type,
+        payload,
+        totalPhases: 3, // Default, can be overridden if needed
+        isSkippable: true,
+        blocksInput: true,
+        phaseDurationMs: 4000,
+        autoAdvance: true
+      });
+    }
   };
 });

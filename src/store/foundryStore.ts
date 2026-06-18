@@ -58,6 +58,7 @@ interface FoundryActions {
   
   toggleChokepointStatus: (chokepointId: string) => void;
   tickFoundry: (currentTick: number) => void;
+  notifyCovertProcurementDelivery: (commodityType: string, quantity: number, targetPurpose: string) => void;
 }
 
 // Initial Core Seeded Content
@@ -635,6 +636,11 @@ export const useFoundryStore = create<FoundryState & FoundryActions>((set, get) 
         });
       }
     }));
+  },
+
+  notifyCovertProcurementDelivery: (commodityType: string, quantity: number, targetPurpose: string) => {
+      // Called when high-end contraband arrives for weapons programs
+      useWorldStore.getState().addGlobalEvent(`FOUNDRY ALERT: Covert ${commodityType} delivery confirmed. Material transferred to black programs.`, 'WARNING');
   },
 
   tickFoundry: (currentTick) => {

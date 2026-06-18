@@ -1545,3 +1545,298 @@ export interface PSYOPState {
     wasExposed: boolean;
   }[];
 }
+
+// ─── OVERSIGHT & SCANDAL CORE TYPES ─────────────────────────────────
+
+export type ScandalOrigin =
+  | 'COVERT_OP_EXPOSED'        // Module 5.2 coup/op attribution
+  | 'PSYOP_ATTRIBUTED'         // Module 5.3 disinfo sourced to player
+  | 'FINANCIAL_TRACE_LEAKED'   // Module 5.4 shell company / hawala
+  | 'OPERATIVE_TURNED'         // burnt operative cooperating
+  | 'SIGNALS_INTERCEPT_LEAKED' // Arachne collection revealed
+  | 'COLLATERAL_DAMAGE'        // civilian harm in covert action
+  | 'ALLY_BETRAYAL_REVEALED'   // ally discovers they were manipulated
+  | 'WHISTLEBLOWER_INTERNAL'   // insider from intelligence community
+  | 'JOURNALISTIC_INVESTIGATION'// OSINT / investigative journalism
+  | 'FOREIGN_INTELLIGENCE_DROP';// rival state releases documents
+
+export type ScandalTier =
+  | 'TIER_1_RUMOR'     // unverified, deniable, low political cost
+  | 'TIER_2_ALLEGATION'// sourced reporting, moderate cost
+  | 'TIER_3_EVIDENCE'  // documented, high cost, triggers hearings
+  | 'TIER_4_PROVEN'    // incontrovertible, maximum damage
+  | 'TIER_5_HISTORIC'; // enters political history, permanent legacy hit
+
+export type LeakSourceType =
+  | 'ANONYMOUS_OFFICIAL'   // "sources familiar with the matter"
+  | 'DOCUMENTS_OBTAINED'   // physical or digital documents
+  | 'WHISTLEBLOWER_NAMED'  // named, on-record source
+  | 'FOREIGN_GOVERNMENT'   // another state officially releasing info
+  | 'INTERCEPT_PUBLISHED'  // leaked SIGINT / COMINT
+  | 'OPERATIVE_CONFESSION' // intelligence operative speaks publicly
+  | 'FINANCIAL_RECORDS';   // banking / corporate documents
+
+export type MediaOutletAlignment =
+  | 'DOMESTIC_FRIENDLY'    // politically aligned, suppresses damage
+  | 'DOMESTIC_HOSTILE'     // opposition-aligned, amplifies damage
+  | 'DOMESTIC_NEUTRAL'     // independent, reports factually
+  | 'FOREIGN_WESTERN'      // allied nation press
+  | 'FOREIGN_ADVERSARIAL'  // rival state press, weaponizes scandal
+  | 'INTERNATIONAL_WIRE';  // global wire service (AP, Reuters)
+
+export type HearingType =
+  | 'CLOSED_INTELLIGENCE'  // classified, limited political damage
+  | 'OPEN_SENATE'          // televised, high public impact
+  | 'SPECIAL_COUNSEL'      // independent prosecutor, most dangerous
+  | 'INTERNATIONAL_TRIBUNAL'// ICJ / UN body, diplomatic damage
+  | 'JOINT_CONGRESSIONAL'; // bicameral, signals bipartisan opposition
+
+export type ScandalResolutionPath =
+  | 'SUCCESSFUL_SUPPRESSION'  // scandal contained, minimal damage
+  | 'MANAGED_DISCLOSURE'      // player controls the narrative
+  | 'SCAPEGOAT_SACRIFICE'     // operative or official takes the fall
+  | 'FOREIGN_REDIRECT'        // blame shifted to another country
+  | 'LEGAL_OBSTRUCTION'       // investigations blocked via legal means
+  | 'POLITICAL_COLLAPSE'      // player loses political control
+  | 'RESIGNATION_FORCED'      // key cabinet members resign
+  | 'INDICTMENT'              // legal charges against player's agents
+  | 'UNRESOLVED';             // scandal remains open, ongoing drain
+
+export type PoliticalCapitalPool =
+  | 'DOMESTIC_EXECUTIVE'   // president / prime minister authority
+  | 'LEGISLATIVE'          // congress / parliament cooperation
+  | 'INTELLIGENCE_COMMUNITY'// IC trust — critical for ops authorization
+  | 'MILITARY_COMMAND'     // joint chiefs / defense authority
+  | 'ALLIED_DIPLOMATIC'    // allied nations' trust in the player state
+  | 'PUBLIC_LEGITIMACY';   // popular approval driving all other pools
+
+export interface LeakEvent {
+  id: string;
+  sourceOpId: string;              // which op from 5.2/5.3/5.4 leaked
+  scandalOrigin: ScandalOrigin;
+  leakSourceType: LeakSourceType;
+  leakerIdentity: string | null;   // null if anonymous
+  leakerIsOperative: boolean;
+  leakerOperativeId: string | null;
+  outletPublishingId: string;      // MediaOutlet id
+  tickLeaked: number;
+  classifiedDocumentsExposed: boolean;
+  documentClassificationLevel:
+    | 'CONFIDENTIAL' | 'SECRET' | 'TOP_SECRET' | 'TS_SCI' | null;
+  initialDamageScore: number;      // 0-100
+  isActive: boolean;
+  suppressionAttempted: boolean;
+  suppressionSucceeded: boolean | null;
+}
+
+export interface Scandal {
+  id: string;
+  codename: string;               // "OPERATION MIDNIGHT" format
+  origin: ScandalOrigin;
+  tier: ScandalTier;
+  sourceOpIds: string[];          // all ops that fed into this scandal
+  triggeringLeakId: string;
+  tickBorn: number;
+  tickResolved: number | null;
+  isActive: boolean;
+
+  // Narrative
+  headlineText: string;           // procedurally generated
+  outletAlignment: MediaOutletAlignment;
+  publicNarrativeSummary: string; // 2-sentence summary for UI
+
+  // Damage tracking
+  politicalCapitalDamagePerTick: Record<PoliticalCapitalPool, number>;
+  totalPoliticalCapitalDrained: number;
+  publicAwarenessPercent: number; // 0-100: how much the public knows
+  internationalAwarenessPercent: number;
+  evidenceStrength: number;       // 0-100: how much documented proof exists
+
+  // Escalation
+  hasTriggeredHearing: boolean;
+  hearingId: string | null;
+  hasTriggeredInternationalBlowback: boolean;
+  blowbackCountryIds: string[];
+  cascadedToAllies: boolean;
+  alliesWhoCondemned: string[];   // country ids
+
+  // Resolution
+  resolutionPath: ScandalResolutionPath | null;
+  sacrificedOperativeIds: string[];
+  sacrificedCabinetPositions: string[];
+
+  // Suppression state
+  activeSuppression: {
+    method: 'LEGAL' | 'MEDIA_COUNTER' | 'PSYOP_NARRATIVE' | 'FOREIGN_DISTRACTION';
+    ticksRemaining: number;
+    successProbability: number;
+  } | null;
+}
+
+export interface MediaOutlet {
+  id: string;
+  name: string;                   // "The New York Tribune" format
+  alignment: MediaOutletAlignment;
+  investigativeCapacity: number;  // 0-100: how deeply they dig
+  reachScore: number;             // 0-100: audience size
+  credibilityScore: number;       // 0-100: public trust
+  isCurrentlyInvestigating: boolean;
+  activeInvestigationScandalId: string | null;
+  bribeAttempted: boolean;
+  bribeSucceeded: boolean | null;
+  injunctionFiled: boolean;
+  injunctionSucceeded: boolean | null;
+  ticksUntilPublication: number | null;
+  countryId: string;              // where this outlet is based
+}
+
+export interface CongressionalHearing {
+  id: string;
+  scandalId: string;
+  hearingType: HearingType;
+  tickScheduled: number;
+  tickConcluded: number | null;
+  isActive: boolean;
+  isPublic: boolean;
+
+  // Witness system
+  scheduledWitnesses: HearingWitness[];
+  completedTestimonies: HearingTestimony[];
+
+  // Outcome
+  findingsText: string | null;    // procedurally generated outcome
+  politicalCapitalPenalty: number;
+  operativesNamed: string[];
+  operationsRevealed: string[];
+  referredToSpecialCounsel: boolean;
+  referredToInternationalTribunal: boolean;
+
+  // Committee composition
+  committeeAlignment:
+    | 'FRIENDLY_MAJORITY'  // player's party controls committee
+    | 'HOSTILE_MAJORITY'   // opposition controls
+    | 'SPLIT';             // divided committee
+  chairpersonHotility: number; // 0-100
+}
+
+export interface HearingWitness {
+  witnessId: string;
+  name: string;
+  role: string;               // "Former Deputy Director, CIA"
+  isOperative: boolean;
+  operativeId: string | null;
+  cooperationLevel: number;   // 0-100: 0=stonewalls, 100=full disclosure
+  hasImmunityDeal: boolean;
+  expectedDamageScore: number;// 0-100 if they testify fully
+  subpoenaed: boolean;
+  subpoenaResisted: boolean;
+}
+
+export interface HearingTestimony {
+  witnessId: string;
+  tickTestified: number;
+  revealedOpIds: string[];
+  revealedCountryIds: string[];
+  revealedOperativeNames: string[];
+  damageScore: number;          // actual damage delivered
+  quotableStatement: string;    // procedurally generated headline quote
+  wentPublic: boolean;
+}
+
+export interface WhistleblowerEvent {
+  id: string;
+  scandalId: string;
+  operativeId: string | null;   // if internal IC whistleblower
+  isAnonymous: boolean;
+  leakMethod:
+    | 'SECURE_DROP'
+    | 'JOURNALIST_MEETING'
+    | 'CONGRESSIONAL_TESTIMONY'
+    | 'FOREIGN_ASYLUM'
+    | 'DEAD_MAN_SWITCH';
+  documentsProvided: boolean;
+  documentCount: number;
+  tickActivated: number;
+  publicAwarenessImpact: number; // +0-40 to scandal.publicAwarenessPercent
+  evidenceStrengthImpact: number;// +0-50 to scandal.evidenceStrength
+  playerResponse:
+    | 'IGNORED'
+    | 'DISCREDITED'
+    | 'EXTRACTED'
+    | 'NEUTRALIZED'    // operative quietly removed
+    | 'PROSECUTED'     // legal charges — can backfire
+    | null;
+  responseTicksRemaining: number | null;
+}
+
+export interface InternationalBlowbackEvent {
+  id: string;
+  scandalId: string;
+  triggeringCountryId: string;
+  blowbackType:
+    | 'FORMAL_CONDEMNATION'       // diplomatic note
+    | 'AMBASSADOR_RECALLED'       // escalation
+    | 'SANCTIONS_THREATENED'      // economic pressure
+    | 'SANCTIONS_IMPOSED'         // economic damage
+    | 'INTELLIGENCE_SHARING_CUT'  // operational damage
+    | 'MILITARY_BASING_WITHDRAWN' // strategic damage
+    | 'UN_RESOLUTION_FILED'       // international legal proceeding
+    | 'ALLIANCE_SUSPENDED';       // catastrophic
+  severityScore: number;          // 0-100
+  tickTriggered: number;
+  isResolved: boolean;
+  resolutionMethod: string | null;
+  alliedCapitalPenalty: number;   // drain on ALLIED_DIPLOMATIC pool
+}
+
+export interface PoliticalCapitalState {
+  pools: Record<PoliticalCapitalPool, number>; // all 0-100
+  poolMaxima: Record<PoliticalCapitalPool, number>; // can be reduced by scandals
+  poolRegenerationRates: Record<PoliticalCapitalPool, number>; // per tick
+  totalPoliticalCapital: number;  // weighted average of all pools
+  isInCrisisMode: boolean;        // true if any pool < 20
+  isInCollapseMode: boolean;      // true if PUBLIC_LEGITIMACY < 10
+  totalDrainedAllTime: number;
+}
+
+export interface OversightState {
+  // Core political capital
+  politicalCapital: PoliticalCapitalState;
+
+  // Active scandals
+  activeScandals: Record<string, Scandal>;
+  resolvedScandals: Scandal[];    // historical record
+  scandalHistory: {               // summary for legacy/debrief
+    totalScandals: number;
+    mostDamagingId: string | null;
+    totalCapitalDrained: number;
+  };
+
+  // Leak system
+  pendingLeaks: LeakEvent[];      // queued, not yet public
+  publishedLeaks: LeakEvent[];    // in the public record
+
+  // Media ecosystem
+  mediaOutlets: Record<string, MediaOutlet>;
+  activeInvestigations: {
+    outletId: string;
+    scandalId: string;
+    progressPercent: number;
+    ticksUntilBreaking: number;
+  }[];
+
+  // Oversight institutions
+  activeHearings: Record<string, CongressionalHearing>;
+  completedHearings: CongressionalHearing[];
+  activeWhistleblowers: WhistleblowerEvent[];
+  internationalBlowback: InternationalBlowbackEvent[];
+
+  // Special counsel
+  specialCounselActive: boolean;
+  specialCounselTicksRemaining: number | null;
+  specialCounselScandalIds: string[];
+  specialCounselFindingsPublished: boolean;
+
+  // Suppression budget
+  suppressionBudgetRemaining: number; // $B available for damage control
+}
