@@ -33,6 +33,7 @@ import { dampenOpinionDelta } from '../utils/pacing';
 import { ConsequenceEngine } from './consequenceEngine';
 import { saveAutosaveScenario } from '../utils/persistence';
 import { processOperativeNetwork } from './operativeEngine';
+import { useDefconStore } from '../store/defconStore';
 
 export const TICK_INTERVALS: Record<"day" | "week" | "month", number> = {
   day: 2000,
@@ -41,6 +42,14 @@ export const TICK_INTERVALS: Record<"day" | "week" | "month", number> = {
 };
 
 let tickIntervalId: any = null;
+export let isFlashActive = false;
+
+export function setFlashBannerActive(active: boolean) {
+  if (isFlashActive !== active) {
+    isFlashActive = active;
+    restartTickTimer();
+  }
+}
 
 export function restartTickTimer() {
   if (tickIntervalId) {
@@ -49,15 +58,30 @@ export function restartTickTimer() {
   }
 
   const speed = usePlayerStore.getState().tickSpeed;
-  if (speed === 'PAUSED') return;
+  const currentDefcon = useDefconStore.getState().currentDefconLevel;
 
-  const rawDuration = useClockStore.getState().tickDuration ?? "WEEK";
-  const tickDuration = rawDuration.toLowerCase() as "day" | "week" | "month";
-  const interval = TICK_INTERVALS[tickDuration] ?? 2000;
+  let delay = 8000; // NORMAL
 
-  let delay = interval;
-  if (speed === 'FAST') delay = Math.round(interval / 2.5);
-  if (speed === 'ULTRA') delay = Math.round(interval / 5.5);
+  if (speed === 'FAST') delay = 4000; // FAST
+  if (speed === 'ULTRA') delay = 3000; // CRISIS/HYPER manually triggered
+
+  if (speed === 'PAUSED') {
+    if (currentDefcon > 2) {
+      return; // fully paused
+    } else {
+      // Cannot slow it below FAST during active crises
+      delay = 4000;
+    }
+  }
+
+  if (currentDefcon <= 2) {
+    if (speed === 'NORMAL') delay = 3000; // Auto-switches to CRISIS
+  } else {
+    // Flash Precedence Auto-Slow 
+    if (isFlashActive && (delay === 8000 || delay === 4000)) {
+      delay = 12000; // SLOW
+    }
+  }
 
   tickIntervalId = setInterval(() => {
     executeSimulationStep();

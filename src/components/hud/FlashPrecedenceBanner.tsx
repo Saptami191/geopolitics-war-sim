@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useWorldStore } from '../../store/worldStore';
 import { audio } from '../../utils/audio';
 import { motion, AnimatePresence } from 'motion/react';
+import { setFlashBannerActive } from '../../sim/tickEngine';
 
 interface FlashEvent {
   id: string;
@@ -14,6 +15,9 @@ export default function FlashPrecedenceBanner() {
   const [queue, setQueue] = useState<FlashEvent[]>([]);
   const [processedLogSize, setProcessedLogSize] = useState(0);
   const [typedText, setTypedText] = useState('');
+  
+  // Ref to hold the auto-dismiss timeout
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Process new events natively using an effect that compares log diffs locally for UI extraction
   useEffect(() => {
@@ -51,33 +55,52 @@ export default function FlashPrecedenceBanner() {
     }
   }, [globalEventLog, processedLogSize]);
 
-  // Handle Typewriter effect for the active message
+  // Handle Typewriter effect for the active message and Auto-dismiss
   const activeEvent = queue[0];
+
+  const handleAck = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    audio.sfxKeyClick();
+    setQueue(prev => prev.slice(1));
+  };
 
   useEffect(() => {
     if (!activeEvent) {
+      setFlashBannerActive(false);
       setTypedText('');
       return;
     }
+    
+    setFlashBannerActive(true);
 
     let i = 0;
     setTypedText('');
     const fullText = activeEvent.text.toUpperCase();
+    
+    // Clear any existing timeout if event rapidly shifted
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
     const interval = setInterval(() => {
       setTypedText(fullText.substring(0, i));
       i++;
-      if (i > fullText.length) clearInterval(interval);
+      if (i > fullText.length) {
+        clearInterval(interval);
+        // Add 4 second auto-dismiss hold once typed
+        timeoutRef.current = setTimeout(() => {
+          setQueue(prev => prev.slice(1));
+        }, 4000);
+      }
     }, 15);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
   }, [activeEvent]);
 
   if (!activeEvent) return null;
-
-  const handleAck = () => {
-    audio.sfxKeyClick();
-    setQueue(prev => prev.slice(1));
-  };
 
   return (
     <AnimatePresence>
@@ -87,7 +110,7 @@ export default function FlashPrecedenceBanner() {
         animate={{ y: 0, opacity: 1 }}
         exit={{ opacity: 0, scale: 0.98 }}
         transition={{ type: 'spring', damping: 20, stiffness: 200 }}
-        className="fixed top-16 left-0 w-full z-40 bg-[#000] border-t border-b border-[#ffae00] shadow-[0_10px_30px_rgba(255,174,0,0.2)] font-mono text-sm uppercase overflow-hidden"
+        className="fixed top-[108px] left-0 w-full z-40 bg-[#000] border-t border-b border-[#ffae00] shadow-[0_10px_30px_rgba(255,174,0,0.2)] font-mono text-sm uppercase overflow-hidden"
       >
         {/* HAZARD STRIPES */}
         <div className="absolute inset-x-0 top-0 h-1" style={{ backgroundImage: 'repeating-linear-gradient(45deg, #ffae00, #ffae00 10px, #000 10px, #000 20px)' }}></div>
@@ -127,3 +150,4 @@ export default function FlashPrecedenceBanner() {
     </AnimatePresence>
   );
 }
+
