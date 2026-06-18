@@ -36,6 +36,9 @@ import {
 import { WorldState, Country } from '../types';
 import { INITIAL_COUNTRIES } from '../data/countries';
 import { ConsequenceEngine } from '../sim/consequenceEngine';
+import { useLeaderMemoryStore } from './leaderMemoryStore';
+import { useMirrorStore } from './mirrorStore';
+import { triggerEmotionalEvent } from '../sim/leaderPsychologyEngine';
 
 interface SovereignStoreActions {
   initializeAgents: () => void;
@@ -1063,14 +1066,11 @@ export const useSovereignStore = create<Record<string, any> & SovereignStoreActi
             }
             
             try {
-              const { useLeaderEmotionStore } = require('./leaderEmotionStore');
-              useLeaderEmotionStore.getState().updateEmotion(countryId, 'anger', penalty / 2);
-              useLeaderEmotionStore.getState().updateEmotion(countryId, 'fear', penalty / 3);
+              triggerEmotionalEvent(countryId, 'BORDER_PRESSURE', penalty / 2);
             } catch (e) {
-              console.warn("Emotion store not yet mounted during sim tick");
+              console.warn("Psychology engine not mounted yet");
             }
             try {
-              const { useLeaderMemoryStore } = require('./leaderMemoryStore');
               useLeaderMemoryStore.getState().addMemory({
                 nationId: countryId,
                 tick: worldDraft.currentTick,
@@ -1085,7 +1085,6 @@ export const useSovereignStore = create<Record<string, any> & SovereignStoreActi
               console.warn("Memory store not yet mounted during sim tick");
             }
             try {
-              const { useMirrorStore } = require('./mirrorStore');
               useMirrorStore.getState().recordAction(worldDraft.currentTick, countryId, eventType);
             } catch (e) {
               console.warn("Mirror store not yet mounted during sim tick");

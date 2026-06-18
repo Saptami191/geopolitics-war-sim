@@ -9,8 +9,10 @@ export default function TimelineView() {
   const globalEventLog = useWorldStore((s) => s.globalEventLog);
   const currentTick = useWorldStore((s) => s.currentTick);
   const countries = useWorldStore((s) => s.countries);
-  const scheduledConsequences = useWorldStore((s) => s.scheduledConsequences || []);
-  const recentResolvedConsequences = useWorldStore((s) => s.recentResolvedConsequences || []);
+  const rawScheduled = useWorldStore((s) => s.scheduledConsequences);
+  const scheduledConsequences = rawScheduled || [];
+  const rawResolved = useWorldStore((s) => s.recentResolvedConsequences);
+  const recentResolvedConsequences = rawResolved || [];
 
   const {
     selectedEventId,

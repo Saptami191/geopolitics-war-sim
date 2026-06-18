@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { LeaderEmotionalState } from './leaderEmotionStore';
+import { LeaderEmotionalState } from '../types';
 
 export interface NationMemoryEntry {
   id: string;

@@ -4,7 +4,8 @@ import { useWorldStore } from '../../store/worldStore';
 import { motion } from 'motion/react';
 
 export const NationSovereignPanel: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
-  const nations = useWorldStore(s => Object.values(s.countries));
+  const countries = useWorldStore(s => s.countries);
+  const nations = Object.values(countries);
   const identities = useNationIdentityStore(s => s.nationIdentities);
   const [selectedNation, setSelectedNation] = React.useState<string>('CN');
 

@@ -4,7 +4,6 @@ import { CinematicScene } from '../../../store/cinematicsStore';
 import { audio } from '../../../utils/audio';
 import { useMirrorStore } from '../../../store/mirrorStore';
 import { useLeaderStore } from '../../../store/leaderStore';
-import { useLeaderEmotionStore } from '../../../store/leaderEmotionStore';
 import { getArchetypeForPersonality } from '../../../utils/psychologyGenerator';
 
 export const MirrorAiWarningScene: React.FC<{ scene: CinematicScene; onComplete: () => void }> = ({ onComplete }) => {

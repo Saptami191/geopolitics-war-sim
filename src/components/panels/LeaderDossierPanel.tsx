@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { LeaderDossierModal } from './LeaderDossierModal';
 
 export const LeaderDossierPanel: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
-  const leaders = useLeaderStore(s => Object.values(s.leadersByCountryId));
+  const leadersByCountryId = useLeaderStore(s => s.leadersByCountryId);
+  const leaders = Object.values(leadersByCountryId);
   const [selectedLeaderCountry, setSelectedLeaderCountry] = React.useState<string | null>(null);
 
   if (!isOpen) return null;

@@ -15,6 +15,7 @@ import { useBlocStore } from '../store/blocStore';
 import { useSoftPowerStore } from '../store/softPowerStore';
 import { useMirrorStore } from '../store/mirrorStore';
 import { useInfluenceStore } from '../store/influenceStore';
+import { useLeaderMemoryStore } from '../store/leaderMemoryStore';
 import { pollScenarioStatus } from './scenarioEngine';
 import { processFactions } from './factionEngine';
 import { processFiscal } from './fiscalEngine';
@@ -131,6 +132,12 @@ export function executeSimulationStep() {
 
   // Keep clock store in lock-step with simulation ticks
   useClockStore.getState().advanceTick();
+
+  const activeTick = useWorldStore.getState().currentTick;
+  
+  Object.keys(world.countries).forEach(id => {
+    useLeaderMemoryStore.getState().forgiveMemories(id, activeTick);
+  });
 
   // Phase 5: Tick Operative Network Engine
   processOperativeNetwork(useWorldStore.getState().currentTick);

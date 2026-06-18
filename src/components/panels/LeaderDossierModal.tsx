@@ -1,18 +1,25 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { useLeaderStore } from '../../store/leaderStore';
-import { useLeaderEmotionStore } from '../../store/leaderEmotionStore';
 import { useLeaderMemoryStore } from '../../store/leaderMemoryStore';
 import { getArchetypeForPersonality } from '../../utils/psychologyGenerator';
 import { audio } from '../../utils/audio';
 
 export const LeaderDossierModal: React.FC<{ countryId: string; onClose: () => void }> = ({ countryId, onClose }) => {
   const [activeTab, setActiveTab] = useState(0);
-  const leader = useLeaderStore.getState().leadersByCountryId[countryId];
-  const emotions = useLeaderEmotionStore(s => s.getEmotion(countryId));
+  const leader = useLeaderStore(s => s.leadersByCountryId[countryId]);
+  
+  // Real psychology integration!
+  const emotions = leader?.psychology?.emotions || {
+     humiliation: 0, fear: 0, emboldenment: 0, anger: 0, anxiety: 0,
+     pride: 0, resentment: 0, vindication: 0, desperation: 0, overconfidence: 0,
+     fatigue: 0, relief: 0, paranoiaSpike: 0, moralInjury: 0, shame: 0
+  };
+
   const memoryWeight = useLeaderMemoryStore(s => s.getMemoryWeight(countryId));
   const trustBalance = useLeaderMemoryStore(s => s.getTrustBalance(countryId));
-  const memories = useLeaderMemoryStore(s => s.nationMemories[countryId] || []);
+  const rawMemories = useLeaderMemoryStore(s => s.nationMemories[countryId]);
+  const memories = rawMemories || [];
 
   if (!leader) return null;
 
