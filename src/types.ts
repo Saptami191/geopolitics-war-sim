@@ -2477,4 +2477,289 @@ export type HandlerCase = {
   lastInteractionTick: number;
 };
 
+// ────────────────────────────────────────────────────────────────────────────────
+// DENIAL & DECEPTION TYPES — MODULE 6.4 (MIRROR SHROUD)
+// ────────────────────────────────────────────────────────────────────────────────
+
+export type DeceptionObjective =
+  | 'HIDE'
+  | 'MISLEAD'
+  | 'DELAY'
+  | 'REDIRECT'
+  | 'FRAME'
+  | 'SATURATE'
+  | 'AMBIGUATE';
+
+export type DeceptionDomain =
+  | 'SIGINT'
+  | 'HUMINT'
+  | 'FININT'
+  | 'CYBER'
+  | 'IMAGERY'
+  | 'OPEN_SOURCE'
+  | 'LOGISTICS'
+  | 'POLITICAL'
+  | 'MILITARY'
+  | 'TECHNICAL';
+
+export type DeceptionSignatureFamily =
+  | 'APT_STYLE'
+  | 'STATE_ACTOR_STYLE'
+  | 'CRIMINAL_STYLE'
+  | 'INSIDER_STYLE'
+  | 'THIRD_PARTY_STYLE'
+  | 'NATURAL_NOISE'
+  | 'PLATFORM_ARTIFACT'
+  | 'LANGUAGE_STYLE'
+  | 'TIMING_STYLE'
+  | 'INFRASTRUCTURE_STYLE';
+
+export type DeceptionBeliefState =
+  | 'UNSEEN'
+  | 'DISMISSED'
+  | 'SUSPECTED'
+  | 'BELIEVED'
+  | 'OVERCONFIDENT'
+  | 'CONTRADICTED'
+  | 'REJECTED';
+
+export type DeceptionConfidenceProfile = {
+  plantedConfidence: number;
+  adversaryConfidence: number;
+  contradictionConfidence: number;
+  analystConfidence: number;
+  ambiguityScore: number;
+  believabilityScore: number;
+  signatureCoherence: number;
+  exposureRisk: number;
+  contaminationRisk: number;
+  decayRate: number;
+};
+
+export type DeceptionObjectiveProfile = {
+  objective: DeceptionObjective;
+  targetBeliefDesired: string;
+  targetBehaviorDesired: string;
+  intendedEffect: string;
+  successCriteria: string[];
+  fallbackEffect: string;
+};
+
+export type DeceptionSignature = {
+  signatureId: string;
+  family: DeceptionSignatureFamily;
+  label: string;
+  observedTraits: string[];
+  mimickedTTPs: string[];
+  narrativeMarkers: string[];
+  infrastructureMarkers: string[];
+  timingMarkers: string[];
+  confidenceWeight: number;
+  authenticityRisk: number;
+};
+
+export type FalseIntelPacket = {
+  packetId: string;
+  deceptionId: string;
+  sourceDomain: DeceptionDomain;
+  plantedTick: number;
+  expirationTick: number;
+  payloadSummary: string;
+  payloadDetails: string[];
+  intendedRecipientProfile: string;
+  intendedInterpretation: string;
+  coverStory: string;
+  visibleToPlayer: boolean;
+  visibleToAdversary: boolean;
+  contaminationRisk: number;
+  exposureRisk: number;
+};
+
+export type DeceptionCampaign = {
+  deceptionId: string;
+  label: string;
+  objectiveProfile: DeceptionObjectiveProfile;
+  domain: DeceptionDomain;
+  signature: DeceptionSignature;
+  beliefState: DeceptionBeliefState;
+  confidence: DeceptionConfidenceProfile;
+  packets: FalseIntelPacket[];
+  plantedEvidenceIds: string[];
+  linkedOperations: string[];
+  linkedTargets: string[];
+  createdTick: number;
+  lastUpdatedTick: number;
+  active: boolean;
+};
+
+export type CounterDeceptionFinding = {
+  findingId: string;
+  deceptionId: string;
+  severity: number;
+  contradictionType:
+    | 'TIMING_MISMATCH'
+    | 'TTP_MISMATCH'
+    | 'LANGUAGE_MISMATCH'
+    | 'INFRA_MISMATCH'
+    | 'NARRATIVE_MISMATCH'
+    | 'BEHAVIORAL_OUTLIER'
+    | 'SOURCE_CONTAMINATION'
+    | 'OVEREXPLICIT_BREADCRUMB';
+  description: string;
+  evidenceRefs: string[];
+  analystNote: string;
+  createdTick: number;
+};
+
+export type AmbiguityControlMode =
+  | 'SINGLE_NARRATIVE'
+  | 'MULTIPLE_NARRATIVES'
+  | 'CONTROLLED_NOISE'
+  | 'SIGNATURE_BLENDING'
+  | 'BELIEF_SATURATION'
+  | 'SELECTIVE_CLARITY';
+
+// ────────────────────────────────────────────────────────────────────────────────
+// COUNTER-PROLIFERATION TYPES — MODULE 6.5 (IRON VEIL)
+// ────────────────────────────────────────────────────────────────────────────────
+
+export type ProliferationNodeType =
+  | 'ORGANIZATION'
+  | 'BROKER'
+  | 'FRONT_COMPANY'
+  | 'INDIVIDUAL'
+  | 'VESSEL'
+  | 'VEHICLE'
+  | 'MATERIAL'
+  | 'DOCUMENT'
+  | 'PORT'
+  | 'FACILITY'
+  | 'LAB'
+  | 'BANK'
+  | 'CUSTOMS_POINT'
+  | 'TRANSPORT_LINK'
+  | 'COMMUNICATION_LINK';
+
+export type ProliferationThreatLevel =
+  | 'NONE'
+  | 'LOW'
+  | 'SUSPECTED'
+  | 'PROBABLE'
+  | 'VERIFIED'
+  | 'CRITICAL';
+
+export type VerificationTier =
+  | 'UNVERIFIED'
+  | 'WEAK'
+  | 'CORROBORATED'
+  | 'STRONG'
+  | 'LEGAL_THRESHOLD_MET'
+  | 'OPERATIONALLY_ACTIONABLE';
+
+export type LegalBlowbackLevel =
+  | 'NONE'
+  | 'LOW'
+  | 'MODERATE'
+  | 'HIGH'
+  | 'SEVERE'
+  | 'INTERNATIONAL_CRISIS';
+
+export type CounterProliferationAction =
+  | 'MONITOR'
+  | 'SANCTION'
+  | 'INTERDICT'
+  | 'SABOTAGE'
+  | 'DISRUPT'
+  | 'EXPOSE'
+  | 'FRAGMENT_NETWORK'
+  | 'DETAIN'
+  | 'SEIZE'
+  | 'DENY_ACCESS';
+
+export type NetworkConfidenceProfile = {
+  nodeConfidence: number;
+  edgeConfidence: number;
+  materialConfidence: number;
+  attributionConfidence: number;
+  verificationConfidence: number;
+  legalConfidence: number;
+  actionabilityConfidence: number;
+  falsePositiveRisk: number;
+  falseNegativeRisk: number;
+  contaminationRisk: number;
+};
+
+export type ProliferationNode = {
+  nodeId: string;
+  label: string;
+  nodeType: ProliferationNodeType;
+  threatLevel: ProliferationThreatLevel;
+  verificationTier: VerificationTier;
+  confidence: number;
+  materialRelevance: number;
+  legalSensitivity: number;
+  operationalSensitivity: number;
+  exposureRisk: number;
+  lastObservedTick: number;
+  associatedCountries: string[];
+  linkedNodes: string[];
+  notes: string[];
+};
+
+export type ProliferationEdge = {
+  edgeId: string;
+  fromNodeId: string;
+  toNodeId: string;
+  relationshipType:
+    | 'SUPPLY'
+    | 'PAYMENT'
+    | 'TRANSPORT'
+    | 'COORDINATION'
+    | 'COVER'
+    | 'BROKERAGE'
+    | 'OWNERSHIP'
+    | 'SHARED_ENTITY'
+    | 'COMMUNICATION'
+    | 'TRANSHIPMENT';
+  confidence: number;
+  traceability: number;
+  concealmentResistance: number;
+  legalSensitivity: number;
+  lastObservedTick: number;
+};
+
+export type ProliferationNetwork = {
+  networkId: string;
+  label: string;
+  threatLevel: ProliferationThreatLevel;
+  verificationTier: VerificationTier;
+  confidence: NetworkConfidenceProfile;
+  nodes: Record<string, ProliferationNode>;
+  edges: Record<string, ProliferationEdge>;
+  rootNodes: string[];
+  activeAlerts: string[];
+  legalBlowbackLevel: LegalBlowbackLevel;
+  operationalReadiness: number;
+  lastUpdatedTick: number;
+};
+
+export type InterdictionCase = {
+  caseId: string;
+  networkId: string;
+  selectedAction: CounterProliferationAction;
+  verificationThresholdMet: boolean;
+  legalThresholdMet: boolean;
+  confidenceRequired: number;
+  confidenceCurrent: number;
+  legalBlowbackLevel: LegalBlowbackLevel;
+  projectedEffectiveness: number;
+  collateralRisk: number;
+  diplomaticRisk: number;
+  operationalRisk: number;
+  evidenceRefs: string[];
+  lastEvaluatedTick: number;
+  active: boolean;
+};
+
+
 

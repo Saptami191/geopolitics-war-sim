@@ -39,6 +39,7 @@ import { processOperativeNetwork } from './operativeEngine';
 import { useDefconStore } from '../store/defconStore';
 import { useTargetedOperationsStore } from '../store/targetedOperationsStore';
 import { useHumintStore } from '../store/humintStore';
+import { useDeceptionStore } from '../store/deceptionStore';
 
 export const TICK_INTERVALS: Record<"day" | "week" | "month", number> = {
   day: 2000,
@@ -232,6 +233,9 @@ export function executeSimulationStep() {
 
   // Synchronize Human Intelligence & Counter-Penetration Platform (Module 6.3 — MIRROR VEIL)
   useHumintStore.getState().tickHumint(useWorldStore.getState().currentTick);
+
+  // Synchronize Denial and Deception Engine (Module 6.4 — MIRROR SHROUD)
+  useDeceptionStore.getState().tickDeception(useWorldStore.getState().currentTick);
 
   // Regularly save a checkpoint if there is no ongoing nuclear exchange or active aftermath
   const currentWorld = useWorldStore.getState();

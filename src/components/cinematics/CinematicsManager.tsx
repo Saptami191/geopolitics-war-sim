@@ -849,6 +849,70 @@ function GameOverVictoryRenderer({ scene }: { scene: CinematicScene }) {
   );
 }
 
+function CounterProliferationSceneRenderer({ scene, onComplete }: { scene: any; onComplete: () => void }) {
+  const payload = scene.payload || {};
+  return (
+    <div className="absolute inset-0 bg-black/95 flex flex-col items-center justify-center p-8 z-[9000] font-mono select-none">
+      <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-red-600 to-transparent animate-pulse" />
+      
+      <div className="max-w-xl mx-auto border border-red-500/30 bg-slate-950 p-6 rounded-xl shadow-[0_0_50px_rgba(239,68,68,0.12)]">
+        <header className="flex items-center gap-3 border-b border-red-900/30 pb-3.5 mb-4">
+          <div className="w-3 h-3 bg-red-500 rounded-full animate-ping" />
+          <div>
+            <h1 className="text-xs font-black tracking-[0.2em] text-red-400 uppercase leading-snug">
+              DEFENSE SECURITY DIRECTIVE: SPECIAL OPERATIONAL DECREE
+            </h1>
+            <span className="text-[9px] text-slate-500 font-bold tracking-widest block mt-0.5">
+              MODULE 6.5 // ARCHIVE ENVELOPE: IRON VEIL
+            </span>
+          </div>
+        </header>
+
+        <main className="space-y-4">
+          <div className="bg-slate-900/40 p-3.5 border border-slate-900 rounded font-mono">
+            <div className="text-[8.5px] text-slate-500 uppercase font-black">TARGET PROLIFERATION CELL</div>
+            <div className="text-xs font-extrabold text-slate-200 mt-1 uppercase tracking-wide">
+              {payload.networkLabel || 'ASTARTE CASCADE NETWORKS'}
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3 text-[9px] mt-3 border-t border-slate-800/40 pt-2.5">
+              <div>
+                <span className="text-slate-400 block font-bold uppercase">EXECUTED ACTION:</span>
+                <span className="text-red-400 font-black block uppercase mt-0.5">{payload.action || 'INTERDICT'}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block font-bold uppercase">OUTCOME EFFECTIVENESS:</span>
+                <span className="text-emerald-400 font-black block uppercase mt-0.5">{payload.outcome || 'SUCCESS'}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block font-bold uppercase">LEGAL BLOWBACK SEVERITY:</span>
+                <span className="text-yellow-400 font-black block uppercase mt-0.5">{payload.legalBlowback || 'NONE'}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block font-bold uppercase">COLLATERAL DAMAGE INDEX:</span>
+                <span className="text-purple-400 font-black block uppercase mt-0.5">{payload.collateral || '0'}%</span>
+              </div>
+            </div>
+          </div>
+
+          <p className="text-[9.2px] inline-block bg-slate-900/20 border border-slate-900 p-2.5 rounded leading-relaxed text-slate-400">
+            Durable geostrategic counters successfully propagated across joint regional intelligence cells. Material pipeline throughput modified. Command directives standby.
+          </p>
+        </main>
+
+        <footer className="mt-5 border-t border-slate-900 pt-3 flex justify-end">
+          <button
+            onClick={onComplete}
+            className="px-5 py-2 border border-red-500/30 text-red-400 hover:text-white hover:border-red-500 hover:bg-red-950/20 text-[9.5px] font-black tracking-widest transition-all cursor-pointer"
+          >
+            DISMISS REPORT
+          </button>
+        </footer>
+      </div>
+    </div>
+  );
+}
+
 // =========================================================================
 // MASTER MANAGER COMPONENT
 // =========================================================================
@@ -881,6 +945,13 @@ export default function CinematicsManager() {
       case 'MIRROR_AI_WARNING': return <MirrorAiWarningScene scene={activeScene} onComplete={completeScene} />;
       case 'LEADER_BREAKDOWN': return <LeaderBreakdownScene scene={activeScene} onComplete={completeScene} />;
       case 'NATION_AGENDA_EXPOSED': return <NationAgendaExposedScene scene={activeScene} onComplete={completeScene} />;
+      case 'NETWORK_DISCOVERED':
+      case 'VERIFICATION_THRESHOLD_MET':
+      case 'INTERDICTION_AUTHORIZED':
+      case 'INTERDICTION_EXECUTED':
+      case 'LEGAL_BLOWBACK_RAISED':
+      case 'NETWORK_FRAGMENTED':
+        return <CounterProliferationSceneRenderer scene={activeScene} onComplete={completeScene} />;
       default: return null;
     }
   };
