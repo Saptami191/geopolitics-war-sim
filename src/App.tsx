@@ -55,6 +55,11 @@ import { RegimePressurePanel } from './components/panels/RegimePressurePanel';
 import CovertFinancePanel from './components/panels/CovertFinancePanel';
 import { useCovertFinanceStore } from './store/covertFinanceStore';
 import OversightPanel from './components/panels/OversightPanel';
+import SigintPanel from './components/panels/SigintPanel';
+import TargetedOperationsPanel from './components/panels/TargetedOperationsPanel';
+import HumintPenetrationSuite from './components/panels/HumintPenetrationSuite';
+import SigintHUD from './components/panels/SigintHUD';
+import { useSigintStore } from './store/sigintStore';
 import PoliticalCapitalBar from './components/panels/PoliticalCapitalBar';
 import NuclearPosturePanel from './components/panels/NuclearPosturePanel';
 import { useOperativeStore } from './store/operativeStore';
@@ -346,6 +351,7 @@ export default function App() {
     // Synchronize DEFCON variables and classes on initial mount
     const level = useDefconStore.getState().currentDefconLevel;
     applyDefconPalette(level);
+    useSigintStore.getState().initializeSigintSystem();
 
     // Stop tick timer only on true app unmount
     return () => {
@@ -382,6 +388,9 @@ export default function App() {
   const [covertOpsOpen, setCovertOpsOpen] = useState(false);
   const [covertFinanceOpen, setCovertFinanceOpen] = useState(false);
   const [oversightOpen, setOversightOpen] = useState(false);
+  const [sigintOpen, setSigintOpen] = useState(false);
+  const [targetedOpsOpen, setTargetedOpsOpen] = useState(false);
+  const [humintOpen, setHumintOpen] = useState(false);
   const unreadCommsCount = useCommsStore((s) => s.unreadCount);
 
   // Aftermath states
@@ -1191,6 +1200,9 @@ export default function App() {
       {covertOpsOpen && <RegimePressurePanel onClose={() => setCovertOpsOpen(false)} />}
       {covertFinanceOpen && <CovertFinancePanel onClose={() => setCovertFinanceOpen(false)} />}
       {oversightOpen && <OversightPanel onClose={() => setOversightOpen(false)} />}
+      {sigintOpen && <SigintPanel onClose={() => setSigintOpen(false)} />}
+      {targetedOpsOpen && <TargetedOperationsPanel onClose={() => setTargetedOpsOpen(false)} />}
+      {humintOpen && <HumintPenetrationSuite onClose={() => setHumintOpen(false)} />}
       <CinematicsManager />
 
       {/* Top command status HUD bar */}
@@ -1226,8 +1238,9 @@ export default function App() {
                 />
               </div>
             </span>
-            <div className="ml-2">
+            <div className="ml-2 flex items-center gap-2">
               <PoliticalCapitalBar onClick={() => setOversightOpen(!oversightOpen)} />
+              <SigintHUD onClick={() => setSigintOpen(!sigintOpen)} />
             </div>
             <span>GLOBAL STATUS: ACTIVE</span>
           </div>
@@ -1320,6 +1333,24 @@ export default function App() {
           >
              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
              COVERT FIN
+          </button>
+
+          <button
+            id="btn-targeted-ops-toggle"
+            onClick={() => { audio.sfxKeyClick(); setTargetedOpsOpen(!targetedOpsOpen); }}
+            className={`px-2.5 py-1 border border-cyan-800 text-cyan-400 hover:bg-cyan-950/30 text-[9px] uppercase font-bold cursor-pointer transition-all flex items-center gap-1.5 ${targetedOpsOpen ? 'bg-cyan-950/50' : 'bg-[#011b1b]/10'}`}
+          >
+             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+             TARGETED OPS
+          </button>
+
+          <button
+            id="btn-humint-toggle"
+            onClick={() => { audio.sfxKeyClick(); setHumintOpen(!humintOpen); }}
+            className={`px-2.5 py-1 border border-[#00ffcc]/60 text-[#00ffcc] hover:bg-emerald-950/30 text-[9px] uppercase font-bold cursor-pointer transition-all flex items-center gap-1.5 ${humintOpen ? 'bg-[#003d33]/50' : 'bg-[#002f23]/10'}`}
+          >
+             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+             HUMINT OPS
           </button>
 
           <button

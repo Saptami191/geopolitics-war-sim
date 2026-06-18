@@ -469,7 +469,7 @@ export const useCovertFinanceStore = create<CovertFinanceState & CovertFinanceAc
 
         const id = `sroute_${Math.random().toString(36).substring(2, 9)}`;
         draft.smuggleRoutes[id] = {
-            id, codename: `${params.direction || 'NORTHERN'} ${params.routeType.split('_')[0]}-${Math.floor(Math.random()*10)}`,
+            id, codename: `ROUTE ${params.routeType.split('_')[0]}-${Math.floor(Math.random()*10)}`,
             routeType: params.routeType, originCountryId: params.originCountryId,
             destinationCountryId: params.destinationCountryId, transitCountryIds: params.transitCountryIds,
             establishedTick: w.currentTick, isActive: true, capacityPerRun: 10, costPerRun: cost,
@@ -592,6 +592,7 @@ export const useCovertFinanceStore = create<CovertFinanceState & CovertFinanceAc
   deliverCargo: (routeId) => {}, // implemented inside tick
 
   placeProcurementOrder: (params) => {
+    const id = `order_${Math.random().toString(36).substring(2, 9)}`;
     set(produce((draft: CovertFinanceState) => {
         let price = 0.1;
         switch (params.contrabandCategory) {
@@ -611,7 +612,6 @@ export const useCovertFinanceStore = create<CovertFinanceState & CovertFinanceAc
 
         let traceScore = 100 - chain.effectiveSecrecy + (route.detectionRiskPerRun * 0.3);
 
-        const id = `order_${Math.random().toString(36).substring(2, 9)}`;
         draft.activeProcurementOrders[id] = {
             id, requestingOpId: params.requestingOpId, contrabandCategory: params.contrabandCategory,
             quantity: params.quantity, sourceBrokerCountryId: params.sourceBrokerCountryId,
@@ -762,7 +762,15 @@ export const useCovertFinanceStore = create<CovertFinanceState & CovertFinanceAc
     set(produce((draft: CovertFinanceState) => {
         if (draft.globalTraceLevel > 80 && draft.fatfWatchlistStatus !== 'BLACKLISTED') {
             draft.fatfWatchlistStatus = 'BLACKLISTED';
-            useSanctionsStore.getState().executeSanctionAction('COMPREHENSIVE_EMBARGO', ['US', 'EU'], usePlayerStore.getState().countryId || 'US');
+            try {
+              useSanctionsStore.getState().proposeCampaign(
+                'FATF Blacklist Sanctions',
+                'US',
+                [usePlayerStore.getState().countryId || 'US'],
+                'LAW_ENFORCEMENT',
+                'Response to systematic FATF blacklisting for illicit asset streams.'
+              );
+            } catch (e) {}
             useCinematicsStore.getState().triggerCinematic('FATF_BLACKLISTED', {triggerTrace:'Multiple', playerCountry: usePlayerStore.getState().countryId || 'US', estimatedGdpImpact: 2.0});
         }
         else if (draft.globalTraceLevel > 60 && draft.fatfWatchlistStatus !== 'GREYLISTED' && draft.fatfWatchlistStatus !== 'BLACKLISTED') {

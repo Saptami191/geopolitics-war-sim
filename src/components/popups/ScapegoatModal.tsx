@@ -37,11 +37,11 @@ export default function ScapegoatModal({ scandalId, onClose }: { scandalId: stri
              ))}
 
              <h3 className="text-gray-500 font-bold mb-2 mt-4 text-[10px]">INTELLIGENCE OPERATIVES</h3>
-             {operativeStore.operatives.map(op => (
+             {Object.values(operativeStore.operatives).map(op => (
                 <div key={op.id} className="border border-gray-800 p-2 flex justify-between items-center bg-black hover:border-gray-600 transition-colors">
                     <div>
                        <span className="text-gray-300 font-bold block">{op.name}</span>
-                       <span className="text-gray-600 text-[9px]">{op.specialization} · Loyalty: {op.loyaltyScore}</span>
+                       <span className="text-gray-600 text-[9px]">{op.coverType} · Loyalty: {op.loyalty}</span>
                     </div>
                     <button onClick={() => handleSacrifice(op.id)} className="text-[10px] px-3 py-1 border border-orange-900 text-orange-500 hover:bg-orange-950/30">BURN</button>
                 </div>

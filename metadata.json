@@ -1,6 +1,6 @@
 {
   "name": "Sovereign Command Simulator",
-  "description": "A deep geopolitical and military strategy simulator terminal with Cognitive Warfare and Adversarial Deception systems.",
+  "description": "A deep geopolitical and military strategy simulator terminal with Cognitive Warfare, Signals Intelligence (ECHO GRID), and Targeted Operations (BLACK LANTERN) platforms.",
   "requestFramePermissions": [
     "camera",
     "microphone",

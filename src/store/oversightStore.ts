@@ -17,7 +17,6 @@ import { useOperativeStore } from './operativeStore';
 import { useLeaderMemoryStore } from './leaderMemoryStore';
 import { useMirrorStore } from './mirrorStore';
 import { useArachneStore } from './arachneStore';
-import { useDiplomaticStore } from './diplomaticStore';
 import { useEconomyStore } from './economyStore';
 import { useSanctionsStore } from './sanctionsStore';
 import { useCinematicsStore } from './cinematicsStore';

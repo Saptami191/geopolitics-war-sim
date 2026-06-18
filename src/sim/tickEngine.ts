@@ -16,6 +16,7 @@ import { useSoftPowerStore } from '../store/softPowerStore';
 import { useMirrorStore } from '../store/mirrorStore';
 import { useInfluenceStore } from '../store/influenceStore';
 import { useOversightStore } from '../store/oversightStore';
+import { useSigintStore } from '../store/sigintStore';
 import { useLeaderMemoryStore } from '../store/leaderMemoryStore';
 import { pollScenarioStatus } from './scenarioEngine';
 import { processFactions } from './factionEngine';
@@ -36,6 +37,8 @@ import { ConsequenceEngine } from './consequenceEngine';
 import { saveAutosaveScenario } from '../utils/persistence';
 import { processOperativeNetwork } from './operativeEngine';
 import { useDefconStore } from '../store/defconStore';
+import { useTargetedOperationsStore } from '../store/targetedOperationsStore';
+import { useHumintStore } from '../store/humintStore';
 
 export const TICK_INTERVALS: Record<"day" | "week" | "month", number> = {
   day: 2000,
@@ -220,6 +223,15 @@ export function executeSimulationStep() {
   useInfluenceStore.getState().tickInfluenceSystem(useWorldStore.getState().currentTick);
 
   useOversightStore.getState().tickOversight(useWorldStore.getState().currentTick);
+
+  // Synchronize Signals Intelligence and Deception Platform (Module 6.1)
+  useSigintStore.getState().tickSigint(useWorldStore.getState().currentTick);
+
+  // Synchronize Targeted Operations Platform (Module 6.2 — BLACK LANTERN)
+  useTargetedOperationsStore.getState().tickTargetedOperations(useWorldStore.getState().currentTick);
+
+  // Synchronize Human Intelligence & Counter-Penetration Platform (Module 6.3 — MIRROR VEIL)
+  useHumintStore.getState().tickHumint(useWorldStore.getState().currentTick);
 
   // Regularly save a checkpoint if there is no ongoing nuclear exchange or active aftermath
   const currentWorld = useWorldStore.getState();
