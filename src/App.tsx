@@ -67,6 +67,7 @@ import PoliticalCapitalBar from './components/panels/PoliticalCapitalBar';
 import NuclearPosturePanel from './components/panels/NuclearPosturePanel';
 import NC3SystemPanel from './components/panels/NC3SystemPanel';
 import FalseAlarmDecisionPanel from './components/panels/FalseAlarmDecisionPanel';
+import ConventionalOpsPanel from './components/panels/ConventionalOpsPanel';
 import { useOperativeStore } from './store/operativeStore';
 import { checkAndRestoreSharedScenario, hydrateScenario, ScenarioPackage } from './utils/persistence';
 
@@ -249,6 +250,7 @@ function ActivePanelWrapper({ activeTab, getTabClassification }: { activeTab: nu
       {activeTab === 24 && <OperativeNetworkPanel />}
       {activeTab === 25 && <RegimePressurePanel />}
       {activeTab === 26 && <PSYOPCommandPanel />}
+      {activeTab === 27 && <ConventionalOpsPanel />}
       {activeTab === 100 && <NuclearPosturePanel />}
       {activeTab === 101 && <NC3SystemPanel />}
     </div>

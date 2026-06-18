@@ -1290,8 +1290,8 @@ export const useNuclearStore = create<NuclearState>((set, get) => ({
     }));
 
     // 3. Degrade NC3 channels under electronic warfare or cyber attacks
-    const EW_ops = useDeceptionStore.getState().campaigns || [];
-    if (EW_ops.length > 0) {
+    const EW_campaigns = Object.values(useDeceptionStore.getState().campaigns || {});
+    if (EW_campaigns.length > 0) {
       self.degradeNC3Channel('STRATCOM_BROADCAST', 10, 'EW');
     } else {
       self.restoreNC3Channel('STRATCOM_BROADCAST', 5);

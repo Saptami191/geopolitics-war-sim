@@ -83,10 +83,10 @@ export function tickNuclearAI(currentTick: number): void {
     // STEP 2 — Posture escalation (or de-escalation)
     if (retaliationPressure > 30 && currentPosture === 'PEACETIME') {
       nextPosture = 'ELEVATED';
-      worldStore.addGlobalEvent(`NATIONAL DEFENSE SENSING: Adversary ${countryId} scales strategic nuclear forces to ELEVATED alert level under perceived security threats.`, 'AMBER');
+      worldStore.addGlobalEvent(`NATIONAL DEFENSE SENSING: Adversary ${countryId} scales strategic nuclear forces to ELEVATED alert level under perceived security threats.`, 'WARNING');
     } else if (retaliationPressure > 55 && currentPosture === 'ELEVATED') {
       nextPosture = 'SURGE';
-      worldStore.addGlobalEvent(`NATIONAL DEFENSE SENSING: Adversary ${countryId} strategic rocket divisions deploy and submarines disperse under SURGE alert posture.`, 'RED');
+      worldStore.addGlobalEvent(`NATIONAL DEFENSE SENSING: Adversary ${countryId} strategic rocket divisions deploy and submarines disperse under SURGE alert posture.`, 'CRITICAL');
     } else if (retaliationPressure > 80 && currentPosture === 'SURGE') {
       nextPosture = 'HAIR_TRIGGER';
       worldStore.addGlobalEvent(`CRITICAL WARNING: Adversary ${countryId} moves strategic posture to HAIR-TRIGGER. Command in-the-loop delegation is authorized.`, 'CRITICAL');
@@ -104,13 +104,13 @@ export function tickNuclearAI(currentTick: number): void {
       // STEP 4 — De-escalation
       if (currentPosture === 'HAIR_TRIGGER') {
         nextPosture = 'SURGE';
-        worldStore.addGlobalEvent(`INTEL REPORT: Adversary ${countryId} de-escalates nuclear forces from Hair-Trigger back to Surge capability as pressures subside.`, 'AMBER');
+        worldStore.addGlobalEvent(`INTEL REPORT: Adversary ${countryId} de-escalates nuclear forces from Hair-Trigger back to Surge capability as pressures subside.`, 'WARNING');
       } else if (currentPosture === 'SURGE') {
         nextPosture = 'ELEVATED';
         worldStore.addGlobalEvent(`INTEL REPORT: Adversary ${countryId} returns deployed strategic ballistic missile submarines to base (ELEVATED).`, 'INFO');
       } else if (currentPosture === 'ELEVATED') {
         nextPosture = 'PEACETIME';
-        worldStore.addGlobalEvent(`INTEL REPORT: Adversary ${countryId} strategic command returns to PEACETIME readiness levels. Forces standard reserve.`, 'GREEN');
+        worldStore.addGlobalEvent(`INTEL REPORT: Adversary ${countryId} strategic command returns to PEACETIME readiness levels. Forces standard reserve.`, 'INFO');
       }
     }
 

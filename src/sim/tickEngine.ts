@@ -41,6 +41,8 @@ import { useTargetedOperationsStore } from '../store/targetedOperationsStore';
 import { useHumintStore } from '../store/humintStore';
 import { useDeceptionStore } from '../store/deceptionStore';
 import { useNuclearStore } from '../store/nuclearStore';
+import { useConventionalOpsStore } from '../store/conventionalOpsStore';
+
 
 export const TICK_INTERVALS: Record<"day" | "week" | "month", number> = {
   day: 2000,
@@ -179,6 +181,10 @@ export function executeSimulationStep() {
   
   // Tick nuclear simulation system
   useNuclearStore.getState().tickNuclear(activeTick);
+  
+  // Tick conventional operations campaign and logistics system
+  useConventionalOpsStore.getState().tickConventionalOps(activeTick);
+
   
   Object.keys(world.countries).forEach(id => {
     useLeaderMemoryStore.getState().forgiveMemories(id, activeTick);

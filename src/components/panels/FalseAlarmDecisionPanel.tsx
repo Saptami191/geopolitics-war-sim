@@ -5,6 +5,7 @@ import { useWorldStore } from '../../store/worldStore';
 import { useLeaderStore } from '../../store/leaderStore';
 import { 
   AlertOctagon, 
+  AlertTriangle,
   Clock, 
   Activity, 
   CornerDownRight, 

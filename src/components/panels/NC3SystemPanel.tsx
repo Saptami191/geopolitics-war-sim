@@ -93,7 +93,7 @@ export default function NC3SystemPanel() {
   return (
     <PanelFxShell 
       panelId="nc3_system" 
-      relevantFxTypes={['NC3_DEGRADED', 'PERIMETER_ACTIVATION']}
+      relevantFxTypes={['NC3_DEGRADED', 'PERIMETER_ACTIVATION'] as any}
     >
       <div className="flex flex-col h-full text-gray-100 bg-[#0c0f12] border border-gray-800 rounded shadow-2xl overflow-hidden font-mono text-sm">
         

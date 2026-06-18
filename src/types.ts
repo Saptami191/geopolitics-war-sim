@@ -3036,6 +3036,410 @@ export interface AdversaryPosture {
   launchCommitted: boolean;
 }
 
+// ─── CONVENTIONAL OPERATIONS CORE SYSTEM TYPES ───────────────────────
+
+export type UnitDomain =
+  | 'LAND'
+  | 'AIR'
+  | 'MARITIME'
+  | 'CYBER'
+  | 'SPACE'
+  | 'SPECIAL_OPERATIONS';
+
+export type UnitFamily =
+  | 'ARMORED_BRIGADE'
+  | 'MECHANIZED_INFANTRY'
+  | 'LIGHT_INFANTRY'
+  | 'AIRBORNE'
+  | 'SPECIAL_FORCES'
+  | 'AVIATION_BRIGADE'
+  | 'FIELD_ARTILLERY'
+  | 'AIR_DEFENSE'
+  | 'LOGISTICS_SUPPORT'
+  | 'ENGINEER'
+  | 'TACTICAL_FIGHTER_WING'
+  | 'STRATEGIC_BOMBER_WING'
+  | 'ISR_WING'
+  | 'CARRIER_STRIKE_GROUP'
+  | 'SUBMARINE_FORCE'
+  | 'AMPHIBIOUS_READINESS_GROUP'
+  | 'MINE_WARFARE'
+  | 'CYBER_COMMAND'
+  | 'SPACE_FORCE_ELEMENT';
+
+export interface UnitAttributes {
+  firepower: number;           // 0–100: ability to destroy targets
+  maneuver: number;            // 0–100: movement speed and agility
+  protection: number;          // 0–100: survivability
+  sustainmentDemand: number;   // fuel+ammo consumed per tick
+  readiness: number;           // 0–100: current operational readiness
+  mobility: UnitMobility;
+  signature: number;           // 0–100: how visible to ISR
+  electronicWarfare: number;   // 0–100: EW emit and jam capability
+  airDefense: number;          // 0–100: organic air defense
+  intelligenceContribution: number; // 0–100: ISR capability
+  specialCapabilities: SpecialCapability[];
+}
+
+export type UnitMobility = 
+  | 'WHEELED' 
+  | 'TRACKED' 
+  | 'ROTARY' 
+  | 'FIXED_WING'
+  | 'NAVAL_SURFACE' 
+  | 'SUBSURFACE' 
+  | 'AMPHIBIOUS' 
+  | 'FOOT';
+
+export type SpecialCapability =
+  | 'SEAD'                 // Suppression of enemy air defenses
+  | 'DEEP_STRIKE'          // Long-range precision strike
+  | 'ELECTRONIC_ATTACK'    // Offensive EW
+  | 'CBRN'                 // Chemical/biological/radiological/nuclear
+  | 'URBAN_WARFARE'        // Optimized for cities
+  | 'MOUNTAIN_WARFARE'
+  | 'ARCTIC_WARFARE'
+  | 'AMPHIBIOUS_ASSAULT'
+  | 'AIRBORNE_ASSAULT'
+  | 'PSYOP_CAPABILITY'
+  | 'CYBER_ATTACK'
+  | 'SPACE_CONTROL'
+  | 'COUNTER_IED'
+  | 'CIVIL_AFFAIRS';
+
+export interface OrderOfBattleUnit {
+  id: string;
+  countryId: string;
+  family: UnitFamily;
+  domain: UnitDomain;
+  designation: string;         // e.g. "1st Armored Brigade Combat Team"
+  attributes: UnitAttributes;
+  currentRegion: string;       // regionId from worldStore
+  assignedObjectiveId: string | null;
+  assignedCampaignId: string | null;
+  currentStatus: ConventionalUnitStatus;
+  attritionLevel: number;      // 0–1: 0 = full strength, 1 = destroyed
+  supplyLevel: number;         // 0–1: current supply state
+  maintenanceDebt: number;     // accumulated maintenance cycles missed
+  lastEngagedTick: number;
+  isReserve: boolean;
+  isDeployed: boolean;
+  terrainPenalty: number;      // computed from current region terrain
+  weatherPenalty: number;      // computed from current region weather
+  sigintExposure: number;      // 0–1: how visible to enemy SIGINT
+  deceptionCover: boolean;     // protected by active deception plan
+  notes: string;
+}
+
+export type ConventionalUnitStatus =
+  | 'READY'
+  | 'DEPLOYED'
+  | 'IN_TRANSIT'
+  | 'ENGAGED'
+  | 'WITHDRAWING'
+  | 'RECONSTITUTING'
+  | 'DEGRADED'
+  | 'NON_MISSION_CAPABLE'
+  | 'DESTROYED';
+
+export interface CampaignPlan {
+  id: string;
+  name: string;
+  plannerCountryId: string;
+  status: CampaignStatus;
+  objective: CampaignObjective;
+  assignedUnitIds: string[];
+  phases: CampaignPhase[];
+  currentPhaseIndex: number;
+  supportingFiresConfig: SupportingFiresConfig;
+  logisticsConfig: LogisticsConfig;
+  riskTolerance: RiskTolerance;
+  sigintOverlaysApplied: string[];    // sigintStore target IDs
+  deceptionPlansApplied: string[];    // deceptionStore plan IDs
+  weatherAssessment: WeatherAssessment;
+  terrainAssessment: TerrainAssessment;
+  successCriteria: SuccessCriteria;
+  casualtyEstimate: CasualtyEstimate;
+  createdTick: number;
+  launchedTick: number | null;
+  completedTick: number | null;
+  outcome: CampaignOutcome | null;
+}
+
+export type CampaignStatus =
+  | 'PLANNING'
+  | 'WARGAMED'
+  | 'APPROVED'
+  | 'EXECUTING'
+  | 'PAUSED'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'ABORTED';
+
+export interface CampaignObjective {
+  id: string;
+  type: ObjectiveType;
+  targetRegionId: string;
+  targetEntityId: string | null;
+  description: string;
+  priority: number;
+  isAchieved: boolean;
+  achievedTick: number | null;
+}
+
+export type ObjectiveType =
+  | 'SEIZE_TERRITORY'
+  | 'DEFEAT_FORCE'
+  | 'ESTABLISH_NO_FLY_ZONE'
+  | 'NAVAL_BLOCKADE'
+  | 'DECAPITATE_LEADERSHIP'
+  | 'DESTROY_INFRASTRUCTURE'
+  | 'HUMANITARIAN_CORRIDOR'
+  | 'DETERRENCE_DEMONSTRATION'
+  | 'SPECIAL_RECOVERY'
+  | 'CYBER_DOMINANCE'
+  | 'SPACE_DENIAL';
+
+export interface CampaignPhase {
+  phaseNumber: number;
+  name: string;
+  description: string;
+  duration: number;              // ticks
+  primaryObjectiveId: string;
+  unitIdsActive: string[];
+  firesConfig: SupportingFiresConfig;
+  logisticsConfig: LogisticsConfig;
+  entryConditions: string[];
+  exitConditions: string[];
+  isComplete: boolean;
+}
+
+export interface SupportingFiresConfig {
+  airSupportEnabled: boolean;
+  navalFiresEnabled: boolean;
+  artilleryEnabled: boolean;
+  cyberFiresEnabled: boolean;
+  spaceBasedISREnabled: boolean;
+  airDefenseSuppressionEnabled: boolean;
+  intensityLevel: FireIntensity;
+  targetPriority: FireTargetPriority;
+  rulesOfEngagement: ROELevel;
+}
+
+export type FireIntensity = 'MINIMAL' | 'DELIBERATE' | 'INTENSE' | 'MAXIMUM';
+export type FireTargetPriority = 'MILITARY_ONLY' | 'DUAL_USE' | 'INFRASTRUCTURE' | 'LEADERSHIP';
+export type ROELevel = 'PEACETIME' | 'RESTRICTIVE' | 'NORMAL' | 'PERMISSIVE' | 'UNRESTRICTED';
+export type RiskTolerance = 'MINIMAL' | 'MODERATE' | 'AGGRESSIVE' | 'RECKLESS';
+
+export interface LogisticsConfig {
+  primarySupplyRouteId: string | null;
+  alternateSupplyRouteIds: string[];
+  fuelAllocationPerTick: number;
+  ammoAllocationPerTick: number;
+  maintenanceAllocationPerTick: number;
+  portCapacityUsed: number;
+  railCapacityUsed: number;
+  airCapacityUsed: number;
+  supplyPriorityUnits: string[];
+  contestedLogisticsRisk: number;     // 0–1
+  a2adThreatLevel: number;            // 0–1
+}
+
+export interface SupplyRoute {
+  id: string;
+  name: string;
+  fromRegionId: string;
+  toRegionId: string;
+  type: RouteType;
+  capacityTons: number;
+  currentThroughput: number;
+  contestedLevel: number;          // 0–1
+  isActive: boolean;
+  weatherDegradation: number;      // 0–1 throughput reduction from weather
+  terrainDegradation: number;      // 0–1 throughput reduction from terrain
+  ewDegradation: number;           // 0–1 reduction from EW interdiction
+  lastInterruptedTick: number | null;
+}
+
+export type RouteType = 'ROAD' | 'RAIL' | 'AIR' | 'SEA' | 'PIPELINE';
+
+export interface LogisticsNode {
+  id: string;
+  regionId: string;
+  type: LogisticsNodeType;
+  capacityTons: number;
+  currentLoad: number;
+  isContested: boolean;
+  isDestroyed: boolean;
+  repairProgress: number;      // 0–1
+}
+
+export type LogisticsNodeType = 'PORT' | 'RAILHEAD' | 'AIRFIELD' | 'FORWARD_SUPPLY_BASE' | 'PIPELINE_JUNCTION';
+
+export interface SustainmentState {
+  countryId: string;
+  fuelStockpile: number;
+  ammoStockpile: number;
+  sparePartsStockpile: number;
+  fuelConsumptionPerTick: number;
+  ammoConsumptionPerTick: number;
+  maintenanceCycleDebt: number;
+  supplyChainIntegrity: number;       // 0–1
+  daysOfSupplyRemaining: number;
+}
+
+export interface RegionTerrainProfile {
+  regionId: string;
+  primaryTerrain: TerrainType;
+  secondaryTerrain: TerrainType | null;
+  urbanDensity: UrbanDensity;
+  passability: number;             // 0–1 movement multiplier
+  concealmentLevel: number;        // 0–1 ISR degradation
+  defensibleTerrain: boolean;
+  keyTerrainFeatures: TerrainFeature[];
+  hasMountainPasses: boolean;
+  hasChokePoints: boolean;
+  coastlineLength: number;         // km
+  majorRivers: number;
+}
+
+export type TerrainType =
+  | 'OPEN'
+  | 'ROLLING'
+  | 'WOODED'
+  | 'MOUNTAIN'
+  | 'DESERT'
+  | 'JUNGLE'
+  | 'ARCTIC'
+  | 'SWAMP'
+  | 'COASTAL'
+  | 'ISLAND';
+
+export type UrbanDensity = 'RURAL' | 'SUBURBAN' | 'URBAN' | 'MEGACITY';
+
+export type TerrainFeature =
+  | 'MOUNTAIN_PASS'
+  | 'RIVER_CROSSING'
+  | 'CHOKE_POINT'
+  | 'FORTIFIED_POSITION'
+  | 'INDUSTRIAL_COMPLEX'
+  | 'AIRFIELD'
+  | 'PORT'
+  | 'RAILHEAD'
+  | 'COMMAND_BUNKER';
+
+export interface RegionWeatherState {
+  regionId: string;
+  season: Season;
+  currentCondition: WeatherCondition;
+  visibility: number;          // 0–1 multiplier on ISR effectiveness
+  precipitationType: PrecipitationType | null;
+  precipitationIntensity: number;    // 0–1
+  groundCondition: GroundCondition;
+  windSpeed: number;                 // km/h
+  temperature: number;               // Celsius
+  movementMultiplier: number;        // derived: terrain + weather combined
+  firesAccuracy: number;             // 0–1 degradation on fires
+  ewEffectiveness: number;           // 0–1 degradation on EW
+  isrPenetration: number;            // 0–1 how well ISR cuts through
+  mudSeason: boolean;
+  snowCover: boolean;
+  stormSurge: boolean;
+  lastUpdatedTick: number;
+}
+
+export type Season = 'SPRING' | 'SUMMER' | 'AUTUMN' | 'WINTER';
+export type WeatherCondition = 'CLEAR' | 'OVERCAST' | 'RAIN' | 'STORM' | 'SNOW' | 'FOG' | 'SANDSTORM' | 'BLIZZARD';
+export type PrecipitationType = 'RAIN' | 'SNOW' | 'SLEET' | 'HAIL';
+export type GroundCondition = 'FIRM' | 'SOFT' | 'MUD' | 'SNOW_COVERED' | 'FROZEN' | 'FLOODED';
+
+export interface CourseOfAction {
+  id: string;
+  campaignId: string;
+  name: string;
+  description: string;
+  assignedUnits: string[];
+  projectedDurationTicks: number;
+  successProbability: number;       // 0–1
+  casualtyEstimate: CasualtyEstimate;
+  logisticsFeasibility: number;     // 0–1
+  weatherRisk: number;              // 0–1
+  terrainRisk: number;              // 0–1
+  a2adRisk: number;                 // 0–1
+  strategicRisk: number;            // 0–1
+  escalationRisk: number;           // 0–1
+  advantages: string[];
+  disadvantages: string[];
+  isSelected: boolean;
+}
+
+export interface CasualtyEstimate {
+  ownForcesLight: number;
+  ownForcesModerate: number;
+  ownForcesHeavy: number;
+  enemyForces: number;
+  civilianEstimate: number;
+  equipmentLoss: number;
+}
+
+export interface WeatherAssessment {
+  forecastTicks: number;
+  currentRisk: 'LOW' | 'MODERATE' | 'HIGH' | 'SEVERE';
+  movementImpact: string;
+  firesImpact: string;
+  isrImpact: string;
+}
+
+export interface TerrainAssessment {
+  overallDifficulty: 'EASY' | 'MODERATE' | 'DIFFICULT' | 'VERY_DIFFICULT';
+  keyObstacles: string[];
+  approachRoutes: number;
+  defensiveAdvantage: 'ATTACKER' | 'DEFENDER' | 'NEUTRAL';
+}
+
+export interface SuccessCriteria {
+  primaryObjectiveComplete: boolean;
+  casualtyThresholdNotExceeded: boolean;
+  timelineAdhered: boolean;
+  escalationContained: boolean;
+  logisticsIntact: boolean;
+}
+
+export type CampaignOutcome =
+  | 'DECISIVE_VICTORY'
+  | 'PYRRHIC_VICTORY'
+  | 'OPERATIONAL_SUCCESS'
+  | 'STALEMATE'
+  | 'OPERATIONAL_FAILURE'
+  | 'CATASTROPHIC_DEFEAT';
+
+export interface CombatEngagement {
+  id: string;
+  attackerUnitIds: string[];
+  defenderUnitIds: string[];
+  regionId: string;
+  tick: number;
+  attackerFirepower: number;
+  defenderFirepower: number;
+  terrainModifier: number;
+  weatherModifier: number;
+  isrModifier: number;
+  attackerAttrition: number;
+  defenderAttrition: number;
+  outcome: EngagementOutcome;
+  supplyConsumed: number;
+  maintenanceIncurred: number;
+}
+
+export type EngagementOutcome =
+  | 'ATTACKER_ADVANCE'
+  | 'ATTACKER_REPELLED'
+  | 'MUTUAL_ATTRITION'
+  | 'DEFENDER_ROUT'
+  | 'ATTACKER_ROUT'
+  | 'WITHDRAWAL';
+
+
 
 
 
