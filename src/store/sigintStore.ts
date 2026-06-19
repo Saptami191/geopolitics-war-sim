@@ -18,6 +18,8 @@ import {
 import { useWorldStore } from './worldStore';
 import { useCinematicsStore } from './cinematicsStore';
 import { useArachneStore } from './arachneStore';
+import { useEWStore } from './ewStore';
+import { audio } from '../utils/audio';
 
 export interface SigintState {
   totalCollectionBudget: number;
@@ -292,6 +294,19 @@ export const useSigintStore = create<SigintState & SigintActions>((set, get) => 
               if (!target) return;
               
               const deception = draft.deceptionCountermeasures[camp.targetId];
+              const ewState = useEWStore.getState();
+              
+              // Find if this target has EW jamming/spoofing active against it
+              const activeEwEffects = Object.values(ewState.activeCampaigns).filter(ew => ew.targetCountryId === camp.targetId);
+              const isJammed = activeEwEffects.some(ew => ew.mode.includes('JAM'));
+              const isSpoofed = activeEwEffects.some(ew => ew.mode === 'DECEPTIVE_SPOOF');
+
+              if (isJammed) {
+                  // Play static audio on first detected jam
+                  if (Math.random() < 0.1) audio.sfxWhiteout();
+                  return; // complete collection blind
+              }
+
               let totalYield = 0;
               let bestChannel: SigintCollectionDomain = 'OPEN_SOURCE';
 
@@ -309,14 +324,19 @@ export const useSigintStore = create<SigintState & SigintActions>((set, get) => 
               });
 
               if (Math.random() < totalYield) {
+                  const applySpoof = isSpoofed || (deception && deception.activeTicksRemaining > 0 && Math.random() < 0.5);
+                  if (applySpoof) {
+                       if (Math.random() < 0.2) audio.playEWSpoofSnap();
+                  }
+                  
                   // Collection succeeded
                   get().ingestObservation({
                       targetId: camp.targetId,
                       domain: bestChannel,
                       timestampTick: currentTick,
                       confidenceScore: Math.floor(Math.random() * 40 + 20),
-                      rawSignalData: `[${bestChannel}] Intercepted packet fragment.`,
-                      isDeceptive: deception && deception.activeTicksRemaining > 0 && Math.random() < 0.5 ? true : false,
+                      rawSignalData: applySpoof ? `[${bestChannel}] [ANOMALY DETECTED] Corrupted intercepted stream.` : `[${bestChannel}] Intercepted packet fragment.`,
+                      isDeceptive: applySpoof ? true : false,
                       corroboratedBy: []
                   });
               }

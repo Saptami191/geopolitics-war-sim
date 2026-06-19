@@ -29,6 +29,7 @@ import {
 } from '../types';
 import { useWorldStore } from './worldStore';
 import { useA2ADStore } from './a2adStore';
+import { useEWStore } from './ewStore';
 import { usePlayerStore } from './playerStore';
 import { useLeaderMemoryStore } from './leaderMemoryStore';
 import { useSigintStore } from './sigintStore';
@@ -743,12 +744,27 @@ export const useConventionalOpsStore = create<ConventionalOpsState & Conventiona
         let allyFP = 0;
         let enemyFP = 0;
         const a2adState = useA2ADStore.getState();
+        const ewState = useEWStore.getState();
+        
+        let allyEwPenalty = 0;
+        let enemyEwPenalty = 0;
+        
+        const regionEwEffect = ewState.spectrumContention.find(e => e.regionId === targetRegionId && e.contentionLevel > 30);
+        if (regionEwEffect) {
+           if (regionEwEffect.dominantCountryId === targetCountryId) {
+              allyEwPenalty = 0.25;
+              if (regionEwEffect.effectsActive.includes('MISSILE_GUIDANCE_CORRUPTED')) allyEwPenalty = 0.40;
+           } else {
+              enemyEwPenalty = 0.25;
+              if (regionEwEffect.effectsActive.includes('MISSILE_GUIDANCE_CORRUPTED')) enemyEwPenalty = 0.40;
+           }
+        }
 
         allyUnitsInZone.forEach((u) => {
           let fp = u.attributes.firepower * (1.0 - u.attritionLevel);
           const tPenalty = get().calculateTerrainPenalty(u, terrain);
           const wPenalty = get().calculateWeatherPenalty(u, weather);
-          fp *= (1.0 - tPenalty) * (1.0 - wPenalty);
+          fp *= (1.0 - tPenalty) * (1.0 - wPenalty) * (1.0 - allyEwPenalty);
 
           // Apply A2AD Precision Munitions and C2 Degradation penalties
           const targetGpsZone = Object.values(a2adState.gpsDegradationZones).find(z => 

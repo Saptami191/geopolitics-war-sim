@@ -3667,6 +3667,147 @@ export interface SEADCampaign {
   status: 'ACTIVE' | 'COMPLETED' | 'ABORTED';
 }
 
+// ==== MODULE 7.4 ELECTRONIC WARFARE TYPES ====
+
+export type EWSpectrumBand = 'HF' | 'VHF' | 'UHF' | 'SHF' | 'EHF' | 'OPTICAL' | 'INFRARED' | 'CYBER_RF';
+
+export type EWAssetType = 
+  | 'GROUND_JAMMER' 
+  | 'AIRBORNE_JAMMER' 
+  | 'SHIP_JAMMER' 
+  | 'CYBER_RF_EMITTER' 
+  | 'DRONE_EW_PLATFORM' 
+  | 'DECOY_EMITTER' 
+  | 'HARDENED_RELAY' 
+  | 'DIRECTION_FINDING_ARRAY' 
+  | 'SPOOF_TRANSMITTER';
+
+export type EWOperationMode = 
+  | 'STANDBY' 
+  | 'LISTENING' 
+  | 'SPOT_JAM' 
+  | 'BARRAGE_JAM' 
+  | 'SWEEP_JAM' 
+  | 'DECEPTIVE_SPOOF' 
+  | 'FRIENDLY_PROTECT' 
+  | 'EMISSION_CONTROL' 
+  | 'DIRECTION_FIND' 
+  | 'CYBER_RF_INJECT';
+
+export type EWEffectType = 
+  | 'COMMS_DEGRADED' 
+  | 'RADAR_BLINDED' 
+  | 'GPS_DENIED' 
+  | 'DRONE_LINK_SEVERED' 
+  | 'MISSILE_GUIDANCE_CORRUPTED' 
+  | 'SIGINT_COLLECTION_DEGRADED' 
+  | 'FALSE_TARGET_INJECTED' 
+  | 'FRIENDLY_FORCE_EXPOSED' 
+  | 'EMISSIONS_DETECTED' 
+  | 'DIRECTION_FOUND';
+
+export type SignalVisibilityState = 
+  | 'UNDETECTED' 
+  | 'DETECTED' 
+  | 'LOCATED' 
+  | 'IDENTIFIED' 
+  | 'TARGETED';
+
+export interface EWAsset {
+  id: string;
+  name: string;
+  type: EWAssetType;
+  countryId: string;
+  regionId: string;
+  currentMode: EWOperationMode;
+  spectrumBands: EWSpectrumBand[];
+  powerOutput: number;          // 0–100
+  operationalRange: number;     // km
+  emissionProfile: number;      // 0–100, detectability
+  isActive: boolean;
+  isCompromised: boolean;
+  cooldownTicksRemaining: number;
+  deployedAtTick: number;
+  lastModeChangeTick: number;
+  effectsApplied: EWEffectType[];
+  detectedBy: string[];         // countryIds that have found this asset
+}
+
+export interface EWObjective {
+  type: 
+    | 'BLIND_AIR_DEFENSE' 
+    | 'SEVER_DRONE_COMMS' 
+    | 'CORRUPT_MISSILE_GUIDANCE' 
+    | 'SPOOF_RADAR_PICTURE' 
+    | 'PROTECT_OWN_EMISSIONS' 
+    | 'LOCATE_ADVERSARY_EMITTERS' 
+    | 'DEGRADE_SIGINT_COLLECTION' 
+    | 'INJECT_FALSE_TARGETS' 
+    | 'ESTABLISH_COMMS_CORRIDOR';
+  targetSystemType: string;
+  successThreshold: number;
+  currentProgress: number;
+  isAchieved: boolean;
+}
+
+export interface EWCampaign {
+  id: string;
+  initiatorCountryId: string;
+  targetCountryId: string;
+  targetedBands: EWSpectrumBand[];
+  mode: EWOperationMode;
+  intensity: number;            // 0–100
+  startTick: number;
+  endTick: number | null;
+  objectives: EWObjective[];
+  activeEffects: EWEffectType[];
+  successProbability: number;
+  detectionRisk: number;
+  powerDrainPerTick: number;
+}
+
+export interface SpectrumContentionEntry {
+  regionId: string;
+  band: EWSpectrumBand;
+  contestingCountries: string[];
+  dominantCountryId: string | null;
+  contentionLevel: number;      // 0–100
+  effectsActive: EWEffectType[];
+  lastUpdatedTick: number;
+}
+
+export interface EWIntelProfile {
+  countryId: string;
+  knownAssets: Partial<EWAsset>[];
+  suspectedCapabilities: EWAssetType[];
+  observedPatterns: string[];
+  lastEWActivityTick: number;
+  adaptationScore: number;      // how much they've changed tactics
+}
+
+export interface AntiDroneSystem {
+  id: string;
+  countryId: string;
+  regionId: string;
+  systemType: 'KINETIC' | 'LASER' | 'RF_SPOOF' | 'RF_JAM' | 'NET_GUN' | 'CYBER';
+  effectiveRange: number;
+  engagementCapacity: number;   // drones per tick
+  currentLoad: number;
+  isActive: boolean;
+  powerConsumption: number;
+  spectrumBandsCovered: EWSpectrumBand[];
+}
+
+export interface DroneEWVulnerability {
+  droneTypeId: string;
+  controlBand: EWSpectrumBand;
+  jamResistance: number;        // 0–100
+  spoofResistance: number;      // 0–100
+  autonomousCapability: number; // 0–100, fallback if link severed
+  gpsDependent: boolean;
+  dataLinkEncrypted: boolean;
+}
+
 
 
 

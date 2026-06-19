@@ -58,6 +58,8 @@ import { useCovertFinanceStore } from './store/covertFinanceStore';
 import OversightPanel from './components/panels/OversightPanel';
 import SigintPanel from './components/panels/SigintPanel';
 import TargetedOperationsPanel from './components/panels/TargetedOperationsPanel';
+import EWPanel from './components/panels/EWPanel';
+import EWStatusWidget from './components/hud/EWStatusWidget';
 import HumintPenetrationSuite from './components/panels/HumintPenetrationSuite';
 import DeceptionOperationsSuite from './components/panels/DeceptionOperationsSuite';
 import CounterProliferationSuite from './components/panels/CounterProliferationSuite';
@@ -253,6 +255,7 @@ function ActivePanelWrapper({ activeTab, getTabClassification }: { activeTab: nu
       {activeTab === 26 && <PSYOPCommandPanel />}
       {activeTab === 27 && <ConventionalOpsPanel />}
       {activeTab === 28 && <A2ADPanel />}
+      {activeTab === 29 && <EWPanel />}
       {activeTab === 100 && <NuclearPosturePanel />}
       {activeTab === 101 && <NC3SystemPanel />}
     </div>
@@ -1220,6 +1223,10 @@ export default function App() {
       {counterProliferationOpen && <CounterProliferationSuite onClose={() => setCounterProliferationOpen(false)} />}
       <FalseAlarmDecisionPanel />
       <CinematicsManager />
+
+      <div className="fixed top-[52px] right-2 z-40 pointer-events-none flex flex-col items-end gap-2">
+        <EWStatusWidget />
+      </div>
 
       {/* Top command status HUD bar */}
       <DefconBar />

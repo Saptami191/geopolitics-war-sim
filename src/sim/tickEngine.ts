@@ -43,7 +43,7 @@ import { useDeceptionStore } from '../store/deceptionStore';
 import { useNuclearStore } from '../store/nuclearStore';
 import { useConventionalOpsStore } from '../store/conventionalOpsStore';
 import { useA2ADStore } from '../store/a2adStore';
-
+import { useEWStore } from '../store/ewStore';
 
 export const TICK_INTERVALS: Record<"day" | "week" | "month", number> = {
   day: 2000,
@@ -189,6 +189,8 @@ export function executeSimulationStep() {
   // Tick A2/AD Air-Sea-Space simulation system
   useA2ADStore.getState().tickA2AD(activeTick);
 
+  // Tick Electronic Warfare (Module 7.4)
+  useEWStore.getState().tickEW(activeTick);
   
   Object.keys(world.countries).forEach(id => {
     useLeaderMemoryStore.getState().forgiveMemories(id, activeTick);
