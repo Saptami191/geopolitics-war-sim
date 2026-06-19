@@ -69,6 +69,7 @@ export const PANEL_REGISTRY: Record<number, PanelRegistryDef> = {
   27: { id: 27, name: 'CONVENTIONAL OPS', category: 'MILITARY', primaryPurpose: 'Theatre joint campaigns and logistics', minDefconAvailability: 5, minPersonaTier: 1, layoutPriority: 'PRIMARY' },
   28: { id: 28, name: 'A2/AD UMBRELLA', category: 'MILITARY', primaryPurpose: 'Air-Sea-Space Denial Operations', minDefconAvailability: 5, minPersonaTier: 1, layoutPriority: 'PRIMARY' },
   29: { id: 29, name: 'EW SPECTRUM', category: 'MILITARY', primaryPurpose: 'Electronic Warfare Operations', minDefconAvailability: 5, minPersonaTier: 2, layoutPriority: 'PRIMARY' },
+  30: { id: 30, name: 'DEFENSE INDUSTRY', category: 'MILITARY', primaryPurpose: 'Procurement and Mobilization', minDefconAvailability: 5, minPersonaTier: 2, layoutPriority: 'PRIMARY' },
   
   // Virtual panels for nuclear/command
   100: { id: 100, name: 'NUCLEAR POSTURE', category: 'NUCLEAR', primaryPurpose: 'Strategic deterrence', minDefconAvailability: 3, minPersonaTier: 4, layoutPriority: 'PRIMARY', isNuclearRestricted: true },

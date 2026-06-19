@@ -3808,6 +3808,236 @@ export interface DroneEWVulnerability {
   dataLinkEncrypted: boolean;
 }
 
+// ==========================================
+// MODULE 7.5: DEFENSE INDUSTRY & PROCUREMENT
+// ==========================================
+
+export type IndustrialSector = 
+  | 'GROUND_VEHICLES' 
+  | 'NAVAL_SYSTEMS' 
+  | 'AVIATION' 
+  | 'MISSILES_MUNITIONS' 
+  | 'ELECTRONICS_EW' 
+  | 'SPACE_SYSTEMS' 
+  | 'NUCLEAR_STRATEGIC' 
+  | 'SMALL_ARMS_LIGHT' 
+  | 'CYBER_SYSTEMS' 
+  | 'LOGISTICS_SUPPORT';
+
+export interface IndustrialCapacityBlock {
+  sectorId: IndustrialSector;
+  countryId: string;
+  baseCapacity: number;            // monthly unit-equivalents at peacetime
+  currentCapacity: number;         // modified by mobilization, damage, sanctions
+  mobilizationMultiplier: number;  // 1.0 = peacetime, up to 3.0 = full war economy
+  utilizationRate: number;         // 0–100, how much capacity is currently committed
+  workerCount: number;
+  skillLevel: number;              // 0–100
+  sanctionDegradation: number;     // 0–100, how much sanctions have degraded capacity
+  supplyChainHealth: number;       // 0–100
+  lastUpdatedTick: number;
+}
+
+export type ProductionItemType = 'PLATFORM' | 'MUNITION' | 'SYSTEM' | 'COMPONENT' | 'INFRASTRUCTURE';
+
+export interface ComponentRequirement {
+  componentId: string;
+  quantityPerUnit: number;
+  isAvailable: boolean;
+  availableFromSource: string | null;
+}
+
+export interface ProductionItem {
+  id: string;
+  name: string;
+  itemType: ProductionItemType;
+  sector: IndustrialSector;
+  countryId: string;
+  quantity: number;
+  quantityCompleted: number;
+  costPerUnit: number;
+  productionTicksPerUnit: number;
+  ticksRemainingCurrentUnit: number;
+  totalTicksElapsed: number;
+  requiredComponents: ComponentRequirement[];
+  assignedFacilityId: string;
+  priority: 'EMERGENCY' | 'HIGH' | 'NORMAL' | 'LOW';
+  isBlocked: boolean;
+  blockReasons: string[];
+  startedAtTick: number;
+  estimatedCompletionTick: number;
+}
+
+export interface ProductionQueue {
+  countryId: string;
+  items: ProductionItem[];
+  totalQueuedCost: number;
+  estimatedMonthlyOutput: number;
+  bottleneckSector: IndustrialSector | null;
+}
+
+export type FacilityType = 'FACTORY' | 'SHIPYARD' | 'ARSENAL' | 'LAB' | 'TEST_RANGE' | 'DEPOT';
+
+export interface DefenseFacility {
+  id: string;
+  name: string;
+  countryId: string;
+  regionId: string;
+  sector: IndustrialSector;
+  facilityType: FacilityType;
+  capacityUnits: number;
+  currentLoad: number;
+  techGeneration: number;          // 1–5
+  isNationalized: boolean;
+  isPrivate: boolean;
+  exportLicensed: boolean;
+  vulnerabilityScore: number;      // how targetable this is in conflict
+  isOperational: boolean;
+  damageTicks: number;             // 0 = undamaged, higher = degraded
+  workforceId: string;
+}
+
+export type RDCategory = 
+  | 'PROPULSION' 
+  | 'GUIDANCE_PRECISION' 
+  | 'STEALTH_SIGNATURE' 
+  | 'ELECTRONIC_SYSTEMS' 
+  | 'ARMOR_PROTECTION' 
+  | 'ENERGY_WEAPONS' 
+  | 'AUTONOMOUS_SYSTEMS' 
+  | 'CYBER_OFFENSE' 
+  | 'SPACE_DOMAIN' 
+  | 'NUCLEAR_PHYSICS' 
+  | 'BIODEFENSE' 
+  | 'LOGISTICS_AI';
+
+export interface ResearchProject {
+  id: string;
+  name: string;
+  countryId: string;
+  sector: IndustrialSector;
+  category: RDCategory;
+  currentGeneration: number;       // what gen of tech this advances from
+  targetGeneration: number;        // what gen this achieves
+  fundingPerTick: number;
+  totalFundingInvested: number;
+  fundingRequired: number;
+  progressPercent: number;
+  ticksElapsed: number;
+  estimatedTicksRemaining: number;
+  breakthroughProbability: number; // can finish early
+  failureProbability: number;      // can collapse and need restart
+  espionageVulnerability: number;  // how stealable the research is
+  isClassified: boolean;
+  isStolen: boolean;               // has adversary stolen key results
+  collaboratingCountries: string[];
+  dual_use: boolean;               // civilian / military crossover
+  status: 'ACTIVE' | 'PAUSED' | 'COMPLETE' | 'FAILED' | 'STOLEN' | 'ACCELERATED';
+  completedAtTick: number | null;
+  unlocksItemIds: string[];        // what production items this unlocks
+}
+
+export type StrategicComponentCategory = 'RARE_EARTH' | 'SEMICONDUCTOR' | 'PROPELLANT' | 'ALLOY' | 'OPTICS' | 'SOFTWARE_STACK';
+
+export interface StrategicComponent {
+  id: string;
+  name: string;
+  category: StrategicComponentCategory;
+  globalSupplyLevel: number;       // 0–100
+  primaryProducerCountries: string[];
+  stockpileByCountry: Record<string, number>;
+  consumptionRateByCountry: Record<string, number>;
+  sanctionedFlows: string[];       // pairs of country→country flows that are blocked (format "src_dest")
+  alternativeSourceDifficulty: number; // 0–100, how hard to replace
+}
+
+export type MobilizationLevel = 'PEACETIME' | 'ELEVATED' | 'PARTIAL' | 'FULL' | 'TOTAL_WAR';
+
+export interface MobilizationState {
+  countryId: string;
+  level: MobilizationLevel;
+  civilianIndustrialDiverted: number;  // 0–100
+  mobilizationStartTick: number | null;
+  demobilizationStartTick: number | null;
+  economicDistortionScore: number;
+  warEconomyActive: boolean;
+  populationSupportScore: number;      // mobilization requires public support
+  sustainabilityTicks: number;         // how many ticks at current level is sustainable
+}
+
+export interface DeliveryMilestone {
+  tickTarget: number;
+  itemId: string;
+  quantity: number;
+  delivered: boolean;
+  deliveredAtTick: number | null;
+}
+
+export interface ArmsExportContract {
+  id: string;
+  exporterCountryId: string;
+  importerCountryId: string;
+  itemIds: string[];
+  quantities: Record<string, number>;
+  totalValue: number;
+  durationTicks: number;
+  ticksElapsed: number;
+  deliverySchedule: DeliveryMilestone[];
+  endUseCertificate: boolean;
+  thirdPartyTransferProhibited: boolean;
+  politicalConditionality: string[];
+  isActive: boolean;
+  isViolated: boolean;
+  violationDetails: string | null;
+  diplomaticLinkage: string | null;   // tied to a treaty or alignment
+}
+
+export interface ExportLicense {
+  id: string;
+  exporterCountryId: string;
+  importerCountryId: string;
+  itemCategory: IndustrialSector;
+  isApproved: boolean;
+  expiryTick: number;
+  conditions: string[];
+  revokedAtTick: number | null;
+  revokeReason: string | null;
+}
+
+export interface ProcurementIntelEntry {
+  countryId: string;
+  observedPurchases: string[];
+  inferredProductionRamp: IndustrialSector[];
+  estimatedMobilizationLevel: MobilizationLevel;
+  knownFacilities: string[];
+  rdBreakthroughsSuspected: RDCategory[];
+  supplyChainVulnerabilities: string[];
+  lastUpdatedTick: number;
+  confidenceScore: number;
+}
+
+export type DefenseIndustryAlertType = 
+  | 'PRODUCTION_BLOCKED' 
+  | 'COMPONENT_SHORTAGE' 
+  | 'RD_BREAKTHROUGH' 
+  | 'RD_STOLEN' 
+  | 'MOBILIZATION_DETECTED' 
+  | 'EXPORT_VIOLATION' 
+  | 'FACILITY_DAMAGED' 
+  | 'SUPPLY_CHAIN_INTERDICTED' 
+  | 'TECH_GENERATION_LEAP';
+
+export interface DefenseIndustryAlert {
+  id: string;
+  type: DefenseIndustryAlertType;
+  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+  countryId: string;
+  details: string;
+  tick: number;
+  acknowledged: boolean;
+}
+
+
 
 
 

@@ -44,6 +44,7 @@ import { useNuclearStore } from '../store/nuclearStore';
 import { useConventionalOpsStore } from '../store/conventionalOpsStore';
 import { useA2ADStore } from '../store/a2adStore';
 import { useEWStore } from '../store/ewStore';
+import { useDefenseIndustryStore } from '../store/defenseIndustryStore';
 
 export const TICK_INTERVALS: Record<"day" | "week" | "month", number> = {
   day: 2000,
@@ -191,6 +192,9 @@ export function executeSimulationStep() {
 
   // Tick Electronic Warfare (Module 7.4)
   useEWStore.getState().tickEW(activeTick);
+  
+  // Tick Defense Industry and Procurement (Module 7.5 - IRON FOUNDRY)
+  useDefenseIndustryStore.getState().tickDefenseIndustry(activeTick);
   
   Object.keys(world.countries).forEach(id => {
     useLeaderMemoryStore.getState().forgiveMemories(id, activeTick);
