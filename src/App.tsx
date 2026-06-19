@@ -68,6 +68,7 @@ import NuclearPosturePanel from './components/panels/NuclearPosturePanel';
 import NC3SystemPanel from './components/panels/NC3SystemPanel';
 import FalseAlarmDecisionPanel from './components/panels/FalseAlarmDecisionPanel';
 import ConventionalOpsPanel from './components/panels/ConventionalOpsPanel';
+import A2ADPanel from './components/panels/A2ADPanel';
 import { useOperativeStore } from './store/operativeStore';
 import { checkAndRestoreSharedScenario, hydrateScenario, ScenarioPackage } from './utils/persistence';
 
@@ -251,6 +252,7 @@ function ActivePanelWrapper({ activeTab, getTabClassification }: { activeTab: nu
       {activeTab === 25 && <RegimePressurePanel />}
       {activeTab === 26 && <PSYOPCommandPanel />}
       {activeTab === 27 && <ConventionalOpsPanel />}
+      {activeTab === 28 && <A2ADPanel />}
       {activeTab === 100 && <NuclearPosturePanel />}
       {activeTab === 101 && <NC3SystemPanel />}
     </div>

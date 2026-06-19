@@ -3440,6 +3440,235 @@ export type EngagementOutcome =
   | 'WITHDRAWAL';
 
 
+// ==========================================
+// MODULE 7.3: A2/AD AIR-SEA-SPACE LAYER (IRON UMBRELLA)
+// ==========================================
+
+export type A2ADSystemCategory =
+  | 'SAM_SHORT'        // SHORAD: <30km, e.g. Tor, Pantsir
+  | 'SAM_MEDIUM'       // MRAD: 30-120km, e.g. Buk, HQ-16
+  | 'SAM_LONG'         // LRAD: 120-400km, e.g. S-300, S-400, HQ-9
+  | 'ASBM'             // Anti-ship ballistic missile: 500-3000km
+  | 'ASCM'             // Anti-ship cruise missile: 200-800km
+  | 'A2AD_INTEGRATED';  // Networked IADS combining multiple layers
+
+export type A2ADSystemStatus =
+  | 'ACTIVE'
+  | 'DEGRADED'
+  | 'SUPPRESSED'
+  | 'DESTROYED'
+  | 'REDEPLOYING'
+  | 'HIDDEN';
+
+export interface A2ADSystem {
+  id: string;
+  name: string;                  // e.g. "S-400 Triumf Battery Alpha"
+  ownerNationId: string;
+  category: A2ADSystemCategory;
+  status: A2ADSystemStatus;
+  lat: number;
+  lng: number;
+  engagementRadiusKm: number;    // hard kill zone
+  trackingRadiusKm: number;      // detection/tracking zone (larger)
+  interceptProbabilityBase: number;  // 0-1 against nominal target
+  salvoCapacity: number;         // missiles available before reload
+  reloadTicksRequired: number;
+  mobilityScore: number;         // 0-1, how easily repositioned
+  electronicVulnerability: number;  // susceptibility to jamming/SEAD
+  deceptionResistance: number;   // resistance to decoys and feints
+  linkedRadarId: string | null;  // if part of networked IADS
+  deployedAtTick: number;
+  lastAttritionTick: number | null;
+  attritionLevel: number;        // 0-1, degradation from strikes
+  isPlayerVisible: boolean;      // from fogOfWarStore
+  currentRegion: string;         // closest/primary region ID covered
+}
+
+export type CSGPosture =
+  | 'SURGE'           // maximum projection, maximum risk
+  | 'STANDARD'        // normal operations
+  | 'DEFENSIVE'       // reduced reach, hardened posture
+  | 'WITHDRAWN';       // outside A2/AD envelope, minimal projection
+
+export interface CarrierStrikeGroup {
+  id: string;
+  name: string;
+  ownerNationId: string;
+  lat: number;
+  lng: number;
+  aircraftCount: number;
+  aircraftBaseRangeKm: number;
+  tankerCount: number;
+  tankerMultiplier: number;      // 1.0 to 1.8 range extension
+  posture: CSGPosture;
+  fuelStatePercent: number;      // 0-100
+  a2adAttritionRisk: number;     // 0-1, computed from zone coverage
+  effectiveStrikeRadiusKm: number;  // computed: base * tanker * (1 - attritionMod)
+  escortCapacity: number;
+  lastMovedTick: number;
+  isInA2ADZone: boolean;
+  detectionRisk: number;         // 0-1 probability of being detected this tick
+}
+
+export interface RefuelCorridor {
+  id: string;
+  waypointLat: number;
+  waypointLng: number;
+  rangeExtensionKm: number;
+  isContested: boolean;
+  asatRisk: number;
+}
+
+export interface BomberForce {
+  id: string;
+  name: string;
+  ownerNationId: string;
+  baseLocation: { lat: number; lng: number };
+  aircraftType: string;           // e.g. "B-2A", "Tu-160", "H-6K"
+  combatRadiusKm: number;         // unrefueled
+  refuelCorridors: RefuelCorridor[];
+  stealthModifier: number;        // 0-1 (e.g. 0.85 = drops SAM effectiveness by 85%)
+  penetrationProbability: number; // computed against current A2/AD environment
+  currentMission: 'STANDBY' | 'PENETRATION' | 'STRIKE' | 'EGRESS' | null;
+}
+
+export type SatelliteOrbitType =
+  | 'LEO'    // Low Earth Orbit: fast revisit, lower coverage per pass
+  | 'MEO'    // Medium Earth Orbit: GPS, navigation
+  | 'GEO'    // Geostationary: persistent ISR, comms
+  | 'HEO';    // Highly Elliptical Orbit: polar coverage
+
+export type SatelliteFunction =
+  | 'ISR_OPTICAL'
+  | 'ISR_RADAR'
+  | 'SIGINT_COLLECTION'
+  | 'COMMS_RELAY'
+  | 'GPS_PNT'
+  | 'EARLY_WARNING'
+  | 'WEATHER'
+  | 'TARGETING';
+
+export type SatelliteStatus =
+  | 'OPERATIONAL'
+  | 'DEGRADED'
+  | 'JAMMED'
+  | 'SPOOFED'
+  | 'DESTROYED'
+  | 'MANEUVERING';
+
+export interface MilitarySatellite {
+  id: string;
+  name: string;
+  ownerNationId: string;
+  orbitType: SatelliteOrbitType;
+  function: SatelliteFunction;
+  status: SatelliteStatus;
+  coverageArcDegrees: number;     // ground swath coverage per pass
+  revisitTimeHours: number;       // how often it passes over a region
+  resolutionMeters: number | null;  // ISR resolution where applicable
+  gpsContributionScore: number;   // 0-1, contribution to regional GPS accuracy
+  jammingResistance: number;      // 0-1
+  asatVulnerability: number;      // 0-1
+  currentGroundTrackLat: number;  // current ground track center
+  currentGroundTrackLng: number;
+  operationalSince: number;       // tick
+  lastDegradedTick: number | null;
+}
+
+export type GPSDegradationType =
+  | 'JAMMING'          // blocking GPS signal in region
+  | 'SPOOFING'         // feeding false GPS coordinates
+  | 'CONSTELLATION_DEGRADATION'  // ASAT-reduced GPS satellite count
+  | 'SELECTIVE_AVAILABILITY';     // deliberate accuracy reduction
+
+export interface GPSDegradationZone {
+  id: string;
+  degradationType: GPSDegradationType;
+  centerLat: number;
+  centerLng: number;
+  radiusKm: number;
+  severity: number;     // 0-1
+  cepDegradationMultiplier: number;  // 1.0 = no effect, 5.0 = 5x worse CEP
+  affectsNavigation: boolean;
+  affectsPrecisionMunitions: boolean;
+  affectsDroneOps: boolean;
+  affectsComms: boolean;
+  deployedByNationId: string;
+  deployedAtTick: number;
+  expiresAtTick: number | null;
+}
+
+export type ASATMethod =
+  | 'KINETIC_DIRECT_ASCENT'   // ground-launched missile
+  | 'CO_ORBITAL_INTERCEPTOR'  // satellite-based intercept
+  | 'DIRECTED_ENERGY'         // laser or microwave dazzling/blinding
+  | 'CYBER_INTRUSION'         // hack and disable
+  | 'JAMMING_UPLINK'          // ground-based signal jamming
+  | 'SPOOFING_UPLINK';         // command injection
+
+export interface ASATStrike {
+  id: string;
+  initiatingNationId: string;
+  targetSatelliteId: string;
+  method: ASATMethod;
+  launchedAtTick: number;
+  expectedImpactTick: number;
+  successProbability: number;
+  outcome: 'PENDING' | 'SUCCESS' | 'PARTIAL' | 'FAILURE' | 'INTERCEPTED';
+  diplomaticExposureRisk: number;
+  debrisFieldCreated: boolean;
+}
+
+export interface MaritimePatrolAircraft {
+  id: string;
+  ownerNationId: string;
+  baseLocation: { lat: number; lng: number };
+  currentPatrolCenter: { lat: number; lng: number };
+  patrolRadiusKm: number;
+  loiterTimeHours: number;
+  detectionRangeSubmarineKm: number;
+  detectionRangeSurfaceKm: number;
+  isActive: boolean;
+  nextPatrolTick: number;
+}
+
+export interface ComputedA2ADZone {
+  systemId: string;
+  centerLat: number;
+  centerLng: number;
+  engagementRadiusKm: number;
+  trackingRadiusKm: number;
+  interceptProbability: number;
+  category: A2ADSystemCategory;
+  ownerNationId: string;
+  status: A2ADSystemStatus;
+  isOverlapping: boolean;   // true if another zone covers same space
+}
+
+export interface ComputedCoverageArc {
+  sourceId: string;
+  sourceType: 'SATELLITE' | 'RADAR' | 'MPA';  // Maritime Patrol Aircraft
+  centerLat: number;
+  centerLng: number;
+  radiusKm: number;
+  coverageQuality: number;  // 0-1
+  ownerNationId: string;
+  function: SatelliteFunction | 'RADAR' | 'MPA_PATROL';
+}
+
+export interface SEADCampaign {
+  id: string;
+  initiatingNationId: string;
+  targetNationId: string;
+  targetA2ADSystemIds: string[];
+  startTick: number;
+  durationTicks: number;
+  suppressionProbabilityPerTick: number;
+  status: 'ACTIVE' | 'COMPLETED' | 'ABORTED';
+}
+
+
+
 
 
 

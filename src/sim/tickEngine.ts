@@ -42,6 +42,7 @@ import { useHumintStore } from '../store/humintStore';
 import { useDeceptionStore } from '../store/deceptionStore';
 import { useNuclearStore } from '../store/nuclearStore';
 import { useConventionalOpsStore } from '../store/conventionalOpsStore';
+import { useA2ADStore } from '../store/a2adStore';
 
 
 export const TICK_INTERVALS: Record<"day" | "week" | "month", number> = {
@@ -184,6 +185,9 @@ export function executeSimulationStep() {
   
   // Tick conventional operations campaign and logistics system
   useConventionalOpsStore.getState().tickConventionalOps(activeTick);
+
+  // Tick A2/AD Air-Sea-Space simulation system
+  useA2ADStore.getState().tickA2AD(activeTick);
 
   
   Object.keys(world.countries).forEach(id => {
