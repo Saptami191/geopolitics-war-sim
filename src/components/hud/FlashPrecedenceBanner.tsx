@@ -110,7 +110,7 @@ export default function FlashPrecedenceBanner() {
         animate={{ y: 0, opacity: 1 }}
         exit={{ opacity: 0, scale: 0.98 }}
         transition={{ type: 'spring', damping: 20, stiffness: 200 }}
-        className="fixed top-[108px] left-0 w-full z-40 bg-[#000] border-t border-b border-[#ffae00] shadow-[0_10px_30px_rgba(255,174,0,0.2)] font-mono text-sm uppercase overflow-hidden"
+        className="fixed top-[108px] left-0 w-full z-[9500] bg-[#000] border-t border-b border-[#ffae00] shadow-[0_10px_30px_rgba(255,174,0,0.2)] font-mono text-sm uppercase overflow-hidden"
       >
         {/* HAZARD STRIPES */}
         <div className="absolute inset-x-0 top-0 h-1" style={{ backgroundImage: 'repeating-linear-gradient(45deg, #ffae00, #ffae00 10px, #000 10px, #000 20px)' }}></div>

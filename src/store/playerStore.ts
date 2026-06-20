@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { produce } from 'immer';
 import { PlayerState, HUDMode, ScenarioId, BallisticStrike } from '../types';
 import { useWorldStore } from './worldStore';
+import { useUIStore } from './uiStore';
 import { useClockStore } from './clockStore';
 import { useUnitStore } from './unitStore';
 import { useBlackMarketStore } from './blackMarketStore';
@@ -44,7 +45,10 @@ export const usePlayerStore = create<PlayerState & PlayerStoreActions>((set, get
   checkpointState: null,
 
   setHUDMode: (mode) => set({ hudMode: mode }),
-  setActiveTab: (tab) => set({ activeTab: tab }),
+  setActiveTab: (tab) => {
+    set({ activeTab: tab });
+    useUIStore.getState().setActivePanelId(String(tab));
+  },
   setTickSpeed: (speed) => set({ tickSpeed: speed }),
   setTargetCountry: (id) => set({ selectedTargetCountryId: id }),
   setPendingStrike: (strike) => set({ pendingStrike: strike }),

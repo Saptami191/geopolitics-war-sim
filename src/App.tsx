@@ -138,6 +138,7 @@ import { getTickIncrement } from './sim/militaryEngine';
 import { useEconomyStore } from './store/economyStore';
 import { useUIStore } from './store/uiStore';
 import { useEconomicForecastStore } from './store/economicForecastStore';
+import { FullScreenPanel } from './components/shared/FullScreenPanel';
 
 const getTabClassification = (tabId: number): string => {
   switch (tabId) {
@@ -288,16 +289,23 @@ export default function App() {
   const setPersona = useDefconStore((s) => s.setPersona);
   const suspicion = useBlackMarketStore((s) => s.internationalSuspicion);
   
+  const [commsOpen, setCommsOpen] = useState(false);
+  const [showBazaar, setShowBazaar] = useState(false);
+  const unreadCommsCount = useCommsStore((s) => s.unreadCount);
+
+  // Aftermath states
+  const [aftermathCountdown, setAftermathCountdown] = useState<number | null>(null);
+  const [showChoices, setShowChoices] = useState(false);
+  const [spectatingAftermath, setSpectatingAftermath] = useState(false);
+
+  const uiStore = useUIStore();
+
   const personaDef = PERSONAS[activePersona];
   const availablePanels = React.useMemo(() => getAvailablePanels(currentDefconLevel, personaDef.authorityTier), [currentDefconLevel, personaDef.authorityTier]);
   const isInputBlocked = useCinematicsStore((s) => s.isInputBlocked);
 
   const globalEventLog = useWorldStore((s) => s.globalEventLog);
   const prevLogLengthRef = React.useRef(globalEventLog.length);
-
-  const [mirrorIntelOpen, setMirrorIntelOpen] = React.useState(false);
-  const [dossierOpen, setDossierOpen] = React.useState(false);
-  const [sovereignOpen, setSovereignOpen] = React.useState(false);
   
   const mirrorWarningLevel = useMirrorStore((s) => (s as any).warningLevel || 'LOW');
 
@@ -401,24 +409,6 @@ export default function App() {
   const [activeLayer, setActiveLayer] = useState<MapLayer>('POLITICAL');
   const [viewMode, setViewMode] = useState<'MAP' | 'GRAPH'>('MAP');
 
-  // Floating modules
-  const [showBazaar, setShowBazaar] = useState(false);
-  const [commsOpen, setCommsOpen] = useState(false);
-  const [covertOpsOpen, setCovertOpsOpen] = useState(false);
-  const [covertFinanceOpen, setCovertFinanceOpen] = useState(false);
-  const [oversightOpen, setOversightOpen] = useState(false);
-  const [sigintOpen, setSigintOpen] = useState(false);
-  const [targetedOpsOpen, setTargetedOpsOpen] = useState(false);
-  const [humintOpen, setHumintOpen] = useState(false);
-  const [deceptionOpen, setDeceptionOpen] = useState(false);
-  const [counterProliferationOpen, setCounterProliferationOpen] = useState(false);
-  const unreadCommsCount = useCommsStore((s) => s.unreadCount);
-
-  // Aftermath states
-  const [aftermathCountdown, setAftermathCountdown] = useState<number | null>(null);
-  const [showChoices, setShowChoices] = useState(false);
-  const [spectatingAftermath, setSpectatingAftermath] = useState(false);
-  
   const playerExposureScore = useRegimePressureStore(s => s.playerExposureScore);
 
   useEffect(() => {
@@ -1215,17 +1205,6 @@ export default function App() {
       {showBazaar && <BlackMarketBazaar onClose={() => setShowBazaar(false)} />}
       <CommsSyncController />
       <CommsPanel isOpen={commsOpen} onClose={() => setCommsOpen(false)} />
-      <MirrorIntelPanel isOpen={mirrorIntelOpen} onClose={() => setMirrorIntelOpen(false)} />
-      <LeaderDossierPanel isOpen={dossierOpen} onClose={() => setDossierOpen(false)} />
-      <NationSovereignPanel isOpen={sovereignOpen} onClose={() => setSovereignOpen(false)} />
-      {covertOpsOpen && <RegimePressurePanel onClose={() => setCovertOpsOpen(false)} />}
-      {covertFinanceOpen && <CovertFinancePanel onClose={() => setCovertFinanceOpen(false)} />}
-      {oversightOpen && <OversightPanel onClose={() => setOversightOpen(false)} />}
-      {sigintOpen && <SigintPanel onClose={() => setSigintOpen(false)} />}
-      {targetedOpsOpen && <TargetedOperationsPanel onClose={() => setTargetedOpsOpen(false)} />}
-      {humintOpen && <HumintPenetrationSuite onClose={() => setHumintOpen(false)} />}
-      {deceptionOpen && <DeceptionOperationsSuite onClose={() => setDeceptionOpen(false)} />}
-      {counterProliferationOpen && <CounterProliferationSuite onClose={() => setCounterProliferationOpen(false)} />}
       <FalseAlarmDecisionPanel />
       <CinematicsManager />
 
@@ -1263,8 +1242,8 @@ export default function App() {
               </div>
             </span>
             <div className="ml-2 flex items-center gap-2">
-              <PoliticalCapitalBar onClick={() => setOversightOpen(!oversightOpen)} />
-              <SigintHUD onClick={() => setSigintOpen(!sigintOpen)} />
+              <PoliticalCapitalBar onClick={() => uiStore.setActivePanelId('oversight')} />
+              <SigintHUD onClick={() => uiStore.setActivePanelId('sigint')} />
               <button
                 onClick={() => {
                   audio.sfxKeyClick();
@@ -1326,7 +1305,7 @@ export default function App() {
           <div className="h-4 w-[1px] bg-[#1a3a1a]" />
 
           <button
-            onClick={() => { audio.sfxKeyClick(); setMirrorIntelOpen(true); }}
+            onClick={() => { audio.sfxKeyClick(); uiStore.setActivePanelId('mirrorIntel'); }}
             className={`px-2.5 py-1 border text-[9px] uppercase font-bold cursor-pointer transition-all flex items-center gap-1.5 ${
               mirrorWarningLevel !== 'LOW'
                 ? 'border-amber-500 text-amber-500 bg-amber-950/25'
@@ -1341,14 +1320,14 @@ export default function App() {
           </button>
 
           <button
-            onClick={() => { audio.sfxKeyClick(); setDossierOpen(true); }}
+            onClick={() => { audio.sfxKeyClick(); uiStore.setActivePanelId('dossier'); }}
             className="px-2.5 py-1 border border-indigo-800 text-indigo-400 bg-indigo-950/10 hover:bg-indigo-900/40 text-[9px] uppercase font-bold cursor-pointer transition-all"
           >
             WORLD LEADERS
           </button>
 
           <button
-            onClick={() => { audio.sfxKeyClick(); setSovereignOpen(true); }}
+            onClick={() => { audio.sfxKeyClick(); uiStore.setActivePanelId('sovereign'); }}
             className="px-2.5 py-1 border border-emerald-800 text-emerald-400 bg-emerald-950/10 hover:bg-emerald-900/40 text-[9px] uppercase font-bold cursor-pointer transition-all"
           >
             SOVEREIGN STATE
@@ -1357,16 +1336,16 @@ export default function App() {
           <div className="h-4 w-[1px] bg-[#1a3a1a]" />
 
           <button
-            onClick={() => { audio.sfxKeyClick(); setCovertOpsOpen(!covertOpsOpen); }}
-            className={`px-2.5 py-1 border border-red-800 text-red-500 hover:bg-red-950/30 text-[9px] uppercase font-bold cursor-pointer transition-all flex items-center gap-1.5 ${covertOpsOpen ? 'bg-red-950' : 'bg-red-950/10'}`}
+            onClick={() => { audio.sfxKeyClick(); uiStore.setActivePanelId('covertOps'); }}
+            className={`px-2.5 py-1 border border-red-800 text-red-500 hover:bg-red-950/30 text-[9px] uppercase font-bold cursor-pointer transition-all flex items-center gap-1.5 ${uiStore.activePanelId === 'covertOps' ? 'bg-red-950' : 'bg-red-950/10'}`}
           >
              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
              COVERT OPS
           </button>
 
           <button
-            onClick={() => { audio.sfxKeyClick(); setCovertFinanceOpen(!covertFinanceOpen); }}
-            className={`px-2.5 py-1 border border-purple-800 text-purple-400 hover:bg-purple-950/30 text-[9px] uppercase font-bold cursor-pointer transition-all flex items-center gap-1.5 ${covertFinanceOpen ? 'bg-purple-950/50' : 'bg-purple-950/10'}`}
+            onClick={() => { audio.sfxKeyClick(); uiStore.setActivePanelId('covertFinance'); }}
+            className={`px-2.5 py-1 border border-purple-800 text-purple-400 hover:bg-purple-950/30 text-[9px] uppercase font-bold cursor-pointer transition-all flex items-center gap-1.5 ${uiStore.activePanelId === 'covertFinance' ? 'bg-purple-950/50' : 'bg-purple-950/10'}`}
           >
              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
              COVERT FIN
@@ -1374,8 +1353,8 @@ export default function App() {
 
           <button
             id="btn-targeted-ops-toggle"
-            onClick={() => { audio.sfxKeyClick(); setTargetedOpsOpen(!targetedOpsOpen); }}
-            className={`px-2.5 py-1 border border-cyan-800 text-cyan-400 hover:bg-cyan-950/30 text-[9px] uppercase font-bold cursor-pointer transition-all flex items-center gap-1.5 ${targetedOpsOpen ? 'bg-cyan-950/50' : 'bg-[#011b1b]/10'}`}
+            onClick={() => { audio.sfxKeyClick(); uiStore.setActivePanelId('targetedOps'); }}
+            className={`px-2.5 py-1 border border-cyan-800 text-cyan-400 hover:bg-cyan-950/30 text-[9px] uppercase font-bold cursor-pointer transition-all flex items-center gap-1.5 ${uiStore.activePanelId === 'targetedOps' ? 'bg-cyan-950/50' : 'bg-[#011b1b]/10'}`}
           >
              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
              TARGETED OPS
@@ -1383,8 +1362,8 @@ export default function App() {
 
           <button
             id="btn-humint-toggle"
-            onClick={() => { audio.sfxKeyClick(); setHumintOpen(!humintOpen); }}
-            className={`px-2.5 py-1 border border-[#00ffcc]/60 text-[#00ffcc] hover:bg-emerald-950/30 text-[9px] uppercase font-bold cursor-pointer transition-all flex items-center gap-1.5 ${humintOpen ? 'bg-[#003d33]/50' : 'bg-[#002f23]/10'}`}
+            onClick={() => { audio.sfxKeyClick(); uiStore.setActivePanelId('humint'); }}
+            className={`px-2.5 py-1 border border-[#00ffcc]/60 text-[#00ffcc] hover:bg-emerald-950/30 text-[9px] uppercase font-bold cursor-pointer transition-all flex items-center gap-1.5 ${uiStore.activePanelId === 'humint' ? 'bg-[#003d33]/50' : 'bg-[#002f23]/10'}`}
           >
              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
              HUMINT OPS
@@ -1392,8 +1371,8 @@ export default function App() {
 
           <button
             id="btn-deception-toggle"
-            onClick={() => { audio.sfxKeyClick(); setDeceptionOpen(!deceptionOpen); }}
-            className={`px-2.5 py-1 border border-sky-600/60 text-sky-400 hover:bg-sky-950/30 text-[9px] uppercase font-bold cursor-pointer transition-all flex items-center gap-1.5 ${deceptionOpen ? 'bg-[#002f5a]/50' : 'bg-sky-950/10'}`}
+            onClick={() => { audio.sfxKeyClick(); uiStore.setActivePanelId('deception'); }}
+            className={`px-2.5 py-1 border border-sky-600/60 text-sky-400 hover:bg-sky-950/30 text-[9px] uppercase font-bold cursor-pointer transition-all flex items-center gap-1.5 ${uiStore.activePanelId === 'deception' ? 'bg-[#002f5a]/50' : 'bg-sky-950/10'}`}
           >
              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
              DECEPTION OPS
@@ -1401,16 +1380,16 @@ export default function App() {
 
           <button
             id="btn-proliferation-toggle"
-            onClick={() => { audio.sfxKeyClick(); setCounterProliferationOpen(!counterProliferationOpen); }}
-            className={`px-2.5 py-1 border border-red-800 text-red-500 hover:bg-red-950/30 text-[9px] uppercase font-bold cursor-pointer transition-all flex items-center gap-1.5 ${counterProliferationOpen ? 'bg-red-950/50' : 'bg-red-950/10'}`}
+            onClick={() => { audio.sfxKeyClick(); uiStore.setActivePanelId('counterProliferation'); }}
+            className={`px-2.5 py-1 border border-red-800 text-red-500 hover:bg-red-950/30 text-[9px] uppercase font-bold cursor-pointer transition-all flex items-center gap-1.5 ${uiStore.activePanelId === 'counterProliferation' ? 'bg-red-950/50' : 'bg-red-950/10'}`}
           >
              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
              COUNTER PROLIF
           </button>
 
           <button
-            onClick={() => { audio.sfxKeyClick(); setOversightOpen(!oversightOpen); }}
-            className={`px-2.5 py-1 border border-orange-800 text-orange-400 hover:bg-orange-950/30 text-[9px] uppercase font-bold cursor-pointer transition-all flex items-center gap-1.5 ${oversightOpen ? 'bg-orange-950/50' : 'bg-orange-950/10'}`}
+            onClick={() => { audio.sfxKeyClick(); uiStore.setActivePanelId('oversight'); }}
+            className={`px-2.5 py-1 border border-orange-800 text-orange-400 hover:bg-orange-950/30 text-[9px] uppercase font-bold cursor-pointer transition-all flex items-center gap-1.5 ${uiStore.activePanelId === 'oversight' ? 'bg-orange-950/50' : 'bg-orange-950/10'}`}
           >
              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/></svg>
              OVERSIGHT
@@ -1617,10 +1596,6 @@ export default function App() {
 
               {/* Tab content */}
               <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin flex flex-col pb-2">
-                <ActivePanelWrapper
-                  activeTab={playerState.activeTab}
-                  getTabClassification={getTabClassification}
-                />
                 
                 {/* Bottom Reactive columns: Newspaper and UN Council Chambers side-by-side */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-auto shrink-0 mb-2">
@@ -1655,6 +1630,27 @@ export default function App() {
       {expandedWorkstation === 'HAARP' && (
         <HaarpWorkstation onClose={() => setExpandedWorkstation(null)} />
       )}
+
+      {/* Full Screen Panel Content Wrapper */}
+      <FullScreenPanel>
+        {uiStore.activePanelId && !isNaN(parseInt(uiStore.activePanelId, 10)) && (
+          <ActivePanelWrapper 
+            activeTab={parseInt(uiStore.activePanelId, 10)} 
+            getTabClassification={getTabClassification}
+          />
+        )}
+        {uiStore.activePanelId === 'covertOps' && <RegimePressurePanel onClose={() => uiStore.closeActivePanel()} />}
+        {uiStore.activePanelId === 'covertFinance' && <CovertFinancePanel onClose={() => uiStore.closeActivePanel()} />}
+        {uiStore.activePanelId === 'oversight' && <OversightPanel onClose={() => uiStore.closeActivePanel()} />}
+        {uiStore.activePanelId === 'sigint' && <SigintPanel onClose={() => uiStore.closeActivePanel()} />}
+        {uiStore.activePanelId === 'targetedOps' && <TargetedOperationsPanel onClose={() => uiStore.closeActivePanel()} />}
+        {uiStore.activePanelId === 'humint' && <HumintPenetrationSuite onClose={() => uiStore.closeActivePanel()} />}
+        {uiStore.activePanelId === 'deception' && <DeceptionOperationsSuite onClose={() => uiStore.closeActivePanel()} />}
+        {uiStore.activePanelId === 'counterProliferation' && <CounterProliferationSuite onClose={() => uiStore.closeActivePanel()} />}
+        {uiStore.activePanelId === 'mirrorIntel' && <MirrorIntelPanel isOpen={true} onClose={() => uiStore.closeActivePanel()} />}
+        {uiStore.activePanelId === 'dossier' && <LeaderDossierPanel isOpen={true} onClose={() => uiStore.closeActivePanel()} />}
+        {uiStore.activePanelId === 'sovereign' && <NationSovereignPanel isOpen={true} onClose={() => uiStore.closeActivePanel()} />}
+      </FullScreenPanel>
 
       {/* Flashing nuclear aftermath warning overlay (bottom status bar) */}
       {playerState.aftermathActive && aftermathCountdown !== null && aftermathCountdown > 0 && (

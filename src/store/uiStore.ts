@@ -27,6 +27,7 @@ interface UIState {
   builderSelectedIds: string[];
   builderMapMode: 'ALLIANCE' | 'IDEOLOGY' | 'NUCLEAR' | 'MILITARY' | 'GDP' | 'OPINION';
   multiSelectMode: boolean;
+  activePanelId: string | null;
 }
 
 interface UIStoreActions {
@@ -47,6 +48,8 @@ interface UIStoreActions {
   clearBuilderSelectedIds: () => void;
   setBuilderMapMode: (mode: 'ALLIANCE' | 'IDEOLOGY' | 'NUCLEAR' | 'MILITARY' | 'GDP' | 'OPINION') => void;
   setMultiSelectMode: (enabled: boolean) => void;
+  setActivePanelId: (id: string | null) => void;
+  closeActivePanel: () => void;
 }
 
 export const useUIStore = create<UIState & UIStoreActions>((set, get) => ({
@@ -58,6 +61,7 @@ export const useUIStore = create<UIState & UIStoreActions>((set, get) => ({
   builderSelectedIds: [],
   builderMapMode: 'ALLIANCE',
   multiSelectMode: false,
+  activePanelId: null,
   terminalLines: [
     { id: 'start_1', type: 'SYSTEM', text: 'Sovereign Command Simulator CLI v2.0-Alpha loaded.' },
     { id: 'start_2', type: 'INFO', text: 'Enter "/help" to list all available system operations.' }
@@ -109,6 +113,8 @@ export const useUIStore = create<UIState & UIStoreActions>((set, get) => ({
   clearBuilderSelectedIds: () => set({ builderSelectedIds: [] }),
   setBuilderMapMode: (mode) => set({ builderMapMode: mode }),
   setMultiSelectMode: (enabled) => set({ multiSelectMode: enabled }),
+  setActivePanelId: (id) => set({ activePanelId: id }),
+  closeActivePanel: () => set({ activePanelId: null }),
 
   pushTerminalLine: (text, type = 'INFO') => set(produce((draft) => {
     draft.terminalLines.push({
