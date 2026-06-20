@@ -7432,3 +7432,60 @@ export interface InstitutionalActionPreview {
   reprisalsRiskRating: number; // 0-100
 }
 
+// ─── UNIT 8200 SIGINT PLATFORM — Types ───────────────────────────────────────
+
+export type SigintChannel =
+  | 'DIPLOMATIC'   // embassy comms, diplomatic cables
+  | 'TELECOM'      // phone and internet intercepts
+  | 'MILITARY'     // military frequency intercepts
+  | 'CYBER'        // network traffic and metadata
+  | 'COMMERCIAL'   // trade and shipping signals
+  | 'IMAGERY';     // satellite and aerial signatures
+
+export type SigintConfidence = 'RUMINT' | 'OSINT' | 'SIGINT' | 'CONFIRMED';
+
+export type SigintStatus = 'HIDDEN' | 'INFERRED' | 'CONFIRMED';
+
+export type SigintCategory =
+  | 'MILITARY_MOVEMENT'
+  | 'DIPLOMATIC_COMM'
+  | 'ECONOMIC_ANOMALY'
+  | 'WMD_INDICATOR'
+  | 'LEADERSHIP_SIGNAL';
+
+export interface SigintCollectionAsset {
+  id: string;
+  channel: SigintChannel;
+  targetNationId: string;
+  coverageLevel: number;      // 0–100, affects detection probability
+  dailyCost: number;          // deducted from budget every tick
+  isActive: boolean;
+  deployedAtTick: number;
+}
+
+export interface SigintSignal {
+  id: string;
+  sourceNationId: string;
+  channel: SigintChannel;
+  category: SigintCategory;
+  rawContent: string;         // flavour text describing the intercept
+  confidence: SigintConfidence;
+  status: SigintStatus;
+  detectedAtTick: number;
+  expiresAtTick: number;      // signals expire after 30 ticks
+  patternOfLifeFlag: boolean; // true if part of a recurring pattern baseline
+  anomalyFlag: boolean;       // true if deviates >30% from nation baseline
+  linkedSignalIds: string[];  // IDs of corroborating signals
+}
+
+export interface SigintBudget {
+  totalAllocated: number;
+  spent: number;
+  remaining: number;
+}
+
+export interface SigintPatternBaseline {
+  nationId: string;
+  baselineScore: number;      // rolling average activity score
+  lastUpdatedTick: number;
+}

@@ -145,6 +145,9 @@ export function executeSimulationStep() {
     // 7. Process propaganda, mass-media metrics, and state approval ratings
     processSentiment(draft);
 
+    // Unit 8200 SIGINT Platform
+    useSigintStore.getState().u8200ProcessTick(draft.currentTick);
+
     // 8. Process non-player autonomous decisions & hostile retorts
     processAllAI(draft, player.countryId);
 
