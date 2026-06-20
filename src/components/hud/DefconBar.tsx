@@ -79,7 +79,7 @@ export default function DefconBar() {
   };
 
   return (
-    <div className={`fixed top-0 left-0 w-full z-50 transition-colors duration-[1500ms] ${defconLevel === 1 ? 'bg-red-950/30 border-b border-red-600/50' : 'bg-black/85 border-b border-[#222]'} backdrop-blur-md`}>
+    <div className={`relative shrink-0 w-full z-50 transition-colors duration-[1500ms] ${defconLevel === 1 ? 'bg-red-950/30 border-b border-red-600/50' : 'bg-black/85 border-b border-[#222]'} backdrop-blur-md`}>
       {/* CRT SCANLINE */}
       <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{ background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, #000 2px, #000 4px)' }}></div>
       

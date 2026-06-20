@@ -1229,11 +1229,6 @@ export default function App() {
       <FalseAlarmDecisionPanel />
       <CinematicsManager />
 
-      <div className="fixed top-[52px] right-2 z-40 pointer-events-none flex flex-col items-end gap-2">
-        <EWStatusWidget />
-        <DefenseIndustryWidget />
-      </div>
-
       {/* Top command status HUD bar */}
       <DefconBar />
       <FlashPrecedenceBanner />
@@ -1520,6 +1515,11 @@ export default function App() {
           <div className="flex-1 flex overflow-hidden relative">
             {/* Left element: map / graph / timeline active surface */}
             <div data-testid="onboarding-surface" className="flex-1 flex flex-col overflow-hidden h-full relative">
+              <div className="absolute top-2 right-2 z-40 pointer-events-none flex flex-col items-end gap-2">
+                <EWStatusWidget />
+                <DefenseIndustryWidget />
+              </div>
+
               {/* Optional dynamic Layer controller */}
               {(analysisMode === 'MAP' || analysisMode === 'SPLIT') && !isMapFullyHidden && (
                 <MapControls
