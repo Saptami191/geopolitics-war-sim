@@ -4453,6 +4453,8 @@ export interface ArachneIntelItem {
   icon?: string;
   hasFollowUp?: boolean;
   storyId?: string; // clustered storyline identifier
+  isQueryReport?: boolean;
+  queryReportId?: string;
 }
 
 export interface ArachneFilterState {
@@ -5388,6 +5390,8 @@ export interface FinancialIncident {
   title: string;
   summary: string;
   severity: 'INFO' | 'WARNING' | 'CRITICAL';
+  dismissed?: boolean;
+  arachneCorroborated?: boolean;
 }
 
 
@@ -7491,6 +7495,11 @@ export interface SigintSignal {
   patternOfLifeFlag: boolean; // true if part of a recurring pattern baseline
   anomalyFlag: boolean;       // true if deviates >30% from nation baseline
   linkedSignalIds: string[];  // IDs of corroborating signals
+  reviewed?: boolean;
+  deceptionFlagged?: boolean;
+  tasked?: boolean;
+  taskedTo?: string[];
+  analystElevated?: boolean;
 }
 
 export interface SigintBudget {
@@ -7586,6 +7595,10 @@ export interface ArachneFeed {
   nodesDiscoveredTotal: number;
   lastYieldTick: number;
   deployedAtTick: number;
+  credibility?: number;
+  activeStatus?: 'ACTIVE' | 'DORMANT' | 'BURNED';
+  lastActiveTick?: number | null;
+  name?: string;
 }
 
 export interface ArachneIntelFusion {
@@ -7651,6 +7664,8 @@ export interface FinintFlag {
   narrativeSummary: string;            // analyst-style description
   linkedArachneNodeIds: string[];      // entities involved from network graph
   sanctionEvasionRoute: string[];      // chain of intermediary entity IDs
+  dismissed?: boolean;
+  arachneCorroborated?: boolean;
 }
 
 export interface FinintShellCompanyProfile {
@@ -9144,3 +9159,50 @@ export interface Mode_ToneModeModifiers {
   historicalReferencesActive: boolean;
   cinematicFrequency: number;
 }
+
+export interface ArachneQuery {
+  id: string;
+  targetNationId: string;
+  queryType: 'MILITARY_ASSESSMENT' | 'ECONOMIC_ASSESSMENT' | 'LEADERSHIP_PROFILE' | 'WMD_ASSESSMENT' | 'FULL_SPECTRUM' | 'BENEFICIAL_OWNER_TRACE';
+  priority: 'ROUTINE' | 'PRIORITY' | 'URGENT';
+  submittedTick: number;
+  completionTick: number;
+  status: 'PENDING' | 'COMPLETE';
+  result: ArachneQueryReport | null;
+}
+
+export interface ArachneQueryReport {
+  execSummary: string;
+  keyIndicators: string[];
+  threatLevel: 'MONITORING' | 'ELEVATED' | 'HIGH' | 'IMMINENT';
+  recommendedActions: string[];
+  generatedAtTick: number;
+}
+
+export interface ArachneEvidence {
+  id: string;
+  label: string;
+  type: 'military_posture' | 'sanctions_pressure' | 'regime_instability' | 'sigint_wmd' | 'economic_stress';
+  weight: number;
+  isMet?: boolean;
+}
+
+export interface ArachneScenario {
+  id: string;
+  title: string;
+  probability: number;
+  priorProbability: number;
+  evidenceList: ArachneEvidence[];
+  evidenceWeights?: Record<string, number>;
+}
+
+export interface ArachneSource {
+  id: string;
+  name: string;
+  type: ArachneSourceType;
+  credibility: number;                 // 0–100
+  region: string;                      // country code
+  lastActiveTick: number | null;
+  activeStatus: 'ACTIVE' | 'DORMANT' | 'BURNED';
+}
+

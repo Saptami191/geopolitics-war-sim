@@ -3,7 +3,8 @@ import { produce } from 'immer';
 import { 
   ArachneIntelItem, ArachneFilterState, ArachneTheme, ArachneSourceClass, 
   ArachneUrgency, ArachneConfidence, ArachneFreshness, ArachnePriority, ArachneBriefGroup,
-  ArachneFeed, ArachneNode, ArachneLink, ArachneIntelFusion, ArachneExposureLevel, ArachneNodeType, ArachneSourceType
+  ArachneFeed, ArachneNode, ArachneLink, ArachneIntelFusion, ArachneExposureLevel, ArachneNodeType, ArachneSourceType,
+  ArachneQuery, ArachneQueryReport, ArachneScenario, ArachneEvidence, ArachneSource
 } from '../types';
 import { ScenarioId, WorldState, CountryState, WorldEvent } from '../types';
 import { SCENARIO_SEEDS, GLOBAL_BASELINES, generateDynamicWhyItMatters } from '../data/arachneSeeded';
@@ -13,6 +14,7 @@ import { useSigintStore as sigintStore } from './sigintStore';
 import { useFinintStore as finintStore } from './finintStore';
 import { useDefconStore as defconStore } from './defconStore';
 import { useGothamStore as gothamStore } from './gothamStore';
+import { useSanctionsStore } from './sanctionsStore';
 
 function arachne_generateNodeLabel(
   type: ArachneNodeType,
@@ -90,6 +92,9 @@ interface ArachneState {
   arachne_totalLinksDiscovered: number;
   arachne_burnedNodes: string[];
   arachne_activeTab: 'MAP' | 'FEEDS' | 'FUSION' | 'FININT' | 'SHELLS';
+  
+  arachneActiveQueries: ArachneQuery[];
+  arachneScenarios: ArachneScenario[];
 }
 
 interface ArachneActions {
@@ -116,6 +121,12 @@ interface ArachneActions {
   arachne_getMappedNodes: () => ArachneNode[];
   arachne_getActionableFusions: () => ArachneIntelFusion[];
   arachne_getLinksForNode: (nodeId: string) => ArachneLink[];
+
+  arachne_submitQuery: (query: Omit<ArachneQuery, 'id' | 'submittedTick' | 'completionTick' | 'status' | 'result'>, currentTick: number) => void;
+  arachne_assessScenarioEvidence: (scenarioId: string, currentTick: number) => void;
+  arachne_overrideScenarioPrior: (scenarioId: string, delta: number) => void;
+  arachne_setSourceStatus: (feedId: string, status: 'ACTIVE' | 'DORMANT' | 'BURNED') => void;
+  arachne_adjustSourceCredibility: (feedId: string, delta: number) => void;
 }
 
 const initialFilters: ArachneFilterState = {
@@ -147,6 +158,43 @@ export const useArachneStore = create<ArachneState & ArachneActions>((set, get) 
   arachne_totalLinksDiscovered: 0,
   arachne_burnedNodes: [],
   arachne_activeTab: 'MAP',
+  
+  arachneActiveQueries: [],
+  arachneScenarios: [
+    {
+      id: 'scen_wmd',
+      title: 'WMD Proliferation Escalation',
+      probability: 0.15,
+      priorProbability: 0.15,
+      evidenceList: [
+        { id: 'ev_wmd_1', label: 'WMD / Tactical nuclear telemetry intercept (SIGINT)', type: 'sigint_wmd', weight: 4.5, isMet: false },
+        { id: 'ev_wmd_2', label: 'Escalated Sanctions Regime (Severity Tier 3+)', type: 'sanctions_pressure', weight: 1.8, isMet: false },
+        { id: 'ev_wmd_3', label: 'Regime vulnerability index exceeds threshold 60', type: 'regime_instability', weight: 1.5, isMet: false }
+      ]
+    },
+    {
+      id: 'scen_mil',
+      title: 'Forward Military Aggression',
+      probability: 0.25,
+      priorProbability: 0.25,
+      evidenceList: [
+        { id: 'ev_mil_1', label: 'High Combat Readiness (Mobilization posture >75%)', type: 'military_posture', weight: 6.0, isMet: false },
+        { id: 'ev_mil_2', label: 'Analytical economic shock (GDP drop >5%)', type: 'economic_stress', weight: 2.0, isMet: false },
+        { id: 'ev_mil_3', label: 'Escalated Sanctions Regime (Severity Tier 3+)', type: 'sanctions_pressure', weight: 1.2, isMet: false }
+      ]
+    },
+    {
+      id: 'scen_econ',
+      title: 'Sovereign Debt & Economic Collapse',
+      probability: 0.10,
+      priorProbability: 0.10,
+      evidenceList: [
+        { id: 'ev_econ_1', label: 'Deep financial distress (GDP contraction >5%)', type: 'economic_stress', weight: 5.0, isMet: false },
+        { id: 'ev_econ_2', label: 'Escalated Sanctions Regime (Severity Tier 3+)', type: 'sanctions_pressure', weight: 3.5, isMet: false },
+        { id: 'ev_econ_3', label: 'Social unrest vulnerability index exceeds threshold 50', type: 'regime_instability', weight: 1.5, isMet: false }
+      ]
+    }
+  ],
   
   arachne_setActiveTab: (tab) => set({ arachne_activeTab: tab }),
 
@@ -519,16 +567,148 @@ export const useArachneStore = create<ArachneState & ArachneActions>((set, get) 
     }
   })),
 
+  arachne_submitQuery: (query, currentTick) => set(produce((draft: ArachneState) => {
+    let delay = 5;
+    let cost = 20;
+    if (query.priority === 'PRIORITY') {
+      delay = 3;
+      cost = 50;
+    } else if (query.priority === 'URGENT') {
+      delay = 1;
+      cost = 100;
+    }
+    if (query.queryType === 'BENEFICIAL_OWNER_TRACE') {
+      delay = 3;
+      cost = 50;
+    }
+
+    if (draft.arachne_budget.remaining < cost) {
+      return;
+    }
+
+    draft.arachne_budget.spent += cost;
+    draft.arachne_budget.remaining = Math.max(0, draft.arachne_budget.totalAllocated - draft.arachne_budget.spent);
+
+    draft.arachneActiveQueries.push({
+      ...query,
+      id: `arc_query_${currentTick}_${Math.random().toString(36).slice(2,7)}`,
+      submittedTick: currentTick,
+      completionTick: currentTick + delay,
+      status: 'PENDING',
+      result: null
+    });
+  })),
+
+  arachne_assessScenarioEvidence: (scenarioId, currentTick) => set(produce((draft: ArachneState) => {
+    const scenarioIdx = draft.arachneScenarios.findIndex(s => s.id === scenarioId);
+    if (scenarioIdx === -1) return;
+
+    const scenario = draft.arachneScenarios[scenarioIdx];
+    const targetNationId = usePlayerStore.getState().selectedTargetCountryId || 'CN';
+    const worldState = useWorldStore.getState();
+    const sigintState = sigintStore.getState() as any;
+    const sanctionsState = useSanctionsStore.getState() as any;
+
+    let pSuccessGivenState = 1.0; 
+    let pFailureGivenState = 1.0; 
+
+    scenario.evidenceList.forEach(evidence => {
+      let conditionMet = false;
+      const country = worldState.countries[targetNationId];
+
+      if (evidence.type === 'sigint_wmd') {
+        const u8200Signals = sigintState.u8200Signals || [];
+        conditionMet = u8200Signals.some((s: any) => s.category === 'WMD_INDICATOR' && s.status === 'CONFIRMED' && s.sourceNationId === targetNationId);
+      } else if (evidence.type === 'sanctions_pressure') {
+        const campaigns = sanctionsState?.campaigns ? Object.values(sanctionsState.campaigns) : [];
+        conditionMet = campaigns.some((c: any) => c.targetCountryIds?.includes(targetNationId) && (c.campaignTier === 'TIER_3_SEVERE' || c.campaignTier === 'TIER_4_TOTAL_EXCLUSION'));
+      } else if (evidence.type === 'regime_instability') {
+        conditionMet = country && country.political ? (country.political.stabilityIndex < 40 || country.political.popularUnrest > 60) : false;
+      } else if (evidence.type === 'military_posture') {
+        conditionMet = country && country.arsenal ? (country.arsenal.readinessLevel > 70) : false;
+      } else if (evidence.type === 'economic_stress') {
+        if (country?.economic) {
+          const gdpGrowth = country.economic.gdpGrowthRate;
+          conditionMet = gdpGrowth < -0.03 || gdpGrowth < -3;
+        }
+      }
+
+      evidence.isMet = conditionMet;
+
+      if (conditionMet) {
+        pSuccessGivenState *= evidence.weight;
+        pFailureGivenState *= 1.2;
+      } else {
+        pSuccessGivenState *= 0.5;
+        pFailureGivenState *= 1.0;
+      }
+    });
+
+    const prior = scenario.priorProbability;
+    const numerator = pSuccessGivenState * prior;
+    const denominator = numerator + (pFailureGivenState * (1.0 - prior));
+
+    let finalProbability = prior;
+    if (denominator > 0) {
+      finalProbability = numerator / denominator;
+    }
+
+    finalProbability = Math.max(0.05, Math.min(0.95, finalProbability));
+    scenario.probability = finalProbability;
+
+    if (finalProbability >= 0.90) {
+      const alertedText = `BAYESIAN ESCALATION DIRECTIVE: ${scenario.title} threat level has spiked above 90% in target ${targetNationId}! Assessment: IMMINENT.`;
+      const worldStore = useWorldStore.getState();
+      const alreadyAlerted = worldStore.globalEventLog?.some(e => e.text.includes(scenario.title) && e.text.includes('Spiked above 90%'));
+      if (!alreadyAlerted) {
+        worldStore.addGlobalEvent(alertedText, 'CRITICAL');
+      }
+    }
+  })),
+
+  arachne_overrideScenarioPrior: (scenarioId, delta) => set(produce((draft: ArachneState) => {
+    const scenario = draft.arachneScenarios.find(s => s.id === scenarioId);
+    if (scenario) {
+      scenario.priorProbability = Math.max(0.05, Math.min(0.95, scenario.priorProbability + delta));
+      draft.arachneScenarios = [...draft.arachneScenarios];
+    }
+  })),
+
+  arachne_setSourceStatus: (feedId, status) => set(produce((draft: ArachneState) => {
+    const feed = draft.arachne_feeds.find(f => f.id === feedId);
+    if (feed) {
+      feed.activeStatus = status;
+      if (status === 'ACTIVE') feed.isActive = true;
+      else feed.isActive = false;
+    }
+  })),
+
+  arachne_adjustSourceCredibility: (feedId, delta) => set(produce((draft: ArachneState) => {
+    const feed = draft.arachne_feeds.find(f => f.id === feedId);
+    if (feed) {
+      const currentCred = feed.credibility !== undefined ? feed.credibility : feed.coverageDepth;
+      const nextCred = Math.max(0, Math.min(100, currentCred + delta));
+      feed.credibility = nextCred;
+      feed.coverageDepth = nextCred;
+      if (nextCred < 20) {
+        feed.activeStatus = 'BURNED';
+        feed.isActive = false;
+      } else if (feed.activeStatus === 'BURNED' && nextCred >= 20) {
+        feed.activeStatus = 'ACTIVE';
+        feed.isActive = true;
+      }
+    }
+  })),
+
   arachne_processTick: (currentTick: number) => {
     const state = get();
     if (state.arachne_lastProcessedTick === currentTick) return;
 
-    const sigintState = sigintStore.getState();
+    const sigintState = sigintStore.getState() as any;
     const confirmedSignals = sigintState.u8200GetConfirmedSignals ? sigintState.u8200GetConfirmedSignals() : [];
     
-    // finintStore might not be fully implemented yet, but we will mock its shape
     const finintState = finintStore.getState() as any;
-    const criticalFlags = (finintState.finint_flags || []).filter((f: any) => f.severity === 'HIGH' || f.severity === 'CRITICAL');
+    const criticalFlags = (finintState?.finint_flags || []).filter((f: any) => f.severity === 'HIGH' || f.severity === 'CRITICAL');
 
     const worldState = useWorldStore.getState();
     const defcon = defconStore.getState().currentDefconLevel ?? 3;
@@ -541,8 +721,35 @@ export const useArachneStore = create<ArachneState & ArachneActions>((set, get) 
 
     let feeds = [...state.arachne_feeds];
     if (remaining <= 0) {
-      feeds = feeds.map(f => f.isActive ? { ...f, isActive: false } : f);
+      feeds = feeds.map(f => f.isActive ? { ...f, isActive: false, activeStatus: 'DORMANT' as const } : f);
     }
+
+    // Step 1: Source credibility & active status decays
+    feeds = feeds.map(feed => {
+      const currentCred = feed.credibility !== undefined ? feed.credibility : feed.coverageDepth;
+      let nextCred = currentCred;
+      let nextStatus = feed.activeStatus || (feed.isActive ? 'ACTIVE' : 'DORMANT');
+      
+      if (feed.isActive) {
+        nextCred = Math.max(0, Math.min(100, currentCred + (Math.random() > 0.55 ? 1 : -1)));
+      } else {
+        nextCred = Math.max(0, Math.min(100, currentCred - 0.5));
+      }
+
+      if (nextCred < 20) {
+        nextStatus = 'BURNED';
+      } else if (nextStatus === 'BURNED' && nextCred >= 20) {
+        nextStatus = 'DORMANT';
+      }
+
+      return {
+        ...feed,
+        credibility: nextCred,
+        coverageDepth: nextCred,
+        activeStatus: nextStatus as any,
+        isActive: feed.isActive && nextStatus !== 'BURNED'
+      } as any;
+    });
 
     let nodes = [...state.arachne_nodes];
     let links = [...state.arachne_links];
@@ -729,17 +936,160 @@ export const useArachneStore = create<ArachneState & ArachneActions>((set, get) 
     //     gothamStore.getState().ingestArachneNodes(nodes, links);
     // }
 
-    set({
-      arachne_feeds: feeds,
-      arachne_nodes: nodes,
-      arachne_links: links,
-      arachne_fusionProducts: fusions,
-      arachne_budget: { ...state.arachne_budget, spent: budgetSpent, remaining: Math.max(0, remaining) },
-      arachne_burnedNodes: burnedNodeIds,
-      arachne_lastProcessedTick: currentTick,
-      arachne_totalNodesDiscovered: state.arachne_totalNodesDiscovered + nodesDiscovered,
-      arachne_totalLinksDiscovered: state.arachne_totalLinksDiscovered + linksDiscovered
+    set(produce((draft: ArachneState) => {
+      const targetNation = usePlayerStore.getState().selectedTargetCountryId || 'CN';
+      if (Math.random() < 0.08) {
+        const osintEventId = `arc_osint_${currentTick}_${Math.random().toString(36).slice(2,4)}`;
+        const newItem: ArachneIntelItem = {
+          id: osintEventId,
+          title: `BREAKING OSINT: Public unrest and state countermeasures tracked in ${targetNation}`,
+          summary: `Open source monitoring notes unusual activity in major logistical corridors linked to ${targetNation}. High volumes of encrypted military traffic corroborated.`,
+          fullBrief: `According to local satellite telemetry and citizen-journalist posts, major military staging depots outside urban hubs are exhibiting active logistical reinforcement. Commercial flight corridors were temporarily closed without local notifications.`,
+          whyItMatters: `Analytical fusion confirms a high correlation between public notifications of closures and clandestine military relocations.`,
+          countryIds: [targetNation],
+          regionIds: [],
+          relatedLeaderIds: [],
+          themeTags: ['MILITARY', 'UNREST'],
+          urgency: 'HIGH',
+          confidence: 'HIGH',
+          sourceType: 'OSINT',
+          sourceLabel: 'Public Media Aggregator',
+          timestampTick: currentTick,
+          freshnessState: 'BREAKING',
+          linkedIntelFactIds: [],
+          linkedWorldEventIds: [],
+          linkedOperationIds: [],
+          relatedTreatyIds: [],
+          alertScore: 70,
+          strategicPriority: 'HIGH',
+          visibility: 'PUBLIC',
+          status: 'ACTIVE',
+          requiresAttention: true,
+          briefingCategory: 'TOP_STORY'
+        };
+        draft.feed.unshift(newItem);
+        draft.unreadAlertCount++;
+      }
+
+      if (draft.feed.length > 200) {
+        draft.feed = draft.feed.slice(0, 200);
+      }
+
+      draft.arachne_feeds = feeds;
+      draft.arachne_nodes = nodes;
+      draft.arachne_links = links;
+      draft.arachne_fusionProducts = fusions;
+      draft.arachne_budget.spent = budgetSpent;
+      draft.arachne_budget.remaining = Math.max(0, remaining);
+      draft.arachne_burnedNodes = burnedNodeIds;
+      draft.arachne_lastProcessedTick = currentTick;
+      draft.arachne_totalNodesDiscovered += nodesDiscovered;
+      draft.arachne_totalLinksDiscovered += linksDiscovered;
+    }));
+
+    const stateWithNewFusionsAndFeeds = get();
+    stateWithNewFusionsAndFeeds.arachneScenarios.forEach((scen: any) => {
+      get().arachne_assessScenarioEvidence(scen.id, currentTick);
     });
+
+    set(produce((draft: ArachneState) => {
+      draft.arachneActiveQueries.forEach(query => {
+        if (query.status === 'PENDING' && currentTick >= query.completionTick) {
+          query.status = 'COMPLETE';
+          
+          let reportText = `ANALYSIS REPORT: Target [${query.targetNationId}] core assessment. Prior analyses indicate shifting postures.`;
+          let keyInds = ['Symmetric capital mobilization', 'Strategic telemetry shifts'];
+          let repActions = ['Escalate sanctions perimeter', 'Launch tactical cyber offset'];
+          let reportedThreat: ArachneQueryReport['threatLevel'] = 'ELEVATED';
+
+          if (query.queryType === 'MILITARY_ASSESSMENT') {
+            reportText = `TOP SECRET // COLD HORIZON // MILITARY INTERCEPT ASSESSMENT\nWe have reviewed telemetry and troop distribution data for ${query.targetNationId}. Combat logistics clusters are active. Forward staging complexes are housing heavy armor detachments.`;
+            keyInds = ['Clandestine combat readiness posture >75%', 'Unattributed fuel resupply depots on forward sectors'];
+            reportedThreat = 'HIGH';
+            repActions = ['Issue unilateral defensive alert-level directive', 'Redeploy carrier strike groups to adjacent waterways'];
+          } else if (query.queryType === 'ECONOMIC_ASSESSMENT') {
+            reportText = `TOP SECRET // AMBER CHOKE // ECONOMIC COUNTER-MEASURES ASSESS\nTransaction patterns indicate substantial trade diversification bypassing established sanctions pipelines. External accounts cleared through third-party sovereign banking nodes.`;
+            keyInds = ['Offshore hawala nodes clearance at peak volumes', 'Sudden capital reserve diversification into non-aligned holdings'];
+            reportedThreat = 'ELEVATED';
+            repActions = ['Implement secondary targeting sanctions order', 'Engage allied diplomatic offices to pressure offshore havens'];
+          } else if (query.queryType === 'LEADERSHIP_PROFILE') {
+            reportText = `TOP SECRET // UMBRA // CABINET DIRECTIVE DOSSIER\nAssessment of decision-making elites in ${query.targetNationId}. Power consolidation within military-intelligence factions is near complete. Paranoia levels are tracked as elevated.`;
+            keyInds = ['Cabinet hardliners dominating policy councils', 'Aggressiveness coefficient high on sovereign decisions'];
+            reportedThreat = 'MONITORING';
+            repActions = ['Coordinate targeted media campaign targeting elite divisions', 'Deploy covert channels to seed disinformation'];
+          } else if (query.queryType === 'WMD_ASSESSMENT') {
+            reportText = `TOP SECRET // ZERO POINT // WEAPON SPECIAL PROCUREMENT BRIEFING\nSensors confirm specialized raw components moving to subterranean containment facilities. Telemetry matches advanced delivery system simulations.`;
+            keyInds = ['Advanced enrichment telemetry signature signature spike', 'Restricted chemical containment vessels tracked via commercial routes'];
+            reportedThreat = 'IMMINENT';
+            repActions = ['Enforce immediate physical route containment interdiction', 'Initiate emergency cyber interdiction on enrichment networks'];
+          } else if (query.queryType === 'BENEFICIAL_OWNER_TRACE') {
+            reportText = `TOP SECRET // SILVER FORK // CORPORATE DE-SHROUDING BRIEFING\nBeneficial owner tracing operation successfully unmasked the corporate shielding of major front companies linked to ${query.targetNationId}. The ultimate shareholder has been verified.`;
+            keyInds = ['Nested shell entity structures traced back to state actors', 'Nominee shareholders unmasked via offshore registry leaks'];
+            reportedThreat = 'HIGH';
+            repActions = ['Freeze all assets held in unmasked vehicles', 'Initiate secondary prosecution orders against clearing nominee brokers'];
+
+            const finStore = finintStore.getState() as any;
+            if (finStore && finStore.finint_shellProfiles) {
+               const targetProfile = finStore.finint_shellProfiles.find((s: any) => s.controlledByNationId === query.targetNationId || s.registeredName.includes(query.targetNationId));
+               if (targetProfile) {
+                  finintStore.setState(produce((draftFin: any) => {
+                     const fP = draftFin.finint_shellProfiles.find((s: any) => s.id === targetProfile.id);
+                     if (fP) {
+                       fP.isFullyUnmasked = true;
+                       fP.unmaskConfidence = 100;
+                       fP.ultimateBeneficialOwner = `unmasked_beneficiary_${query.targetNationId}`;
+                     }
+                  }));
+               }
+            }
+          }
+
+          query.result = {
+            execSummary: reportText,
+            keyIndicators: keyInds,
+            threatLevel: reportedThreat,
+            recommendedActions: repActions,
+            generatedAtTick: currentTick
+          };
+
+          const liveReportItem: ArachneIntelItem = {
+            id: `arc_query_alert_${currentTick}_${Math.random().toString(36).slice(2,5)}`,
+            title: `COMPLETED REPORT: ${query.queryType.replace('_', ' ')} [${query.targetNationId}]`,
+            summary: `Our analysts have finalized the analytical request for target ${query.targetNationId}. Threat level evaluated as: ${reportedThreat}.`,
+            fullBrief: reportText,
+            whyItMatters: `Analytical reports provide detailed, actionable information that assists divisional heads in selecting operations.`,
+            countryIds: [query.targetNationId],
+            regionIds: [],
+            relatedLeaderIds: [],
+            themeTags: ['MILITARY'],
+            urgency: reportedThreat === 'IMMINENT' || reportedThreat === 'HIGH' ? 'HIGH' : 'MEDIUM',
+            confidence: 'TOTAL',
+            sourceType: 'OSINT',
+            sourceLabel: 'Arachne Query System',
+            timestampTick: currentTick,
+            freshnessState: 'BREAKING',
+            linkedIntelFactIds: [],
+            linkedWorldEventIds: [],
+            linkedOperationIds: [],
+            relatedTreatyIds: [],
+            alertScore: 70,
+            strategicPriority: 'HIGH',
+            visibility: 'PUBLIC',
+            status: 'ACTIVE',
+            requiresAttention: true,
+            briefingCategory: 'TOP_STORY',
+            isQueryReport: true
+          };
+          draft.feed.unshift(liveReportItem);
+          draft.unreadAlertCount++;
+
+          useWorldStore.getState().addGlobalEvent(
+            `Arachne analytical request resolved: ${query.queryType.replace('_', ' ')} [${query.targetNationId}] completed.`,
+            'INFO'
+          );
+        }
+      });
+    }));
   }
 
 }));

@@ -133,6 +133,7 @@ interface SigintState {
   u8200Budget: SigintBudget;
   u8200Baselines: SigintPatternBaseline[];
   u8200LastProcessedTick: number;
+  u8200ReviewedSignalIds: string[];
 }
 
 interface SigintActions {
@@ -154,6 +155,11 @@ interface SigintActions {
   u8200GetConfirmedSignals: () => SigintSignal[];
   u8200GetAnomalyAlerts: () => SigintSignal[];
   u8200GetActiveAssets: () => SigintCollectionAsset[];
+  u8200MarkSignalReviewed: (signalId: string) => void;
+  u8200MarkSignalTasked: (signalId: string, division: string) => void;
+  u8200MarkSignalAnomaly: (signalId: string) => void;
+  u8200DismissSignal: (signalId: string) => void;
+  u8200SetSignalDeceptionFlag: (signalId: string, flagged: boolean) => void;
 }
 
 export const useSigintStore = create<SigintState & SigintActions>((set, get) => ({
@@ -180,6 +186,7 @@ export const useSigintStore = create<SigintState & SigintActions>((set, get) => 
   u8200Budget: { totalAllocated: 500, spent: 0, remaining: 500 },
   u8200Baselines: [],
   u8200LastProcessedTick: -1,
+  u8200ReviewedSignalIds: [],
 
   u8200GetSignalsForNation: (nationId: string) =>
     get().u8200Signals.filter(s => s.sourceNationId === nationId),
@@ -215,6 +222,45 @@ export const useSigintStore = create<SigintState & SigintActions>((set, get) => 
       ...state.u8200Budget,
       totalAllocated: state.u8200Budget.totalAllocated + amount,
       remaining: state.u8200Budget.remaining + amount,
+    }
+  })),
+
+  u8200MarkSignalReviewed: (signalId: string) => set(produce((draft: SigintState) => {
+    const s = draft.u8200Signals.find(x => x.id === signalId);
+    if (s) {
+      s.reviewed = true;
+    }
+    if (!draft.u8200ReviewedSignalIds.includes(signalId)) {
+      draft.u8200ReviewedSignalIds.push(signalId);
+    }
+  })),
+
+  u8200MarkSignalTasked: (signalId: string, division: string) => set(produce((draft: SigintState) => {
+    const s = draft.u8200Signals.find(x => x.id === signalId);
+    if (s) {
+      s.tasked = true;
+      if (!s.taskedTo) s.taskedTo = [];
+      if (!s.taskedTo.includes(division)) {
+        s.taskedTo.push(division);
+      }
+    }
+  })),
+
+  u8200MarkSignalAnomaly: (signalId: string) => set(produce((draft: SigintState) => {
+    const s = draft.u8200Signals.find(x => x.id === signalId);
+    if (s) {
+      s.anomalyFlag = true;
+    }
+  })),
+
+  u8200DismissSignal: (signalId: string) => set(produce((draft: SigintState) => {
+    draft.u8200Signals = draft.u8200Signals.filter(x => x.id !== signalId);
+  })),
+
+  u8200SetSignalDeceptionFlag: (signalId: string, flagged: boolean) => set(produce((draft: SigintState) => {
+    const s = draft.u8200Signals.find(x => x.id === signalId);
+    if (s) {
+      s.deceptionFlagged = flagged;
     }
   })),
 

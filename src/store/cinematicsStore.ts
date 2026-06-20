@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { audio } from '../utils/audio';
 
 export type CinematicSceneType =
   | 'SIGINT_BREAKTHROUGH'
@@ -221,7 +222,7 @@ export const useCinematicsStore = create<CinematicsStoreState>((set, get) => {
 
     // Trigger audio routing dynamically based on custom active scene and phase
     try {
-      const audioModule = (window as any).sovereignAudio || require('../utils/audio').audio;
+      const audioModule = (window as any).sovereignAudio || audio;
       if (audioModule && typeof audioModule.playCinematicCue === 'function') {
         audioModule.playCinematicCue(activeScene.type, 0);
       }
@@ -280,7 +281,7 @@ export const useCinematicsStore = create<CinematicsStoreState>((set, get) => {
 
         // Trigger cinematic audio routing for next phase
         try {
-          const audioModule = (window as any).sovereignAudio || require('../utils/audio').audio;
+          const audioModule = (window as any).sovereignAudio || audio;
           if (audioModule && typeof audioModule.playCinematicCue === 'function') {
             audioModule.playCinematicCue(updatedScene.type, nextPhase);
           }
@@ -309,7 +310,7 @@ export const useCinematicsStore = create<CinematicsStoreState>((set, get) => {
 
       // Restore system volume values
       try {
-        const audioModule = (window as any).sovereignAudio || require('../utils/audio').audio;
+        const audioModule = (window as any).sovereignAudio || audio;
         if (audioModule && typeof audioModule.restoreSimVolume === 'function') {
           audioModule.restoreSimVolume(1200);
         }

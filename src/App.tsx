@@ -60,6 +60,7 @@ import CovertFinancePanel from './components/panels/CovertFinancePanel';
 import { useCovertFinanceStore } from './store/covertFinanceStore';
 import OversightPanel from './components/panels/OversightPanel';
 import SigintPanel from './components/panels/SigintPanel';
+import U8200CommandPanel from './components/panels/U8200CommandPanel';
 import TargetedOperationsPanel from './components/panels/TargetedOperationsPanel';
 import EWPanel from './components/panels/EWPanel';
 import EWStatusWidget from './components/hud/EWStatusWidget';
@@ -769,6 +770,27 @@ export default function App() {
           e.preventDefault();
           audio.sfxKeyClick();
           setCommsOpen((prev) => !prev);
+          return;
+        }
+      }
+
+      // Check key 'u' to toggle U8200 Command active panel
+      if (e.key.toLowerCase() === 'u' && !e.altKey && !e.ctrlKey && !e.metaKey) {
+        const isInputActive = document.activeElement && (
+          document.activeElement.tagName === 'INPUT' ||
+          document.activeElement.tagName === 'TEXTAREA' ||
+          document.activeElement.tagName === 'SELECT' ||
+          document.activeElement.getAttribute('contenteditable') === 'true'
+        );
+        if (!isInputActive) {
+          e.preventDefault();
+          audio.sfxKeyClick();
+          const activeId = useUIStore.getState().activePanelId;
+          if (activeId === 'U8200_COMMAND') {
+            useUIStore.getState().setActivePanelId(null);
+          } else {
+            useUIStore.getState().setActivePanelId('U8200_COMMAND');
+          }
           return;
         }
       }
@@ -1677,6 +1699,7 @@ export default function App() {
         {uiStore.activePanelId === 'covertFinance' && <CovertFinancePanel onClose={() => uiStore.closeActivePanel()} />}
         {uiStore.activePanelId === 'oversight' && <OversightPanel onClose={() => uiStore.closeActivePanel()} />}
         {uiStore.activePanelId === 'sigint' && <SigintPanel onClose={() => uiStore.closeActivePanel()} />}
+        {uiStore.activePanelId === 'U8200_COMMAND' && <U8200CommandPanel onClose={() => uiStore.closeActivePanel()} />}
         {uiStore.activePanelId === 'targetedOps' && <TargetedOperationsPanel onClose={() => uiStore.closeActivePanel()} />}
         {uiStore.activePanelId === 'humint' && <HumintPenetrationSuite onClose={() => uiStore.closeActivePanel()} />}
         {uiStore.activePanelId === 'cia' && <CIAPanel onClose={() => uiStore.closeActivePanel()} />}
