@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { produce } from 'immer';
-import { ArmsDeal, CommodityType } from '../types';
+import { ArmsDeal, CommodityType, Econ_NationProfile, Econ_Sector } from '../types';
 import { useWorldStore } from './worldStore';
 import { usePlayerStore } from './playerStore';
 import { useMirrorStore } from './mirrorStore';
@@ -18,6 +18,7 @@ interface EconomyState {
   portfolioShorts: { [key in CommodityType]?: number };  // short holdings
   tradeLedger: LedgerEntry[];
   activeSanctions: { source: string; target: string }[];
+  econ_nations: Record<string, Econ_NationProfile>;
 }
 
 interface EconomyStoreActions {
@@ -28,6 +29,8 @@ interface EconomyStoreActions {
   removeSanction: (sourceId: string, targetId: string) => void;
   addLedgerEntry: (entry: Omit<LedgerEntry, 'id' | 'tick'>) => void;
   resetEconomy: () => void;
+  econ_initializeNationProfile: (nationId: string, baselineGdp: number) => void;
+  econ_processEconomyTick: (currentTick: number) => void;
 }
 
 export const useEconomyStore = create<EconomyState & EconomyStoreActions>((set, get) => ({
@@ -35,6 +38,7 @@ export const useEconomyStore = create<EconomyState & EconomyStoreActions>((set, 
   portfolioShorts: {},
   tradeLedger: [],
   activeSanctions: [],
+  econ_nations: {},
 
   buyFutures: (commodity, amountB, costPerUnit) => {
     const playerCash = usePlayerStore.getState().cashB;
@@ -129,5 +133,89 @@ export const useEconomyStore = create<EconomyState & EconomyStoreActions>((set, 
     portfolioShorts: {},
     tradeLedger: [],
     activeSanctions: [],
+    econ_nations: {},
   }),
+
+  econ_initializeNationProfile: (nationId, baselineGdp) => set(produce((draft: EconomyState) => {
+    if (!draft.econ_nations[nationId]) {
+      draft.econ_nations[nationId] = {
+        nationId,
+        gdpEstimateUSD: baselineGdp,
+        gdpBaselineUSD: baselineGdp,
+        gdpChangePercent: 0,
+        currencyReserveUSD: baselineGdp * 0.15,
+        reserveDepletionRatePerTick: 0,
+        inflationRate: 2.0,
+        energyExportRevenueUSD: 0,
+        defenceIndustrialOutput: 100,
+        technologyAccessScore: 100,
+        foodSecurityScore: 100,
+        sanctionResistanceScore: 50,
+        adaptationRate: 0,
+        currentSectorHealth: {
+          ENERGY: 100,
+          DEFENCE_INDUSTRIAL: 100,
+          FINANCIAL_SERVICES: 100,
+          TECHNOLOGY: 100,
+          AGRICULTURE: 100,
+          MANUFACTURING: 100,
+          TRANSPORT_LOGISTICS: 100,
+          RARE_EARTH_MINING: 100,
+          TELECOMS: 100,
+          PHARMACEUTICALS: 100,
+        },
+        sanctionedBy: [],
+        evadingVia: [],
+        lastUpdatedTick: useWorldStore.getState().currentTick
+      };
+    }
+  })),
+
+  econ_processEconomyTick: (currentTick) => set(produce((draft: EconomyState) => {
+    Object.keys(draft.econ_nations).forEach(nationId => {
+      const nation = draft.econ_nations[nationId];
+      if (!nation) return;
+
+      // Base degradation recovery
+      Object.keys(nation.currentSectorHealth).forEach(sector => {
+        const s = sector as Econ_Sector;
+        if (nation.currentSectorHealth[s] < 100) {
+          nation.currentSectorHealth[s] = Math.min(100, nation.currentSectorHealth[s] + (0.5 * (1 + nation.adaptationRate / 100)));
+        }
+      });
+
+      // Recalculate GDP based on sector health
+      const averageSectorHealth = Object.values(nation.currentSectorHealth).reduce((a, b) => a + b, 0) / 10;
+      nation.gdpChangePercent = (averageSectorHealth - 100) * 0.5;
+      nation.gdpEstimateUSD = nation.gdpBaselineUSD * (1 + (nation.gdpChangePercent / 100));
+
+      // Inflation bump if Agriculture or Logistics are damaged
+      const agriDamage = 100 - (nation.currentSectorHealth['AGRICULTURE'] ?? 100);
+      const logiDamage = 100 - (nation.currentSectorHealth['TRANSPORT_LOGISTICS'] ?? 100);
+      if (agriDamage > 0 || logiDamage > 0) {
+         nation.inflationRate = 2.0 + ((agriDamage + logiDamage) * 0.1);
+      } else {
+         nation.inflationRate = Math.max(2.0, nation.inflationRate - 0.5); // recovery
+      }
+
+      // Food security score updates
+      if (agriDamage > 50) {
+        nation.foodSecurityScore -= 2;
+      } else if (agriDamage === 0) {
+        nation.foodSecurityScore = Math.min(100, nation.foodSecurityScore + 2);
+      }
+      if (nation.foodSecurityScore < 20) {
+        useWorldStore.getState().addGlobalEvent(`Humanitarian crisis worsening in ${nationId} due to severe food shortages.`, 'WARNING');
+        // Implicitly could use useConsequenceStore.getState().triggerBlowback(nationId, 50, 'FAMINE');
+        // using world event since consequenceStore might not export it or be imported.
+      }
+
+      // Check for reserve depletion
+      if (nation.reserveDepletionRatePerTick > 0) {
+         nation.currencyReserveUSD -= nation.reserveDepletionRatePerTick;
+      }
+      
+      nation.lastUpdatedTick = currentTick;
+    });
+  })),
 }));

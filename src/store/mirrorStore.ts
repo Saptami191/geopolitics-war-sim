@@ -23,8 +23,37 @@ import {
   PatternStabilityScore,
   CountermeasureHistory,
   DeceptionExposureState,
-  MirrorWarningLevel
+  MirrorWarningLevel,
+  SovereignAgent,
+  SovereignLeaderProfile,
+  SovereignAllianceSignal,
+  MirrorAIPlayerProfile,
+  SovereignDecision,
+  SovereignObjective,
+  SovereignThreatAssessment,
+  SovereignPowerOrientation,
+  SovereignIdeologicalPosture,
+  SovereignEconomicDoctrine,
+  SovereignRiskTolerance,
+  SovereignRegionalAmbition,
+  SovereignInstrument,
+  SovereignState,
+  SovereignActions,
+  SovereignObjectiveType,
+  SovereignLeaderArchetype
 } from '../types';
+
+import { useWorldStore } from './worldStore';
+import { useSigintStore } from './sigintStore';
+import { useArachneStore } from './arachneStore';
+import { useFinintStore } from './finintStore';
+import { useCiaStore } from './ciaStore';
+import { useDefconStore } from './defconStore';
+import { useMilitaryStore } from './militaryStore';
+import { useEconomyStore } from './economyStore';
+import { useEWStore } from './ewStore';
+import { useCinematicsStore } from './cinematicsStore';
+import { useConsequenceStore } from './consequenceStore';
 
 const DEFAULT_TEMPLATES: CounterStrategyTemplate[] = [
   {
@@ -141,7 +170,131 @@ const initialProfile = (): PlayerProfileVector => ({
   economicBias: 16.6,
 });
 
-export const useMirrorStore = create<MirrorAdaptationState & MirrorActions>()(
+export function mirror_predictPlayerNextMoves(profile: MirrorAIPlayerProfile, currentTick: number): string[] {
+  const predictions: string[] = [];
+  if (profile.ciaFocusNations.length > 0 && profile.preferredDomains.includes('COVERT_OPERATION')) {
+    predictions.push(`Player likely to continue covert operations in ${profile.ciaFocusNations[0]}.`);
+  }
+  if (profile.militaryPosturePattern === 'SURGE' || profile.escalationThreshold < 30) {
+    predictions.push(`Player preparing military escalation window.`);
+  }
+  if (profile.sigintFocusNations.length > 0 && !profile.ciaFocusNations.includes(profile.sigintFocusNations[0])) {
+    predictions.push(`Player building intelligence picture on ${profile.sigintFocusNations[0]} — covert op likely.`);
+  }
+  if (profile.ewFocusNations.length > 0) {
+    predictions.push(`EW activity signals imminent operation in targeted segments.`);
+  }
+  if (currentTick - profile.lastUpdatedTick > 5) {
+    predictions.push(`Player in strategic pause — deception or preparation.`);
+  }
+  return predictions;
+}
+
+export function mirror_identifyPlayerWeaknesses(profile: MirrorAIPlayerProfile, worldState: any, currentTick: number): string[] {
+  const weaknesses: string[] = [];
+  if (profile.operationalTempo > 80) weaknesses.push(`Player is overextended — spread across too many targets.`);
+  if (profile.ciaFocusNations.length > 0 && profile.ciaFocusNations.length <= 2) weaknesses.push(`Player has blind spots in non-focus nations.`);
+  if (!profile.preferredDomains.includes('ECONOMIC_COERCION')) weaknesses.push(`Player neglecting economic statecraft — leverage available.`);
+  if (profile.riskProfile === 'CAUTIOUS' || profile.riskProfile === 'RISK_AVERSE') weaknesses.push(`Player shows escalation fatigue — credibility gap.`);
+  return weaknesses;
+}
+
+export function sovereign_generateInitialObjectives(agent: SovereignAgent, currentTick: number): SovereignObjective[] {
+  const objectives: SovereignObjective[] = [];
+  
+  let pool: SovereignObjectiveType[] = [];
+  if (agent.powerOrientation === 'HEGEMON') pool = ['REGIONAL_HEGEMONY', 'ALLIANCE_BUILDING', 'INFLUENCE_PROJECTION'];
+  else if (agent.powerOrientation === 'REVISIONIST') pool = ['TERRITORIAL_EXPANSION', 'WMD_ACQUISITION', 'PROXY_WAR_VICTORY'];
+  else if (agent.powerOrientation === 'STATUS_QUO') pool = ['ALLIANCE_BUILDING', 'DIPLOMATIC_ISOLATION_OF_PLAYER', 'COUNTER_PLAYER_CONTAINMENT'];
+  else if (agent.powerOrientation === 'BALANCER') pool = ['COUNTER_PLAYER_CONTAINMENT', 'ALLIANCE_BUILDING', 'ECONOMIC_DOMINANCE'];
+  else if (agent.powerOrientation === 'ISOLATIONIST') pool = ['INTERNAL_CONSOLIDATION', 'SANCTIONS_BREAKING', 'NUCLEAR_DETERRENCE'];
+
+  if (agent.leaderProfile.archetype === 'PARANOID_STRONGMAN') pool.push('INTERNAL_CONSOLIDATION');
+  if (agent.leaderProfile.archetype === 'MILITARY_HAWK') pool.push('TERRITORIAL_EXPANSION');
+
+  for (let i = 0; i < 3; i++) {
+    const type = pool[i % pool.length];
+    objectives.push({
+      id: `obj_${agent.nationId}_${currentTick}_${i}`,
+      type,
+      nationId: agent.nationId,
+      priority: 2,
+      progressScore: 0,
+      isAchieved: false,
+      achievedAtTick: null,
+      blockedBy: [],
+      instrumentsInUse: [],
+      estimatedCompletionTick: currentTick + (agent.riskTolerance === 'RECKLESS' ? 50 : 150),
+      confidenceScore: 50
+    });
+  }
+  return objectives;
+}
+
+export function sovereign_generateDecisionRationale(agent: SovereignAgent, instrument: SovereignInstrument, targetNationId: string | null, threatScore: number): string {
+  const t = targetNationId || 'regional';
+  switch (instrument) {
+    case 'MILITARY_BUILDUP': return `${agent.nationId} assesses that current threat environment from ${t} actors warrants enhanced readiness posture. Defence establishment recommendation: increase force readiness. Leader ${agent.leaderProfile.archetype} concurs.`;
+    case 'DIPLOMATIC_PRESSURE': return `${agent.nationId} leadership has determined that diplomatic leverage against ${t} serves current objectives. Expected outcome: compliance or isolation of ${t}.`;
+    case 'ECONOMIC_COERCION': return `Economic measures authorized against ${t} to compound pressure without crossing military thresholds.`;
+    case 'NUCLEAR_SIGNALLING': return `${agent.nationId} strategic assessment: conventional deterrence insufficient against ${t}'s current posture. Leadership has authorised calibrated nuclear signalling.`;
+    case 'COVERT_OPERATION': return `${agent.nationId} directorate recommends covert action against ${t} to advance objective without attribution. Risk tolerance: ${agent.riskTolerance}.`;
+    case 'ALLIANCE_ACTIVATION': return `${agent.nationId} assesses that unilateral response to current threat is suboptimal. Alliance activation recommended.`;
+    case 'INFORMATION_WARFARE': return `Information operations activated targeting ${t} to shape narrative and degrade domestic coherence.`;
+    case 'SANCTIONS': return `Sanctions ordered against ${t} in response to hostile posture.`;
+    case 'TRADE_DEAL': return `Strategic trade deal arranged to secure vital supply lines and reduce vulnerability.`;
+    case 'ARMS_TRANSFER': return `Arms transfer authorized to offset balance of power concerns involving ${t}.`;
+    case 'FOREIGN_AID': return `Foreign aid deployed to consolidate influence and secure diplomatic support.`;
+    case 'EW_CAMPAIGN': return `Electronic warfare assets deployed to deny spectrum dominance to ${t}.`;
+    case 'PROXY_FORCE': return `Proxy forces engaged to project power against ${t} with deniability.`;
+    default: return `Strategic decision executed concerning ${t}.`;
+  }
+}
+
+export function sovereign_generateLeaderProfile(nationId: string, powerOrientation: SovereignPowerOrientation, ideologicalPosture: SovereignIdeologicalPosture, riskTolerance: SovereignRiskTolerance, currentTick: number): SovereignLeaderProfile {
+  let archetype: SovereignLeaderArchetype = 'OPPORTUNIST';
+  if (powerOrientation === 'REVISIONIST' && ideologicalPosture === 'AUTHORITARIAN_NATIONALIST') archetype = Math.random() > 0.5 ? 'PARANOID_STRONGMAN' : 'NATIONALIST_POPULIST';
+  else if (powerOrientation === 'HEGEMON' && ideologicalPosture === 'PRAGMATIC_REALIST') archetype = Math.random() > 0.5 ? 'IMPERIAL_VISIONARY' : 'PRAGMATIC_TECHNOCRAT';
+  else if (powerOrientation === 'ISOLATIONIST') archetype = 'CAUTIOUS_INSTITUTIONALIST';
+  else if (riskTolerance === 'RECKLESS' && powerOrientation === 'REVISIONIST') archetype = 'MILITARY_HAWK';
+  else if (powerOrientation === 'STATUS_QUO' && ideologicalPosture === 'LIBERAL_DEMOCRATIC') archetype = 'CAUTIOUS_INSTITUTIONALIST';
+  else if (powerOrientation === 'BALANCER' && ideologicalPosture === 'PRAGMATIC_REALIST') archetype = 'PRAGMATIC_TECHNOCRAT';
+  else archetype = ['PARANOID_STRONGMAN', 'IDEOLOGICAL_TRUE_BELIEVER', 'PRAGMATIC_TECHNOCRAT', 'NATIONALIST_POPULIST', 'IMPERIAL_VISIONARY', 'MILITARY_HAWK', 'CAUTIOUS_INSTITUTIONALIST', 'OPPORTUNIST'][Math.floor(Math.random() * 8)] as SovereignLeaderArchetype;
+
+  const namesEu = ['Mikhail Volkov', 'Andrei Kozlov', 'Dmitri Petrov'];
+  const namesMe = ['Khalid Al-Rashid', 'Hassan Al-Mansour', 'Tariq Bin-Zayed'];
+  const namesAs = ['Park Ji-Hoon', 'Kim Tae-Jin', 'Zhang Wei'];
+  const namesWe = ['James Harrison', 'Robert Clarke', 'Elena Müller'];
+
+  let name = namesWe[0];
+  const fc = nationId[0] || 'U';
+  if (['R','U','B'].includes(fc)) name = namesEu[Math.floor(Math.random() * namesEu.length)];
+  else if (['I','S','E','T'].includes(fc)) name = namesMe[Math.floor(Math.random() * namesMe.length)];
+  else if (['C','J','K','N'].includes(fc)) name = namesAs[Math.floor(Math.random() * namesAs.length)];
+  else name = namesWe[Math.floor(Math.random() * namesWe.length)];
+
+  const baseRisk = riskTolerance === 'RECKLESS' ? 90 : riskTolerance === 'AGGRESSIVE' ? 70 : riskTolerance === 'CALCULATED' ? 50 : riskTolerance === 'CAUTIOUS' ? 30 : 10;
+  
+  return {
+    id: `leader_${nationId}_${currentTick}`,
+    name,
+    nationId,
+    archetype,
+    ageYears: 45 + Math.floor(Math.random() * 30),
+    yearsInPower: Math.floor(Math.random() * 15),
+    loyaltyBase: archetype === 'MILITARY_HAWK' ? 'Military' : archetype === 'IDEOLOGICAL_TRUE_BELIEVER' ? 'Party' : 'Popular',
+    domesticApprovalScore: 50 + Math.floor(Math.random() * 40),
+    personalRiskTolerance: Math.max(0, Math.min(100, baseRisk + (Math.random() * 40 - 20))),
+    paranoidModifier: archetype === 'PARANOID_STRONGMAN' ? 80 : archetype === 'PRAGMATIC_TECHNOCRAT' ? 20 : 50,
+    ideologyStrength: archetype === 'IDEOLOGICAL_TRUE_BELIEVER' ? 90 : archetype === 'PRAGMATIC_TECHNOCRAT' ? 10 : 50,
+    ambitionScore: (powerOrientation === 'HEGEMON' || archetype === 'IMPERIAL_VISIONARY') ? 90 : 50,
+    legacyWeight: archetype === 'IMPERIAL_VISIONARY' ? 90 : archetype === 'OPPORTUNIST' ? 20 : 50,
+    decisionLatencyTicks: archetype === 'OPPORTUNIST' ? 2 : archetype === 'CAUTIOUS_INSTITUTIONALIST' ? 6 : 4,
+    memoryCitedEvents: []
+  };
+}
+
+export const useMirrorStore = create<MirrorAdaptationState & MirrorActions & SovereignState & SovereignActions>()(
   persist(
     (set, get) => ({
       // State Properties
@@ -210,6 +363,17 @@ export const useMirrorStore = create<MirrorAdaptationState & MirrorActions>()(
       difficultySetting: 'MEDIUM',
       confrontationPlayed: false,
 
+      // Sovereign AI State Properties
+      sovereign_agents: {},
+      sovereign_leaderProfiles: {},
+      sovereign_allianceSignals: [],
+      mirror_playerProfile: null,
+      mirror_advisoryLog: [],
+      sovereign_globalDecisionLog: [],
+      sovereign_lastProcessedTick: -1,
+      sovereign_activeConflicts: [],
+      sovereign_crisesEmergent: [],
+
       // Actions & Methods
       setDifficulty: (level) => {
         let mult = 1.0;
@@ -244,7 +408,17 @@ export const useMirrorStore = create<MirrorAdaptationState & MirrorActions>()(
             driftDetected: false,
           },
           counterHistory: [],
-          warningLevel: 'LOW'
+          warningLevel: 'LOW',
+          
+          sovereign_agents: {},
+          sovereign_leaderProfiles: {},
+          sovereign_allianceSignals: [],
+          mirror_playerProfile: null,
+          mirror_advisoryLog: [],
+          sovereign_globalDecisionLog: [],
+          sovereign_lastProcessedTick: -1,
+          sovereign_activeConflicts: [],
+          sovereign_crisesEmergent: [],
         });
       },
 
@@ -604,15 +778,408 @@ export const useMirrorStore = create<MirrorAdaptationState & MirrorActions>()(
          set(produce((draft: MirrorAdaptationState) => {
             draft.habits.push({
                habitId: `cia_pattern_${Date.now()}`,
-               description: `CIA Doctrine: Focuses operations on ${mostTargetedNation}. Strategy leans toward ${mostUsedOpType}. Average heat tolerance: ${avgHeat.toFixed(1)}.`,
-               recognitionConfidence: Math.min(100, avgHeat + 20),
-               exploitationWindowTicks: 100,
-               discoveredTick: 0
+               actionCategory: 'COVERT',
+               triggerStatus: mostTargetedNation,
+               frequencyCount: Math.ceil(avgHeat),
+               lastTickSeen: 0,
+               stabilityScore: Math.min(100, Math.ceil(avgHeat + 20))
             });
             // Keep habits capped
             if (draft.habits.length > 20) draft.habits.shift();
          }));
-      }
+      },
+
+      sovereign_initAgent: (nationId, identity, leaderProfileData, currentTick) => {
+        set(produce((draft: any) => {
+          const leader = { id: `leader_${nationId}_${currentTick}`, ...leaderProfileData } as SovereignLeaderProfile;
+          draft.sovereign_leaderProfiles[leader.id] = leader;
+          
+          const agent: SovereignAgent = {
+            id: `agent_${nationId}_${currentTick}`,
+            nationId,
+            powerOrientation: identity.powerOrientation,
+            ideologicalPosture: identity.ideologicalPosture,
+            economicDoctrine: identity.economicDoctrine,
+            riskTolerance: identity.riskTolerance,
+            regionalAmbition: identity.regionalAmbition,
+            leaderProfile: leader,
+            activeObjectives: [],
+            completedObjectives: [],
+            decisionHistory: [],
+            threatAssessments: [],
+            intelBudgetAllocation: {
+              MILITARY_BUILDUP: 10, ECONOMIC_COERCION: 10, DIPLOMATIC_PRESSURE: 20, COVERT_OPERATION: 20,
+              PROXY_FORCE: 5, ALLIANCE_ACTIVATION: 10, INFORMATION_WARFARE: 10, SANCTIONS: 5,
+              TRADE_DEAL: 5, ARMS_TRANSFER: 0, FOREIGN_AID: 5, EW_CAMPAIGN: 0, NUCLEAR_SIGNALLING: 0
+            },
+            relationshipMemory: [],
+            currentMilitaryPosture: 'PEACETIME',
+            currentDiplomaticPosture: 'ENGAGEMENT',
+            currentEconomicPosture: 'OPEN',
+            allianceIds: [],
+            allianceSignalsSent: [],
+            allianceSignalsReceived: [],
+            mirrorAdaptationScore: 0,
+            tacticsAdaptedThisTick: [],
+            lastProcessedTick: currentTick,
+            ticksActive: 0
+          };
+          agent.activeObjectives = sovereign_generateInitialObjectives(agent, currentTick);
+          
+          // Initial threat assessments
+          const world = useWorldStore.getState().countries;
+          Object.keys(world).forEach(id => {
+            if (id !== nationId) {
+               agent.threatAssessments.push({
+                 assessingNationId: nationId,
+                 targetNationId: id,
+                 overallThreatScore: 10,
+                 militaryThreatScore: 10,
+                 economicThreatScore: 10,
+                 intelligenceThreatScore: 0,
+                 covertThreatScore: 0,
+                 ideologicalThreatScore: 10,
+                 lastUpdatedTick: currentTick,
+                 trendDirection: 'STABLE',
+                 responseUrgency: 'NONE'
+               });
+            }
+          });
+
+          draft.sovereign_agents[nationId] = agent;
+        }));
+      },
+
+      sovereign_updateAgentObjective: (nationId, objectiveId, update) => {
+        set(produce((draft: any) => {
+          const agent = draft.sovereign_agents[nationId];
+          if (!agent) return;
+          const obj = agent.activeObjectives.find((o: any) => o.id === objectiveId);
+          if (obj) {
+            Object.assign(obj, update);
+            if (obj.isAchieved && obj.progressScore >= 100) {
+              agent.completedObjectives.push(obj);
+              agent.activeObjectives = agent.activeObjectives.filter((o: any) => o.id !== objectiveId);
+            }
+          }
+        }));
+      },
+
+      sovereign_recordDecision: (nationId, decision, currentTick) => {
+        set(produce((draft: any) => {
+          const agent = draft.sovereign_agents[nationId];
+          if (!agent) return;
+          const newDecision: SovereignDecision = { id: `dec_${nationId}_${currentTick}_${Math.random().toString(36).substring(7)}`, decidedAtTick: currentTick, ...decision };
+          agent.decisionHistory.unshift(newDecision);
+          if (agent.decisionHistory.length > 50) agent.decisionHistory.pop();
+          draft.sovereign_globalDecisionLog.unshift(newDecision);
+          if (draft.sovereign_globalDecisionLog.length > 200) draft.sovereign_globalDecisionLog.pop();
+        }));
+      },
+
+      sovereign_updateThreatAssessment: (assessingNationId, targetNationId, update) => {
+        set(produce((draft: any) => {
+          const agent = draft.sovereign_agents[assessingNationId];
+          if (!agent) return;
+          const ta = agent.threatAssessments.find((t: any) => t.targetNationId === targetNationId);
+          if (ta) {
+            Object.assign(ta, update);
+          } else {
+            agent.threatAssessments.push({
+               assessingNationId,
+               targetNationId,
+               overallThreatScore: 0,
+               militaryThreatScore: 0,
+               economicThreatScore: 0,
+               intelligenceThreatScore: 0,
+               covertThreatScore: 0,
+               ideologicalThreatScore: 0,
+               lastUpdatedTick: 0,
+               trendDirection: 'STABLE',
+               responseUrgency: 'NONE',
+               ...update
+            });
+          }
+        }));
+      },
+
+      sovereign_sendAllianceSignal: (signal, currentTick) => {
+        set(produce((draft: any) => {
+          const sig: SovereignAllianceSignal = { id: `sig_${currentTick}_${Math.random().toString(36).substring(7)}`, sentAtTick: currentTick, ...signal };
+          draft.sovereign_allianceSignals.push(sig);
+          const agentFrom = draft.sovereign_agents[signal.fromNationId];
+          const agentTo = draft.sovereign_agents[signal.toNationId];
+          if (agentFrom) agentFrom.allianceSignalsSent.push(sig);
+          if (agentTo) agentTo.allianceSignalsReceived.push(sig);
+        }));
+      },
+
+      mirror_updatePlayerProfile: (update) => {
+        set(produce((draft: any) => {
+          if (!draft.mirror_playerProfile) {
+             draft.mirror_playerProfile = {
+               playerNationId: 'US',
+               observedSince: 0,
+               preferredDomains: [],
+               preferredTargetNations: [],
+               operationalTempo: 50,
+               escalationThreshold: 50,
+               riskProfile: 'CALCULATED',
+               sigintFocusNations: [],
+               ciaFocusNations: [],
+               ewFocusNations: [],
+               militaryPosturePattern: 'DEFENSIVE',
+               identifiedWeaknesses: [],
+               predictedNextMoves: [],
+               modelConfidence: 0,
+               lastUpdatedTick: 0,
+               ...update
+             };
+          } else {
+             Object.assign(draft.mirror_playerProfile, update);
+          }
+        }));
+      },
+
+      mirror_ingestCIAPattern: (focusNations, operationTypes, currentTick) => {
+        set(produce((draft: any) => {
+          if (draft.mirror_playerProfile) {
+            draft.mirror_playerProfile.ciaFocusNations = focusNations;
+            if (!draft.mirror_playerProfile.preferredDomains.includes('COVERT_OPERATION')) {
+              draft.mirror_playerProfile.preferredDomains.push('COVERT_OPERATION');
+            }
+            draft.mirror_playerProfile.lastUpdatedTick = currentTick;
+          }
+        }));
+      },
+
+      mirror_ingestSIGINTPattern: (focusNations, currentTick) => {
+        set(produce((draft: any) => {
+          if (draft.mirror_playerProfile) {
+            draft.mirror_playerProfile.sigintFocusNations = focusNations;
+            draft.mirror_playerProfile.lastUpdatedTick = currentTick;
+          }
+        }));
+      },
+
+      mirror_ingestEWPattern: (focusNations, currentTick) => {
+        set(produce((draft: any) => {
+          if (draft.mirror_playerProfile) {
+            draft.mirror_playerProfile.ewFocusNations = focusNations;
+            if (!draft.mirror_playerProfile.preferredDomains.includes('EW_CAMPAIGN')) {
+              draft.mirror_playerProfile.preferredDomains.push('EW_CAMPAIGN');
+            }
+            draft.mirror_playerProfile.lastUpdatedTick = currentTick;
+          }
+        }));
+      },
+
+      sovereign_processAllAgentsTick: (currentTick) => {
+        const state = get() as any;
+        if (state.sovereign_lastProcessedTick === currentTick) return; // Idempotency
+        
+        const worldState = useWorldStore.getState();
+        const sigintState = useSigintStore.getState();
+        const arachneState = useArachneStore.getState();
+        const finintState = useFinintStore.getState();
+        const ciaState = useCiaStore.getState();
+        const defconState = useDefconStore.getState();
+        const militaryState = useMilitaryStore.getState();
+        // diplomaticStore doesn't exist, use unStore or treaties? Just assume worldState info can serve.
+        const economyState = useEconomyStore.getState();
+        const ewState = useEWStore.getState();
+        const playerState = useWorldStore.getState(); // or playerStore, let's use worldStore to infer player nation
+        
+        const playerNationId = "US"; // Assuming US for now based on usual setup
+
+        set(produce((draft: any) => {
+          // Sync mirror profile slowly if it exists
+          if (!draft.mirror_playerProfile) {
+            draft.mirror_updatePlayerProfile({ observedSince: currentTick, lastUpdatedTick: currentTick });
+          } else {
+            draft.mirror_playerProfile.modelConfidence = Math.min(100, draft.mirror_playerProfile.modelConfidence + 0.1);
+            draft.mirror_playerProfile.predictedNextMoves = mirror_predictPlayerNextMoves(draft.mirror_playerProfile, currentTick);
+            draft.mirror_playerProfile.identifiedWeaknesses = mirror_identifyPlayerWeaknesses(draft.mirror_playerProfile, worldState, currentTick);
+            draft.mirror_playerProfile.lastUpdatedTick = currentTick;
+          }
+
+          const advMsgs: string[] = [];
+
+          // Sort agents by risk tolerance (reckless first)
+          const riskOrd: Record<SovereignRiskTolerance, number> = {
+            'RECKLESS': 1, 'AGGRESSIVE': 2, 'CALCULATED': 3, 'CAUTIOUS': 4, 'RISK_AVERSE': 5
+          };
+          
+          const agentIds = Object.keys(draft.sovereign_agents).sort((a,b) => 
+            riskOrd[draft.sovereign_agents[a].riskTolerance as SovereignRiskTolerance] - 
+            riskOrd[draft.sovereign_agents[b].riskTolerance as SovereignRiskTolerance]
+          );
+
+          let newDecisionsCount = 0;
+          let nuclearSignalled = false;
+          let emergentCrisesCount = 0;
+
+          for (const nid of agentIds) {
+            const agent = draft.sovereign_agents[nid];
+            agent.ticksActive++;
+
+            // Update threat assessments
+            Object.keys(worldState.countries).forEach(tid => {
+              if (tid === nid) return;
+              const target = worldState.countries[tid];
+              let rawThreat = 0;
+              if (target.arsenal?.units?.some((u: any) => u.count > 0 && u.type !== 'AIR_DEFENSE')) rawThreat += 20;
+              const hasEconSanction = economyState.activeSanctions?.some((s: any) => s.sourceId === tid && s.targetId === nid);
+              if (hasEconSanction) rawThreat += 30;
+              const ciaOps = ciaState.cia_operations?.filter((op: any) => op.targetNationId === nid && op.status === 'ACTIVE' && op.assignedOperativeIds.length > 0) || [];
+              if (ciaOps.length > 0) rawThreat += 20 * ciaOps.length;
+              
+              const isDiffIdeology = target.political?.ideology !== agent.ideologicalPosture;
+              if (isDiffIdeology) rawThreat += 10;
+              
+              const effectiveThreat = rawThreat * (1 + (agent.leaderProfile.paranoidModifier / 100));
+              let ta = agent.threatAssessments.find((t: any) => t.targetNationId === tid);
+              if (!ta) {
+                ta = { assessingNationId: nid, targetNationId: tid, overallThreatScore: effectiveThreat, militaryThreatScore: 0, economicThreatScore: 0, intelligenceThreatScore: 0, covertThreatScore: 0, ideologicalThreatScore: 0, lastUpdatedTick: currentTick, trendDirection: 'STABLE', responseUrgency: 'NONE' };
+                agent.threatAssessments.push(ta);
+              }
+              const oldScore = ta.overallThreatScore;
+              ta.overallThreatScore = effectiveThreat;
+              ta.trendDirection = effectiveThreat > oldScore + 5 ? 'ESCALATING' : (effectiveThreat < oldScore - 5 ? 'DE_ESCALATING' : 'STABLE');
+              ta.responseUrgency = effectiveThreat > 75 ? 'IMMEDIATE' : effectiveThreat > 50 ? 'SHORT_TERM' : effectiveThreat > 25 ? 'LONG_TERM' : 'NONE';
+              ta.lastUpdatedTick = currentTick;
+            });
+
+            // Refill objectives if needed
+            if (agent.activeObjectives.length < 3) {
+              const newObjs = sovereign_generateInitialObjectives(agent, currentTick);
+              for (const o of newObjs) {
+                if (agent.activeObjectives.length < 3) agent.activeObjectives.push(o);
+              }
+            }
+
+            // Decide instruments for IMMEDIATE threats or prioritized objectives
+            let actionTaken = false;
+            for (const obj of agent.activeObjectives) {
+              if (actionTaken) break; // one major action per agent per tick to pace it
+              
+              if (Math.random() < 0.05) { // 5% chance per objective to act this tick
+                let chosenInst: SovereignInstrument = 'DIPLOMATIC_PRESSURE';
+                if (agent.leaderProfile.archetype === 'MILITARY_HAWK' || agent.riskTolerance === 'RECKLESS') {
+                  chosenInst = Math.random() > 0.5 ? 'MILITARY_BUILDUP' : 'COVERT_OPERATION';
+                } else if (agent.economicDoctrine === 'MERCANTILIST' || agent.leaderProfile.archetype === 'PRAGMATIC_TECHNOCRAT') {
+                  chosenInst = Math.random() > 0.5 ? 'ECONOMIC_COERCION' : 'TRADE_DEAL';
+                }
+                
+                const mostThreatening = [...agent.threatAssessments].sort((a,b) => b.overallThreatScore - a.overallThreatScore)[0];
+                const targetId = mostThreatening ? mostThreatening.targetNationId : playerNationId;
+                
+                const rationale = sovereign_generateDecisionRationale(agent, chosenInst, targetId, mostThreatening?.overallThreatScore || 0);
+
+                let adapted = false;
+                if (draft.mirror_playerProfile?.predictedNextMoves.length > 0 && Math.random() < (draft.mirror_playerProfile.modelConfidence / 100)) {
+                   adapted = true;
+                   agent.mirrorAdaptationScore = Math.min(100, agent.mirrorAdaptationScore + 1);
+                   advMsgs.push(`Mirror advisory applied: ${nid} countering predicted player move with ${chosenInst}.`);
+                }
+
+                const newDecision: SovereignDecision = {
+                  id: `dec_${nid}_${currentTick}_${Math.random().toString(36).substring(7)}`,
+                  nationId: nid,
+                  decidedAtTick: currentTick,
+                  triggerEventId: null,
+                  instrument: chosenInst,
+                  targetNationId: targetId,
+                  rationale,
+                  expectedOutcome: `Advance ${obj.type}`,
+                  actualOutcome: null,
+                  successScore: null,
+                  wasAdaptedFromMirror: adapted
+                };
+
+                agent.decisionHistory.unshift(newDecision);
+                if (agent.decisionHistory.length > 50) agent.decisionHistory.pop();
+                draft.sovereign_globalDecisionLog.unshift(newDecision);
+                if (draft.sovereign_globalDecisionLog.length > 200) draft.sovereign_globalDecisionLog.pop();
+
+                newDecisionsCount++;
+                actionTaken = true;
+
+                obj.progressScore += 5;
+                if (!obj.instrumentsInUse.includes(chosenInst)) obj.instrumentsInUse.push(chosenInst);
+
+                // Apply to worldStore
+                if ((chosenInst as SovereignInstrument) === 'NUCLEAR_SIGNALLING' && worldState.countries[nid]?.arsenal?.nuclearCapable) {
+                   nuclearSignalled = true;
+                   worldState.addGlobalEvent(`[SOVEREIGN_AI] ${nid} engaged in nuclear signalling against ${targetId}!`, 'CRITICAL');
+                   useDefconStore.getState().setDefconLevel(Math.max(1, defconState.currentDefconLevel - 1) as any, 'SYSTEM', 'AI Nuclear Signal', currentTick);
+                } else if ((chosenInst as SovereignInstrument) === 'MILITARY_BUILDUP') {
+                   worldState.addGlobalEvent(`[SOVEREIGN_AI] ${nid} announces military buildup.`, 'WARNING');
+                } else if ((chosenInst as SovereignInstrument) === 'DIPLOMATIC_PRESSURE') {
+                   worldState.addGlobalEvent(`[SOVEREIGN_AI] ${nid} applies diplomatic pressure on ${targetId}.`, 'INFO');
+                } else if ((chosenInst as SovereignInstrument) === 'ECONOMIC_COERCION') {
+                   worldState.addGlobalEvent(`[SOVEREIGN_AI] ${nid} deploys economic coercion against ${targetId}.`, 'WARNING');
+                   economyState.imposeSanction(nid, targetId);
+                } else if ((chosenInst as SovereignInstrument) === 'COVERT_OPERATION') {
+                   useConsequenceStore.getState().triggerBlowback(targetId, 20, `AI Covert Operation from ${nid}`);
+                }
+              }
+            }
+
+            // Domestic approval changes over time
+            if (agent.leaderProfile.yearsInPower > 10 && currentTick % 100 === 0) {
+              agent.leaderProfile.domesticApprovalScore -= 0.5;
+            }
+            if (agent.leaderProfile.domesticApprovalScore <= 20) {
+               useCinematicsStore.getState().triggerCinematic('SOVEREIGN_LEADERSHIP_CRISIS', {});
+            }
+          }
+
+          // Crises Emergent mapping
+          const hExpansions = agentIds.filter(id => draft.sovereign_agents[id].activeObjectives.some((o:any)=>o.type==='TERRITORIAL_EXPANSION'));
+          if (hExpansions.length > 1 && Math.random() < 0.02) {
+             draft.sovereign_crisesEmergent.push(`crisis_${hExpansions[0]}_${hExpansions[1]}_${currentTick}`);
+             emergentCrisesCount++;
+          }
+
+          if (advMsgs.length > 0) {
+            draft.mirror_advisoryLog.unshift(...advMsgs);
+            if (draft.mirror_advisoryLog.length > 50) draft.mirror_advisoryLog.length = 50;
+          }
+
+          draft.sovereign_lastProcessedTick = currentTick;
+
+          let aggregateTension = newDecisionsCount * 5 + emergentCrisesCount * 15;
+          if (nuclearSignalled) aggregateTension += 30;
+
+          if (aggregateTension > 20) {
+            useWorldStore.getState().addGlobalEvent(`[SOVEREIGN_AI] Global tension surge detected (Tension Coax: +${aggregateTension}) due to aggregate strategic shifts.`, 'WARNING');
+          }
+
+          // Process cinematics
+          if (newDecisionsCount > 0 && draft.sovereign_globalDecisionLog.length === newDecisionsCount) {
+             useCinematicsStore.getState().triggerCinematic('SOVEREIGN_FIRST_AGENT_DECISION', {});
+          }
+          if (nuclearSignalled) {
+             useCinematicsStore.getState().triggerCinematic('SOVEREIGN_NUCLEAR_SIGNAL', {});
+          }
+          if (emergentCrisesCount > 0) {
+             useCinematicsStore.getState().triggerCinematic('SOVEREIGN_EMERGENT_CRISIS', {});
+          }
+
+        }));
+      },
+
+      sovereign_getAgent: (nationId) => get().sovereign_agents[nationId] || null,
+      sovereign_getAgentObjectives: (nationId) => get().sovereign_agents[nationId]?.activeObjectives || [],
+      sovereign_getThreatAssessment: (assessingNationId, targetNationId) => {
+        const agent = get().sovereign_agents[assessingNationId];
+        return agent ? agent.threatAssessments.find((t: any) => t.targetNationId === targetNationId) || null : null;
+      },
+      sovereign_getMirrorAdvisory: () => get().mirror_advisoryLog,
+      sovereign_getDecisionsThisTick: (tick) => get().sovereign_globalDecisionLog.filter((d: any) => d.decidedAtTick === tick),
+      sovereign_getActiveConflicts: () => get().sovereign_activeConflicts,
+
     }),
     {
       name: 'sovereign_command_mirror_adaptation_v1',

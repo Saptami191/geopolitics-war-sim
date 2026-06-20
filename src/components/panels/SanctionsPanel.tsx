@@ -142,6 +142,16 @@ export default function SanctionsPanel() {
           >
             🤝 OVERLAY: FATIGUE
           </button>
+          <button 
+            onClick={() => setActiveMapOverlay(activeMapOverlay === 'EVASION' ? 'NONE' : 'EVASION')}
+            className={`px-3 py-1.5 rounded border transition-all ${
+              activeMapOverlay === 'EVASION' 
+                ? 'bg-purple-950/80 border-purple-500 text-purple-300 shadow-lg shadow-purple-950/20' 
+                : 'bg-slate-900 border-slate-800 hover:border-slate-700 text-slate-300'
+            }`}
+          >
+            🏴‍ OVERLAY: EVASION
+          </button>
         </div>
       </header>
 

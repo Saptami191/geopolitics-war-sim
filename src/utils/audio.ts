@@ -1910,6 +1910,175 @@ class AudioEngine {
     osc.start(now);
     osc.stop(now + 1.0);
   }
+  sovereign_agent_decision() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(65, now);
+    osc.frequency.exponentialRampToValueAtTime(45, now + 0.6);
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.08, now + 0.1);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+    osc.connect(gain);
+    gain.connect(this.sfxGain || this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 1.2);
+  }
+
+  sovereign_nuclear_signal() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(80, now);
+    osc.frequency.linearRampToValueAtTime(60, now + 2.0);
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.15, now + 0.2);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 2.5);
+    osc.connect(gain);
+    gain.connect(this.sfxGain || this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 2.5);
+  }
+
+  sovereign_crisis_emergent() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(150, now);
+    osc.frequency.linearRampToValueAtTime(300, now + 0.8);
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.1, now + 0.2);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 1.0);
+    osc.connect(gain);
+    gain.connect(this.sfxGain || this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 1.0);
+  }
+
+  sovereign_alliance_fracture() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const osc1 = this.ctx.createOscillator();
+    const osc2 = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc1.type = 'square';
+    osc2.type = 'sawtooth';
+    osc1.frequency.setValueAtTime(200, now);
+    osc2.frequency.setValueAtTime(215, now);
+    osc1.frequency.exponentialRampToValueAtTime(100, now + 0.5);
+    osc2.frequency.exponentialRampToValueAtTime(120, now + 0.5);
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.06, now + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+    osc1.connect(gain);
+    osc2.connect(gain);
+    gain.connect(this.sfxGain || this.ctx.destination);
+    osc1.start(now); osc2.start(now);
+    osc1.stop(now + 0.6); osc2.stop(now + 0.6);
+  }
+
+  mirror_prediction_confirmed() {
+    this.sfxIntelChime();
+  }
+
+  mirror_model_mature() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(440, now);
+    osc.frequency.linearRampToValueAtTime(880, now + 0.3);
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.05, now + 0.1);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+    osc.connect(gain);
+    gain.connect(this.sfxGain || this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.8);
+  }
+
+  sovereign_leadership_crisis() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(120, now);
+    osc.frequency.setTargetAtTime(80, now + 0.1, 0.1);
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.1, now + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+    let lfo = this.ctx.createOscillator();
+    lfo.type = 'square';
+    lfo.frequency.value = 8;
+    let lfoGain = this.ctx.createGain();
+    lfoGain.gain.value = 20;
+    lfo.connect(lfoGain);
+    lfoGain.connect(osc.frequency);
+    lfo.start(now);
+    
+    osc.connect(gain);
+    gain.connect(this.sfxGain || this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.6);
+    lfo.stop(now + 0.6);
+  }
+
+  sovereign_bloc_confrontation() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const osc1 = this.ctx.createOscillator();
+    const osc2 = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc1.type = 'sawtooth';
+    osc2.type = 'sawtooth';
+    osc1.frequency.setValueAtTime(100, now);
+    osc2.frequency.setValueAtTime(105, now);
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.08, now + 0.2);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+    osc1.connect(gain);
+    osc2.connect(gain);
+    gain.connect(this.sfxGain || this.ctx.destination);
+    osc1.start(now); osc2.start(now);
+    osc1.stop(now + 1.5); osc2.stop(now + 1.5);
+  }
+
+  diplo_treaty_proposed() { this.sfxIntelChime(); }
+  diplo_treaty_ratified() { this.sfxPeaceResolution(); }
+  diplo_treaty_violated() { this.sfxCrisisWarning(); }
+  diplo_ambassador_expelled() { this.sfxWarKlaxon(); }
+  diplo_unsc_veto() { this.sfxSystemFailure(); }
+  diplo_unsc_resolution_passed() { this.sfxSuccessConfirmation(); }
+  diplo_crisis_declared() { this.sfxCrisisWarning(); }
+  diplo_crisis_resolved() { this.sfxPeaceResolution(); }
+  diplo_article_5_triggered() { this.sfxNuclearAlarm(); }
+  diplo_bloc_fracture() { this.sfxMarketCrash(); }
+  diplo_soft_power_milestone() { this.sfxSuccessConfirmation(); }
+  diplo_capital_depleted() { this.sfxSystemFailure(); }
+  diplo_summit_success() { this.sfxPeaceResolution(); }
+
+  cyber_operation_launched() { this.sfxKeyClick(); }
+  cyber_phase_advanced() { this.sfxIntelChime(); }
+  cyber_detection_warning() { this.sfxCrisisWarning(); }
+  cyber_attribution_confirmed() { this.sfxFactionAlert(); }
+  cyber_operation_succeeded() { this.sfxSuccessConfirmation(); }
+  cyber_operation_burned() { this.sfxSystemFailure(); }
+  cyber_zero_day_deployed() { this.sfxKeyClick(); }
+  cyber_zero_day_burned() { this.sfxMarketCrash(); }
+  cyber_infrastructure_compromised() { this.sfxCrisisWarning(); }
+  cyber_infrastructure_destroyed() { this.sfxNuclearAlarm(); }
+  cyber_incident_detected() { this.sfxRadarPing(); }
+  cyber_hack_back_authorised() { this.sfxWarKlaxon(); }
+  cyber_apt_group_identified() { this.sfxNewspaper(); }
+  cyber_payload_detonated() { this.sfxEMPBurst(); }
 }
 
 export const audio = new AudioEngine();

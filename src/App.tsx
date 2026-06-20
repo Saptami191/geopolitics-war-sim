@@ -20,6 +20,7 @@ import GovernmentPanel from './components/panels/GovernmentPanel';
 import CentralBankPanel from './components/panels/CentralBankPanel';
 import ArsenalPanel from './components/panels/ArsenalPanel';
 import DiplomacyPanel from './components/panels/DiplomacyPanel';
+import CyberPanel from './components/panels/CyberPanel';
 import ResearchPanel from './components/panels/ResearchPanel';
 import IntelPanel from './components/panels/IntelPanel';
 import SpacePanel from './components/panels/SpacePanel';
@@ -42,6 +43,8 @@ import CommandEventBusPanel from './components/panels/CommandEventBusPanel';
 import ScenarioPersistencePanel from './components/panels/ScenarioPersistencePanel';
 import EconomicForecastPanel from './components/panels/EconomicForecastPanel';
 import UNPanel from './components/panels/UNPanel';
+import ModesPanel from './components/panels/ModesPanel';
+import { ModesWidget } from './components/panels/ModesWidget';
 import { useUNStore } from './store/unStore';
 import BlocsPanel from './components/panels/BlocsPanel';
 import { useBlocStore } from './store/blocStore';
@@ -131,6 +134,10 @@ import { LeaderDossierPanel } from './components/panels/LeaderDossierPanel';
 import { NationSovereignPanel } from './components/panels/NationSovereignPanel';
 import { useRegimePressureStore } from './store/regimePressureStore';
 import CommandLogPanel from './components/hud/CommandLogPanel';
+import SovereignMonitor from './components/hud/SovereignMonitor';
+import SanctionsWidget from './components/hud/SanctionsWidget';
+import DiplomacyWidget from './components/hud/DiplomacyWidget';
+import CyberWidget from './components/hud/CyberWidget';
 import DefconBar from './components/hud/DefconBar';
 import FlashPrecedenceBanner from './components/hud/FlashPrecedenceBanner';
 import WhiteFlashOverlay from './components/hud/WhiteFlashOverlay';
@@ -268,6 +275,8 @@ function ActivePanelWrapper({ activeTab, getTabClassification }: { activeTab: nu
       {activeTab === 31 && <CyberOpsPanel />}
       {activeTab === 100 && <NuclearPosturePanel />}
       {activeTab === 101 && <NC3SystemPanel />}
+      {activeTab === 102 && <CyberPanel />}
+      {activeTab === 103 && <ModesPanel />}
     </div>
   );
 }
@@ -1246,6 +1255,7 @@ export default function App() {
               </div>
             </span>
             <div className="ml-2 flex items-center gap-2">
+              <ModesWidget onClick={() => playerState.setActiveTab(103)} />
               <PoliticalCapitalBar onClick={() => uiStore.setActivePanelId('oversight')} />
               <SigintHUD onClick={() => uiStore.setActivePanelId('sigint')} />
               <button
@@ -1503,6 +1513,10 @@ export default function App() {
                 <DefenseIndustryWidget />
                 <DarkMirrorWidget />
                 <CIAStatusWidget />
+                <SovereignMonitor />
+                <SanctionsWidget />
+                <DiplomacyWidget />
+                <CyberWidget />
               </div>
 
               {/* Optional dynamic Layer controller */}

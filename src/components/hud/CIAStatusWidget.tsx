@@ -4,7 +4,7 @@ import { useUIStore } from '../../store/uiStore';
 
 export default function CIAStatusWidget() {
   const { cia_operations, cia_blowbackEvents, cia_oversight, cia_operatives } = useCiaStore();
-  const setActivePanel = useUIStore(s => s.setActivePanel);
+  const setActivePanelId = useUIStore(s => s.setActivePanelId);
   const activeOps = cia_operations.filter(o => o.status === 'ACTIVE').length;
   const highHeatOps = cia_operatives.filter(o => o.status === 'ACTIVE' && o.heatLevel >= 80).length;
   const unresolvedBlowback = cia_blowbackEvents.filter(b => !b.isResolved);
@@ -14,7 +14,7 @@ export default function CIAStatusWidget() {
 
   return (
     <div 
-      onClick={() => setActivePanel('cia')}
+      onClick={() => setActivePanelId('cia')}
       className="pointer-events-auto cursor-pointer bg-black/60 backdrop-blur-sm border border-red-900/40 p-2 text-[10px] font-mono flex flex-col items-end gap-1 hover:bg-black/80 hover:border-red-500/50 transition-colors w-48 shadow-[0_0_15px_rgba(255,20,20,0.1)] group relative"
     >
       <div className="absolute top-0 right-0 w-8 h-[1px] bg-red-500 opacity-50 group-hover:opacity-100 transition-opacity" />

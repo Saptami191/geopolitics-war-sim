@@ -1,5 +1,6 @@
 import { useWorldStore } from '../store/worldStore';
 import { usePlayerStore } from '../store/playerStore';
+import { useModesStore } from '../store/modesStore';
 import { useClockStore } from '../store/clockStore';
 import { useUnitStore } from '../store/unitStore';
 import { useBlackMarketStore } from '../store/blackMarketStore';
@@ -10,6 +11,8 @@ import { useFinintStore } from '../store/finintStore';
 import { useTradeStore } from '../store/tradeStore';
 import { useEnergyStore } from '../store/energyStore';
 import { useSanctionsStore } from '../store/sanctionsStore';
+import { useEconomyStore } from '../store/economyStore';
+import { useDiplomaticStore } from '../store/diplomaticStore';
 import { useUNStore } from '../store/unStore';
 import { useBlocStore } from '../store/blocStore';
 import { useSoftPowerStore } from '../store/softPowerStore';
@@ -49,6 +52,7 @@ import { useDefenseIndustryStore } from '../store/defenseIndustryStore';
 import { useAPTStore } from '../store/aptStore';
 import { useCyberOffenseStore } from '../store/cyberOffenseStore';
 import { useCyberDefenseStore } from '../store/cyberDefenseStore';
+import { useCyberStore } from '../store/cyberStore';
 
 export const TICK_INTERVALS: Record<"day" | "week" | "month", number> = {
   day: 2000,
@@ -124,6 +128,8 @@ export function executeSimulationStep() {
   // Execute all calculation engines in precise order within a single atomic update.
   world.applyTickDelta((draft) => {
     draft.currentTick++;
+
+    useModesStore.getState().modes_fireForcedEvents(draft.currentTick);
 
     // 1. Process scenarios win/loss
     pollScenarioStatus(draft, player);
@@ -242,6 +248,9 @@ export function executeSimulationStep() {
   // Synchronize Energy Security and Supply Models
   useEnergyStore.getState().tickEnergySystem(useWorldStore.getState().currentTick);
 
+  // Tick Module 8 Cyber Operations (GHOST PROTOCOL)
+  useCyberStore.getState().cyber_processTick(useWorldStore.getState().currentTick);
+
   // Synchronize Sanctions, Coalitions, and Evasion Models
   useSanctionsStore.getState().tickSanctionsSystem(useWorldStore.getState().currentTick);
 
@@ -273,6 +282,16 @@ export function executeSimulationStep() {
 
   // Synchronize Denial and Deception Engine (Module 6.4 — MIRROR SHROUD)
   useDeceptionStore.getState().tickDeception(useWorldStore.getState().currentTick);
+
+  // Synchronize AI Sovereign Agents (Module AI-1)
+  useMirrorStore.getState().sovereign_processAllAgentsTick(useWorldStore.getState().currentTick);
+
+  // SANCTIONS-1 (Economic Warfare - IRON LEDGER)
+  useEconomyStore.getState().econ_processEconomyTick(useWorldStore.getState().currentTick);
+  useSanctionsStore.getState().sanctions_processTick(useWorldStore.getState().currentTick);
+  useDiplomaticStore.getState().diplo_processTick(useWorldStore.getState().currentTick);
+
+  useModesStore.getState().modes_checkObjectiveProgress(useWorldStore.getState().currentTick);
 
   // Regularly save a checkpoint if there is no ongoing nuclear exchange or active aftermath
   const currentWorld = useWorldStore.getState();

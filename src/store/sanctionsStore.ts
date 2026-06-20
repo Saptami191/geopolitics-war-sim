@@ -8,11 +8,19 @@ import {
   EvasionChannel, 
   SanctionTargetProfile, 
   SanctionsPreview, 
-  SanctionsIncident 
+  SanctionsIncident,
+  Sanctions_Regime,
+  Sanctions_EvasionNetwork,
+  Sanctions_CoalitionMember,
+  Sanctions_Budget,
+  Sanctions_Tier,
+  Sanctions_Status,
+  Sanctions_EvasionType
 } from '../types';
 import { useWorldStore } from './worldStore';
 import { useArachneStore } from './arachneStore';
 import { usePlayerStore } from './playerStore';
+import { useCinematicsStore } from './cinematicsStore';
 
 // ALL CANONICAL MEASURES WITH BASELINE IMPACTS
 export const ALL_MEASURES: SanctionsMeasure[] = [
@@ -94,6 +102,11 @@ interface SanctionsStore {
   selectedCampaignId: string | null;
   activeMapOverlay: string; // 'NONE' | 'PRESSURE' | 'FATIGUE' | 'EVASION'
 
+  sanctions_regimes: Record<string, Sanctions_Regime>;
+  sanctions_evasionNetworks: Record<string, Sanctions_EvasionNetwork>;
+  sanctions_coalitions: Record<string, Record<string, Sanctions_CoalitionMember>>;
+  sanctions_budget: Sanctions_Budget;
+
   setSelectedCampaignId: (id: string | null) => void;
   setActiveMapOverlay: (overlay: string) => void;
 
@@ -121,6 +134,10 @@ interface SanctionsStore {
   // Game ticks
   tickSanctionsSystem: (currentTick: number) => void;
   clearAll: () => void;
+
+  sanctions_imposeRegime: (regime: Sanctions_Regime) => void;
+  sanctions_escalateTier: (regimeId: string, newTier: Sanctions_Tier) => void;
+  sanctions_processTick: (currentTick: number) => void;
 }
 
 // INITIAL SEEDED CAMPAIGNS FOR FULL SPECIFICATION COMPLIANCE
@@ -489,6 +506,10 @@ export const useSanctionsStore = create<SanctionsStore>()(
     incidents: INITIAL_INCIDENTS,
     selectedCampaignId: 'campaign_ru_exclusion',
     activeMapOverlay: 'NONE',
+    sanctions_regimes: {},
+    sanctions_evasionNetworks: {},
+    sanctions_coalitions: {},
+    sanctions_budget: { totalAllocated: 50, enforcementSpent: 0, intelligenceSpent: 0, coalitionIncentivesSpent: 0, remaining: 50 },
 
     setSelectedCampaignId: (id) => set({ selectedCampaignId: id }),
     setActiveMapOverlay: (overlay) => set({ activeMapOverlay: overlay }),
@@ -983,6 +1004,86 @@ export const useSanctionsStore = create<SanctionsStore>()(
       }));
     },
 
-    clearAll: () => set({ campaigns: initializeSeededCampaigns(), incidents: INITIAL_INCIDENTS })
+    clearAll: () => set({ campaigns: initializeSeededCampaigns(), incidents: INITIAL_INCIDENTS }),
+
+    sanctions_imposeRegime: (regime: Sanctions_Regime) => set(produce((draft) => {
+      draft.sanctions_regimes[regime.id] = regime;
+      draft.sanctions_coalitions[regime.id] = {};
+      regime.coalitionNationIds.forEach(id => {
+        draft.sanctions_coalitions[regime.id][id] = {
+          nationId: id,
+          regimeId: regime.id,
+          joinedAtTick: useWorldStore.getState().currentTick,
+          complianceScore: 100,
+          fatigueScore: 0,
+          tradeExposureToTarget: 20, // default based on integration
+          energyDependencyScore: 15,
+          politicalWillScore: 80,
+          isDefecting: false,
+          defectionWarningTick: null,
+          activeEvasionAllowed: false
+        };
+      });
+      useCinematicsStore.getState().triggerCinematic('IRON_LEDGER_REGIME_IMPOSED', { regimeId: regime.id, target: regime.targetNationId });
+    })),
+
+    sanctions_escalateTier: (regimeId: string, newTier: Sanctions_Tier) => set(produce((draft) => {
+      const regime = draft.sanctions_regimes[regimeId];
+      if (regime) {
+        regime.tier = newTier;
+        regime.lastEscalatedTick = useWorldStore.getState().currentTick;
+        if (newTier === 'TIER_5_MAXIMUM_PRESSURE') {
+          useCinematicsStore.getState().triggerCinematic('IRON_LEDGER_TIER_FIVE', { regimeId });
+        }
+      }
+    })),
+
+    sanctions_processTick: (currentTick: number) => set(produce((draft) => {
+      Object.keys(draft.sanctions_regimes).forEach(rId => {
+        const regime = draft.sanctions_regimes[rId];
+        if (regime.status !== 'ACTIVE') return;
+
+        // Base Pressure
+        let pressure = 0;
+        switch (regime.tier) {
+          case 'TIER_1_TARGETED': pressure += 5; break;
+          case 'TIER_2_SECTORAL': pressure += 15; break;
+          case 'TIER_3_FINANCIAL': pressure += 30; break;
+          case 'TIER_4_COMPREHENSIVE': pressure += 50; break;
+          case 'TIER_5_MAXIMUM_PRESSURE': pressure += 75; break;
+        }
+
+        // Apply pressure to Target Economy
+        regime.totalEconomicPressureScore = Math.min(100, pressure - regime.evasionDetectedScore);
+
+        // Fatigue growth
+        let totalFatigue = 0;
+        let membersCount = 0;
+        const coalition = draft.sanctions_coalitions[regime.id];
+        if (coalition) {
+          Object.keys(coalition).forEach(nid => {
+             const member = coalition[nid];
+             member.fatigueScore = Math.min(100, member.fatigueScore + (member.tradeExposureToTarget > 30 ? 2 : 0.5));
+             totalFatigue += member.fatigueScore;
+             membersCount++;
+             if (member.fatigueScore > 80 && !member.isDefecting) {
+               member.isDefecting = true;
+               useCinematicsStore.getState().triggerCinematic('IRON_LEDGER_COALITION_FRACTURE', { regimeId: regime.id, nationId: nid });
+             }
+          });
+        }
+        regime.coalitionFatigueScore = membersCount > 0 ? totalFatigue / membersCount : 0;
+      });
+
+      // Evasion Networks
+      Object.keys(draft.sanctions_evasionNetworks).forEach(eId => {
+        const network = draft.sanctions_evasionNetworks[eId];
+        if (!network.isDetected && Math.random() * 100 < network.detectionProbabilityPerTick) {
+           network.isDetected = true;
+           network.detectedAtTick = currentTick;
+           useCinematicsStore.getState().triggerCinematic('IRON_LEDGER_EVASION_NETWORK_MAJOR', { networkId: network.id });
+        }
+      });
+    }))
   })
 );

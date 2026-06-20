@@ -646,18 +646,14 @@ export const useCiaStore = create<CIAStoreState>((set, get) => ({
       s3.cia_assets.filter(a => a.status === 'RECRUITED').forEach(asset => {
           if (currentTick - asset.lastContactTick <= asset.meetingFrequency + 2) {
               if (Math.random() < (asset.productionRate / 100)) {
-                  useSigintStore.getState().addSignal({
-                      id: `sig_asset_${currentTick}_${asset.id}`,
-                      sourceNationId: asset.nationId,
-                      channel: 'HUMINT' as any,
-                      category: 'STRATEGIC' as any,
-                      rawContent: `[HUMINT SOURCE ${asset.codename}]: Operational intelligence package.`,
-                      confidence: 'CONFIRMED' as any,
-                      status: 'NEW' as any,
-                      detectedAtTick: currentTick,
-                      expiresAtTick: currentTick + 30,
-                      patternOfLifeFlag: false
-                  });
+                  useSigintStore.getState().processRawSignal(
+                      asset.nationId,
+                      'TELECOM',
+                      80,
+                      `[HUMINT SOURCE ${asset.codename}]: Operational intelligence package.`,
+                      false,
+                      currentTick
+                  );
               }
           }
       });

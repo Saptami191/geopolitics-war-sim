@@ -5,6 +5,7 @@ import { INITIAL_COUNTRIES } from '../data/countries';
 import { generateInitialCanonicalWorld, advanceCanonicalWorldTick } from '../utils/canonicalGenerator';
 import { COMMODITY_BASELINES } from '../constants';
 import { useBlackMarketStore } from './blackMarketStore';
+import { useMirrorStore } from './mirrorStore';
 import { useLeaderStore } from './leaderStore';
 import { usePlayerStore } from './playerStore';
 import { ConsequenceEngine } from '../sim/consequenceEngine';
@@ -260,6 +261,19 @@ export const useWorldStore = create<WorldState & WorldStoreActions>((set) => ({
     const initialCountries = JSON.parse(JSON.stringify(INITIAL_COUNTRIES));
     const currentLeaders = useLeaderStore.getState().leadersByCountryId;
     const initialCanonical = generateInitialCanonicalWorld(initialCountries, currentLeaders, 0);
+    
+    // Initialize Sovereign Agents
+    setTimeout(() => {
+      const mirror = useMirrorStore.getState();
+      mirror.sovereign_initAgent('RU', { powerOrientation: 'REVISIONIST', ideologicalPosture: 'AUTHORITARIAN_NATIONALIST', economicDoctrine: 'MERCANTILIST', riskTolerance: 'AGGRESSIVE', regionalAmbition: 'GLOBAL' }, { name: 'Mikhail Volkov', nationId: 'RU', archetype: 'PARANOID_STRONGMAN', ageYears: 65, yearsInPower: 15, loyaltyBase: 'Military', domesticApprovalScore: 85, personalRiskTolerance: 70, paranoidModifier: 80, ideologyStrength: 60, ambitionScore: 80, legacyWeight: 90, decisionLatencyTicks: 2, memoryCitedEvents: [] }, 0);
+      mirror.sovereign_initAgent('CN', { powerOrientation: 'HEGEMON', ideologicalPosture: 'PRAGMATIC_REALIST', economicDoctrine: 'STATE_CAPITALIST', riskTolerance: 'CALCULATED', regionalAmbition: 'GLOBAL' }, { name: 'Zhang Wei', nationId: 'CN', archetype: 'IMPERIAL_VISIONARY', ageYears: 70, yearsInPower: 10, loyaltyBase: 'Party', domesticApprovalScore: 90, personalRiskTolerance: 40, paranoidModifier: 30, ideologyStrength: 50, ambitionScore: 95, legacyWeight: 80, decisionLatencyTicks: 4, memoryCitedEvents: [] }, 0);
+      mirror.sovereign_initAgent('IR', { powerOrientation: 'REVISIONIST', ideologicalPosture: 'THEOCRATIC', economicDoctrine: 'SANCTIONS_RESISTANT', riskTolerance: 'RECKLESS', regionalAmbition: 'REGIONAL_PLAYER' }, { name: 'Hassan Al-Mansour', nationId: 'IR', archetype: 'IDEOLOGICAL_TRUE_BELIEVER', ageYears: 72, yearsInPower: 20, loyaltyBase: 'Popular', domesticApprovalScore: 70, personalRiskTolerance: 85, paranoidModifier: 60, ideologyStrength: 95, ambitionScore: 60, legacyWeight: 75, decisionLatencyTicks: 3, memoryCitedEvents: [] }, 0);
+      mirror.sovereign_initAgent('IN', { powerOrientation: 'BALANCER', ideologicalPosture: 'PRAGMATIC_REALIST', economicDoctrine: 'FREE_MARKET', riskTolerance: 'CAUTIOUS', regionalAmbition: 'REGIONAL_DOMINANT' }, { name: 'Karan Sharma', nationId: 'IN', archetype: 'NATIONALIST_POPULIST', ageYears: 60, yearsInPower: 8, loyaltyBase: 'Popular', domesticApprovalScore: 75, personalRiskTolerance: 40, paranoidModifier: 40, ideologyStrength: 80, ambitionScore: 65, legacyWeight: 60, decisionLatencyTicks: 5, memoryCitedEvents: [] }, 0);
+      mirror.sovereign_initAgent('IL', { powerOrientation: 'STATUS_QUO', ideologicalPosture: 'PRAGMATIC_REALIST', economicDoctrine: 'FREE_MARKET', riskTolerance: 'AGGRESSIVE', regionalAmbition: 'LOCAL' }, { name: 'Ari Levin', nationId: 'IL', archetype: 'MILITARY_HAWK', ageYears: 68, yearsInPower: 12, loyaltyBase: 'Military', domesticApprovalScore: 60, personalRiskTolerance: 75, paranoidModifier: 50, ideologyStrength: 40, ambitionScore: 50, legacyWeight: 70, decisionLatencyTicks: 2, memoryCitedEvents: [] }, 0);
+      mirror.sovereign_initAgent('FR', { powerOrientation: 'BALANCER', ideologicalPosture: 'LIBERAL_DEMOCRATIC', economicDoctrine: 'FREE_MARKET', riskTolerance: 'CALCULATED', regionalAmbition: 'REGIONAL_PLAYER' }, { name: 'Aurelie Macron', nationId: 'FR', archetype: 'PRAGMATIC_TECHNOCRAT', ageYears: 55, yearsInPower: 6, loyaltyBase: 'Popular', domesticApprovalScore: 55, personalRiskTolerance: 45, paranoidModifier: 20, ideologyStrength: 30, ambitionScore: 70, legacyWeight: 60, decisionLatencyTicks: 4, memoryCitedEvents: [] }, 0);
+      mirror.sovereign_initAgent('GB', { powerOrientation: 'STATUS_QUO', ideologicalPosture: 'LIBERAL_DEMOCRATIC', economicDoctrine: 'FREE_MARKET', riskTolerance: 'CAUTIOUS', regionalAmbition: 'LOCAL' }, { name: 'Arthur Pendelton', nationId: 'GB', archetype: 'CAUTIOUS_INSTITUTIONALIST', ageYears: 58, yearsInPower: 4, loyaltyBase: 'Party', domesticApprovalScore: 52, personalRiskTolerance: 30, paranoidModifier: 15, ideologyStrength: 40, ambitionScore: 40, legacyWeight: 50, decisionLatencyTicks: 5, memoryCitedEvents: [] }, 0);
+    }, 100);
+
     set({
       countries: initialCountries,
       world: initialCanonical,
