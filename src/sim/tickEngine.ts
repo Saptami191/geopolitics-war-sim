@@ -45,6 +45,9 @@ import { useConventionalOpsStore } from '../store/conventionalOpsStore';
 import { useA2ADStore } from '../store/a2adStore';
 import { useEWStore } from '../store/ewStore';
 import { useDefenseIndustryStore } from '../store/defenseIndustryStore';
+import { useAPTStore } from '../store/aptStore';
+import { useCyberOffenseStore } from '../store/cyberOffenseStore';
+import { useCyberDefenseStore } from '../store/cyberDefenseStore';
 
 export const TICK_INTERVALS: Record<"day" | "week" | "month", number> = {
   day: 2000,
@@ -196,6 +199,11 @@ export function executeSimulationStep() {
   // Tick Defense Industry and Procurement (Module 7.5 - IRON FOUNDRY)
   useDefenseIndustryStore.getState().tickDefenseIndustry(activeTick);
   
+  // Tick Module 8 Cyber Operations
+  useAPTStore.getState().tickAPT();
+  useCyberOffenseStore.getState().tickCyberOffense();
+  useCyberDefenseStore.getState().tickCyberDefense();
+
   Object.keys(world.countries).forEach(id => {
     useLeaderMemoryStore.getState().forgiveMemories(id, activeTick);
   });

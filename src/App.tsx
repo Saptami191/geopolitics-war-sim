@@ -62,6 +62,7 @@ import EWPanel from './components/panels/EWPanel';
 import EWStatusWidget from './components/hud/EWStatusWidget';
 import DefenseIndustryPanel from './components/panels/DefenseIndustryPanel';
 import DefenseIndustryWidget from './components/hud/DefenseIndustryWidget';
+import { CyberOpsPanel } from './components/panels/CyberOpsPanel';
 import HumintPenetrationSuite from './components/panels/HumintPenetrationSuite';
 import DeceptionOperationsSuite from './components/panels/DeceptionOperationsSuite';
 import CounterProliferationSuite from './components/panels/CounterProliferationSuite';
@@ -259,6 +260,7 @@ function ActivePanelWrapper({ activeTab, getTabClassification }: { activeTab: nu
       {activeTab === 28 && <A2ADPanel />}
       {activeTab === 29 && <EWPanel />}
       {activeTab === 30 && <DefenseIndustryPanel />}
+      {activeTab === 31 && <CyberOpsPanel />}
       {activeTab === 100 && <NuclearPosturePanel />}
       {activeTab === 101 && <NC3SystemPanel />}
     </div>
