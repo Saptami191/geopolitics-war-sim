@@ -322,6 +322,7 @@ export default function App() {
   const modesOnboardingActive = useModesStore(s => s.modes_isOnboarding);
 
   const playerExposureScore = useRegimePressureStore(s => s.playerExposureScore);
+  const isInputBlocked = useCinematicsStore(s => s.isInputBlocked);
 
   useEffect(() => {
     if (playerState.aftermathActive) {
