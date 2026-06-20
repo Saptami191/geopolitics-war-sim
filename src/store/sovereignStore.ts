@@ -39,10 +39,19 @@ import { ConsequenceEngine } from '../sim/consequenceEngine';
 import { useLeaderMemoryStore } from './leaderMemoryStore';
 import { useMirrorStore } from './mirrorStore';
 import { triggerEmotionalEvent } from '../sim/leaderPsychologyEngine';
+import { computePerception } from '../sim/aiPerceptionEngine';
+import { scoreOpportunitiesAndConstraints } from '../sim/opportunityThreatScorer';
+import { selectTopGoal } from '../sim/goalSelectionEngine';
+import { instantiatePlan } from '../sim/planInstantiationEngine';
+import { PLAN_TEMPLATE_LIBRARY } from '../sim/planTemplateLibrary';
+import { evaluateEscalation } from '../sim/escalationLogic';
+import { evaluateReplanTrigger } from '../sim/replanTriggerEngine';
+import { useDefconStore } from './defconStore';
 
 interface SovereignStoreActions {
   initializeAgents: () => void;
   tickSovereignAgents: (worldDraft: WorldState, playerCountryId: string) => void;
+  runGoalSelectionAndPlanning: (worldDraft: WorldState, playerCountryId: string) => void;
   handleWorldEvent: (
     worldDraft: WorldState,
     eventType: string,
@@ -742,12 +751,156 @@ export const useSovereignStore = create<Record<string, any> & SovereignStoreActi
     set({ sovereignStates: states });
   },
 
+  runGoalSelectionAndPlanning: (worldDraft: WorldState, playerCountryId: string) => {
+    const currentTick = worldDraft.currentTick;
+    const defconLevel = useDefconStore.getState().currentDefconLevel ?? 3;
+
+    set(produce((draft) => {
+      const sovereignStates = draft.sovereignStates;
+
+      Object.keys(sovereignStates).forEach((countryId) => {
+        if (countryId === playerCountryId) return;
+
+        const agent: SovereignAgentState = sovereignStates[countryId];
+        const country = worldDraft.countries[countryId];
+        if (!agent || !country) return;
+
+        // 1. Compute perception
+        agent.perception = computePerception(countryId, worldDraft, sovereignStates);
+
+        // 2. Score opportunities and constraints
+        const { opportunities, constraints, opportunityWindow } = scoreOpportunitiesAndConstraints(agent, agent.perception, worldDraft);
+        agent.opportunities = opportunities;
+        agent.constraints = constraints;
+
+        // 3. Goal selection
+        const { rankedRecords, selectedGoal } = selectTopGoal(
+          agent.goalStack,
+          agent.perception,
+          opportunities,
+          constraints,
+          agent.identity,
+          agent.threatMemory
+        );
+        agent.goalStack.priorityRecords = rankedRecords;
+
+        // Increment age of goals in goal stack
+        agent.goalStack.activeGoals.forEach((goal) => {
+          goal.ticksActive++;
+        });
+
+        // 4. Replan trigger evaluation
+        const trigger = evaluateReplanTrigger(agent, worldDraft, defconLevel);
+
+        let replannedThisTick = false;
+        if (trigger.shouldReplan || !agent.activePlan || !agent.planExecution.isActive || agent.planExecution.status === 'FINISHED') {
+          // Record interruption history if it's an explicit trigger
+          if (trigger.shouldReplan && agent.activePlan) {
+            agent.interruptionHistory.push({
+              id: `interrupt_${countryId}_${currentTick}`,
+              tick: currentTick,
+              triggerEvent: trigger.reason,
+              severity: trigger.type === 'EMERGENCY_OVERRIDE' ? 'EMERGENCY' : 'HIGH',
+              actionTaken: trigger.type,
+              description: `Strategic detour forced by external system update: ${trigger.reason}`
+            });
+          }
+
+          agent.activePlan = instantiatePlan(selectedGoal, agent.identity, PLAN_TEMPLATE_LIBRARY, currentTick);
+          agent.planExecution = {
+            currentStepIndex: 0,
+            totalSteps: agent.activePlan.steps.length,
+            remainingTicks: agent.activePlan.planningHorizonTicks,
+            isActive: true,
+            status: 'EXECUTING'
+          };
+          agent.lastReplannedTick = currentTick;
+          agent.intentSnapshot.primaryActiveGoalClass = selectedGoal.goalClass;
+          replannedThisTick = true;
+        }
+
+        // 5. Escalation logic
+        const esc = evaluateEscalation(agent, worldDraft, defconLevel);
+        if (esc.shouldEscalate) {
+          // Trigger world effects and record
+          if (esc.escalationInstrument === 'NUCLEAR_SIGNALLING') {
+            const currentDefcon = useDefconStore.getState().currentDefconLevel;
+            if (currentDefcon > 1) {
+              useDefconStore.getState().setDefconLevel((currentDefcon - 1) as any, 'SYSTEM', `Nuclear signalling escalation by ${countryId}`, currentTick);
+            }
+          }
+          
+          useMirrorStore.getState().sovereign_recordDecision(countryId, {
+            nationId: countryId,
+            triggerEventId: null,
+            instrument: esc.escalationInstrument || 'MILITARY_BUILDUP',
+            targetNationId: selectedGoal.targetCountryId || 'US',
+            rationale: esc.rationale,
+            expectedOutcome: `Advance tactical goals`,
+            actualOutcome: null,
+            successScore: null,
+            wasAdaptedFromMirror: false
+          }, currentTick);
+
+          // Add a custom physical reward effect on country draft
+          if (esc.escalationInstrument === 'MILITARY_BUILDUP') {
+            country.arsenal.readinessLevel = Math.min(100, (country.arsenal.readinessLevel || 80) + 10);
+            country.economic.treasuryCashB = Math.max(0, country.economic.treasuryCashB - 5);
+          }
+        } else if (esc.shouldDeEscalate) {
+          // Insert de-escalation action step at front of active plan
+          if (agent.activePlan) {
+            const deEscStep: PlanStep = {
+              stepIndex: 0,
+              actionType: esc.deEscalationInstrument === 'DIPLOMATIC_PRESSURE' ? 'SIGNAL_CONCILIATION' : 'DEESCALATE_BUY_TIME',
+              targetCountryId: selectedGoal.targetCountryId,
+              description: `EMERGENCY DE-ESCALATION: ${esc.rationale}`,
+              durationTicks: 2,
+              executionProgressTicks: 0,
+              completed: false
+            };
+
+            const updatedSteps = [deEscStep, ...agent.activePlan.steps];
+            updatedSteps.forEach((s, idx) => {
+              s.stepIndex = idx + 1;
+            });
+            agent.activePlan.steps = updatedSteps;
+            agent.planExecution.currentStepIndex = 0;
+            agent.planExecution.totalSteps = updatedSteps.length;
+            agent.planExecution.status = 'EXECUTING';
+            agent.planExecution.isActive = true;
+          }
+        }
+
+        // Keep intentSnapshot aligned with current status
+        const activeStepIdx = agent.planExecution.currentStepIndex;
+        const currentActiveStep = agent.activePlan && activeStepIdx < agent.activePlan.steps.length
+          ? agent.activePlan.steps[activeStepIdx]
+          : null;
+
+        agent.intentSnapshot = {
+          primaryActiveGoalClass: selectedGoal.goalClass,
+          actionPreviewLabel: currentActiveStep 
+            ? `${currentActiveStep.actionType}: ${currentActiveStep.description}` 
+            : 'Formulating next geopolitical move...',
+          planningHorizonText: `${agent.planExecution.remainingTicks} ticks remaining`,
+          secrecyLevel: (agent.activePlan?.secrecyScore ?? 50) > 75 ? 'VEILED' : 'OPEN',
+          confidenceRatingPct: Math.round(agent.planCommitment.confidenceScore || 75)
+        };
+      });
+    }));
+  },
+
   tickSovereignAgents: (worldDraft: WorldState, playerCountryId: string) => {
     const states = get().sovereignStates;
     if (Object.keys(states).length === 0) {
       get().initializeAgents();
     }
 
+    // Step A: Run structural planning and goal selection updates on agents
+    get().runGoalSelectionAndPlanning(worldDraft, playerCountryId);
+
+    // Step B: Progress step ticking and execute actions
     set(produce((draft) => {
       Object.keys(draft.sovereignStates).forEach((countryId) => {
         if (countryId === playerCountryId) return;
@@ -756,85 +909,15 @@ export const useSovereignStore = create<Record<string, any> & SovereignStoreActi
         const country = worldDraft.countries[countryId];
         if (!agent || !country) return;
 
-        // I. Decay threat memory slightly, maintain persistent trust memory
+        // Decay threat memory slightly, maintain persistent trust memory
         agent.threatMemory.forEach((tm) => {
           tm.severityScore = Math.max(0, tm.severityScore - tm.decayRateIndex);
         });
         agent.threatMemory = agent.threatMemory.filter((tm) => tm.severityScore > 2);
 
-        // II. Calculate Opportunity and Constraint assessments
-        const constraints: ConstraintAssessment = {
-          unrestRisk: country.political.popularUnrest || 0,
-          treasuryStress: country.economic.debtStressIndex || 0,
-          readinessDeficit: 100 - (country.arsenal.readinessLevel || 80),
-          treatyObligationsCount: country.tradePartners.length,
-          sanctionsPainPercent: country.economic.sanctionedBy.length * 15,
-          recreationalSecurityBuffer: Math.max(10, 50 - country.political.stabilityIndex)
-        };
-        agent.constraints = constraints;
-
-        // Generate opportunities relative to standard threat metrics or players
-        const playerCountry = worldDraft.countries[playerCountryId];
-        if (playerCountry) {
-          const opp: OpportunityAssessment = {
-            targetCountryId: playerCountryId,
-            type: 'DISTRACTION',
-            description: playerCountry.atWarWith.length > 0 ? 'Player distracted with active warlike state.' : 'Superpower maintaining status quo duties',
-            score: playerCountry.atWarWith.length > 0 ? 80 : 35,
-            militaryVulnerability: Math.max(0, 100 - (playerCountry.arsenal.readinessLevel || 80)),
-            diplomaticIsolation: Math.max(0, 100 - playerCountry.political.stabilityIndex),
-            economicSanctionsFatigue: playerCountry.economic.debtStressIndex || 20,
-            allianceCohesionRank: Object.values(playerCountry.opinions).filter((x) => x < 0).length * 10
-          };
-          agent.opportunities = [opp];
-        }
-
-        // III. Evaluate Goal Priority Stack
-        agent.goalStack.activeGoals.forEach((goal) => {
-          let multiplier = 1.0;
-          if (goal.targetCountryId) {
-            // Check threat memories regarding that target
-            const relevantThreats = agent.threatMemory.filter((t) => t.targetCountryId === goal.targetCountryId);
-            if (relevantThreats.length > 0) {
-              const maxThreat = Math.max(...relevantThreats.map((t) => t.severityScore));
-              multiplier += maxThreat / 100;
-            }
-          }
-          goal.ticksActive++;
-
-          const record = agent.goalStack.priorityRecords.find((r) => r.goalId === goal.id);
-          if (record) {
-            record.threatMultiplier = multiplier;
-            record.finalScore = Math.min(100, goal.priorityScore * multiplier + record.opportunityBonus);
-          }
-        });
-
-        // Sort by priority final score
-        agent.goalStack.activeGoals.sort((a, b) => {
-          const scoreA = agent.goalStack.priorityRecords.find((r) => r.goalId === a.id)?.finalScore || 0;
-          const scoreB = agent.goalStack.priorityRecords.find((r) => r.goalId === b.id)?.finalScore || 0;
-          return scoreB - scoreA;
-        });
-
-        // IV. Process active plan or generate a plan
-        const activeTopGoal = agent.goalStack.activeGoals[0];
-        if (!agent.activePlan || !agent.planExecution.isActive || agent.planExecution.status === 'FINISHED') {
-          // Select top goal
-          agent.activePlan = generateStrategicPlan(countryId, activeTopGoal, agent.identity, worldDraft.currentTick);
-          agent.planExecution = {
-            currentStepIndex: 0,
-            totalSteps: agent.activePlan.steps.length,
-            remainingTicks: agent.activePlan.planningHorizonTicks,
-            isActive: true,
-            status: 'EXECUTING'
-          };
-          agent.lastReplannedTick = worldDraft.currentTick;
-          agent.intentSnapshot.primaryActiveGoalClass = activeTopGoal.goalClass;
-        }
-
-        // Execute current plan step material rewards and adjustments
         const execution = agent.planExecution;
         const plan = agent.activePlan;
+
         if (execution.isActive && plan && execution.currentStepIndex < plan.steps.length) {
           const step = plan.steps[execution.currentStepIndex];
           step.executionProgressTicks++;
@@ -932,14 +1015,6 @@ export const useSovereignStore = create<Record<string, any> & SovereignStoreActi
 
           // Render appropriate snapshot details for inspectability
           const currentStep = plan.steps[execution.currentStepIndex];
-          agent.intentSnapshot = {
-            primaryActiveGoalClass: activeTopGoal.goalClass,
-            actionPreviewLabel: currentStep ? `${currentStep.actionType}: ${currentStep.description}` : 'Strategizing next initiative',
-            planningHorizonText: `${execution.remainingTicks} ticks remaining`,
-            secrecyLevel: plan.secrecyScore > 75 ? 'VEILED' : 'OPEN',
-            confidenceRatingPct: Math.round(agent.planCommitment.confidenceScore)
-          };
-
           agent.actionPreview = currentStep ? {
             countryId,
             actionName: currentStep.actionType,

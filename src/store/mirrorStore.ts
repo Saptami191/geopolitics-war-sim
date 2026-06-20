@@ -40,7 +40,8 @@ import {
   SovereignState,
   SovereignActions,
   SovereignObjectiveType,
-  SovereignLeaderArchetype
+  SovereignLeaderArchetype,
+  EscalationDecision
 } from '../types';
 
 import { useWorldStore } from './worldStore';
@@ -54,6 +55,10 @@ import { useEconomyStore } from './economyStore';
 import { useEWStore } from './ewStore';
 import { useCinematicsStore } from './cinematicsStore';
 import { useConsequenceStore } from './consequenceStore';
+import { useSovereignStore } from './sovereignStore';
+import { evaluateReplanTrigger } from '../sim/replanTriggerEngine';
+import { evaluateEscalation } from '../sim/escalationLogic';
+import { selectTopGoal } from '../sim/goalSelectionEngine';
 
 const DEFAULT_TEMPLATES: CounterStrategyTemplate[] = [
   {
@@ -1058,29 +1063,81 @@ export const useMirrorStore = create<MirrorAdaptationState & MirrorActions & Sov
               }
             }
 
-            // Decide instruments for IMMEDIATE threats or prioritized objectives
+            // Decide instruments using pure decision engines synced with SovereignAgentState
             let actionTaken = false;
             for (const obj of agent.activeObjectives) {
-              if (actionTaken) break; // one major action per agent per tick to pace it
-              
-              if (Math.random() < 0.05) { // 5% chance per objective to act this tick
-                let chosenInst: SovereignInstrument = 'DIPLOMATIC_PRESSURE';
-                if (agent.leaderProfile.archetype === 'MILITARY_HAWK' || agent.riskTolerance === 'RECKLESS') {
-                  chosenInst = Math.random() > 0.5 ? 'MILITARY_BUILDUP' : 'COVERT_OPERATION';
-                } else if (agent.economicDoctrine === 'MERCANTILIST' || agent.leaderProfile.archetype === 'PRAGMATIC_TECHNOCRAT') {
-                  chosenInst = Math.random() > 0.5 ? 'ECONOMIC_COERCION' : 'TRADE_DEAL';
-                }
-                
-                const mostThreatening = [...agent.threatAssessments].sort((a,b) => b.overallThreatScore - a.overallThreatScore)[0];
-                const targetId = mostThreatening ? mostThreatening.targetNationId : playerNationId;
-                
-                const rationale = sovereign_generateDecisionRationale(agent, chosenInst, targetId, mostThreatening?.overallThreatScore || 0);
+              if (actionTaken) break;
 
+              const fullSovereignAgent = useSovereignStore.getState().sovereignStates[nid];
+              let triggerAction = Math.random() < 0.15; // default fallback probability
+
+              let trigger = { shouldReplan: false, type: 'SOFT_UPDATE', reason: '' };
+              let esc: EscalationDecision = { shouldEscalate: false, shouldDeEscalate: false, rationale: '' };
+
+              if (fullSovereignAgent) {
+                // 1. Evaluate Replanning trigger
+                trigger = evaluateReplanTrigger(fullSovereignAgent, worldState, defconState.currentDefconLevel);
+                
+                // 2. Evaluate Escalation status
+                esc = evaluateEscalation(fullSovereignAgent, worldState, defconState.currentDefconLevel);
+
+                if (trigger.shouldReplan || esc.shouldEscalate || esc.shouldDeEscalate) {
+                  triggerAction = true;
+                } else {
+                  triggerAction = Math.random() < 0.08 || (fullSovereignAgent.planExecution.isActive && currentTick % 4 === 0);
+                }
+              }
+
+              if (triggerAction) {
+                let chosenInst: SovereignInstrument = 'DIPLOMATIC_PRESSURE';
+                let rationale = '';
+
+                const activePlan = fullSovereignAgent?.activePlan;
+                const currentStepIndex = fullSovereignAgent?.planExecution.currentStepIndex;
+                const activeStep = activePlan && typeof currentStepIndex === 'number' && currentStepIndex < activePlan.steps.length
+                  ? activePlan.steps[currentStepIndex]
+                  : null;
+
+                if (esc.shouldEscalate && esc.escalationInstrument) {
+                  chosenInst = esc.escalationInstrument;
+                  rationale = `Escalation Overrides triggered: ${esc.rationale}`;
+                } else if (esc.shouldDeEscalate && esc.deEscalationInstrument) {
+                  chosenInst = esc.deEscalationInstrument;
+                  rationale = `De-escalation Overrides triggered: ${esc.rationale}`;
+                } else if (activeStep) {
+                  // Synchronize with active step action type mapping
+                  const mapped: Record<string, SovereignInstrument> = {
+                    'SHIFT_MILITARY_POSTURE': 'MILITARY_BUILDUP',
+                    'MOBILIZE_COVERT_ASSETS': 'COVERT_OPERATION',
+                    'BUILD_ECONOMIC_LEVERAGE': 'ECONOMIC_COERCION',
+                    'SIGNAL_CONCILIATION': 'DIPLOMATIC_PRESSURE',
+                    'CULTIVATE_ALLIANCE': 'DIPLOMATIC_PRESSURE',
+                    'TEST_RED_LINES': 'MILITARY_BUILDUP',
+                    'PREPARE_SANCTIONS': 'ECONOMIC_COERCION',
+                    'DEESCALATE_BUY_TIME': 'DIPLOMATIC_PRESSURE'
+                  };
+                  chosenInst = mapped[activeStep.actionType] || 'DIPLOMATIC_PRESSURE';
+                  rationale = `Executing active step of strategic plan "${activePlan.title}": ${activeStep.description}`;
+                } else {
+                  // Fallback based on baseline country attributes
+                  if (agent.leaderProfile.archetype === 'MILITARY_HAWK' || agent.riskTolerance === 'RECKLESS') {
+                    chosenInst = Math.random() > 0.5 ? 'MILITARY_BUILDUP' : 'COVERT_OPERATION';
+                  } else if (agent.economicDoctrine === 'MERCANTILIST' || agent.leaderProfile.archetype === 'PRAGMATIC_TECHNOCRAT') {
+                    chosenInst = Math.random() > 0.5 ? 'ECONOMIC_COERCION' : 'TRADE_DEAL';
+                  }
+                  rationale = `Strategically advancing national interests.`;
+                }
+
+                const targetId = activeStep?.targetCountryId || (fullSovereignAgent?.goalStack.activeGoals[0]?.targetCountryId) || playerNationId;
+
+                // Adapt to predictions from Mirror AI user profile
+                const predictedNext = draft.mirror_playerProfile?.predictedNextMoves || [];
                 let adapted = false;
-                if (draft.mirror_playerProfile?.predictedNextMoves.length > 0 && Math.random() < (draft.mirror_playerProfile.modelConfidence / 100)) {
-                   adapted = true;
-                   agent.mirrorAdaptationScore = Math.min(100, agent.mirrorAdaptationScore + 1);
-                   advMsgs.push(`Mirror advisory applied: ${nid} countering predicted player move with ${chosenInst}.`);
+                if (predictedNext.includes('MILITARY') && (chosenInst === 'COVERT_OPERATION' || chosenInst === 'MILITARY_BUILDUP')) {
+                  adapted = true;
+                  agent.mirrorAdaptationScore = Math.min(100, agent.mirrorAdaptationScore + 5);
+                  advMsgs.push(`Mirror adaptive defense: ${nid} executes counter-actions preparing for predicted player military initiatives.`);
+                  rationale += ` (Adapted based on Mirror AI predictive model: Counter-MILITARY readiness activated.)`;
                 }
 
                 const newDecision: SovereignDecision = {
@@ -1091,7 +1148,7 @@ export const useMirrorStore = create<MirrorAdaptationState & MirrorActions & Sov
                   instrument: chosenInst,
                   targetNationId: targetId,
                   rationale,
-                  expectedOutcome: `Advance ${obj.type}`,
+                  expectedOutcome: `Advance objective ${obj.type}`,
                   actualOutcome: null,
                   successScore: null,
                   wasAdaptedFromMirror: adapted
@@ -1105,23 +1162,23 @@ export const useMirrorStore = create<MirrorAdaptationState & MirrorActions & Sov
                 newDecisionsCount++;
                 actionTaken = true;
 
-                obj.progressScore += 5;
+                obj.progressScore = Math.min(100, obj.progressScore + 5);
                 if (!obj.instrumentsInUse.includes(chosenInst)) obj.instrumentsInUse.push(chosenInst);
 
                 // Apply to worldStore
-                if ((chosenInst as SovereignInstrument) === 'NUCLEAR_SIGNALLING' && worldState.countries[nid]?.arsenal?.nuclearCapable) {
-                   nuclearSignalled = true;
-                   worldState.addGlobalEvent(`[SOVEREIGN_AI] ${nid} engaged in nuclear signalling against ${targetId}!`, 'CRITICAL');
-                   useDefconStore.getState().setDefconLevel(Math.max(1, defconState.currentDefconLevel - 1) as any, 'SYSTEM', 'AI Nuclear Signal', currentTick);
-                } else if ((chosenInst as SovereignInstrument) === 'MILITARY_BUILDUP') {
-                   worldState.addGlobalEvent(`[SOVEREIGN_AI] ${nid} announces military buildup.`, 'WARNING');
-                } else if ((chosenInst as SovereignInstrument) === 'DIPLOMATIC_PRESSURE') {
-                   worldState.addGlobalEvent(`[SOVEREIGN_AI] ${nid} applies diplomatic pressure on ${targetId}.`, 'INFO');
-                } else if ((chosenInst as SovereignInstrument) === 'ECONOMIC_COERCION') {
-                   worldState.addGlobalEvent(`[SOVEREIGN_AI] ${nid} deploys economic coercion against ${targetId}.`, 'WARNING');
-                   economyState.imposeSanction(nid, targetId);
-                } else if ((chosenInst as SovereignInstrument) === 'COVERT_OPERATION') {
-                   useConsequenceStore.getState().triggerBlowback(targetId, 20, `AI Covert Operation from ${nid}`);
+                if (chosenInst === 'NUCLEAR_SIGNALLING' && worldState.countries[nid]?.arsenal?.nuclearCapable) {
+                  nuclearSignalled = true;
+                  worldState.addGlobalEvent(`[SOVEREIGN_AI] ${nid} engaged in nuclear signalling against ${targetId}!`, 'CRITICAL');
+                  useDefconStore.getState().setDefconLevel(Math.max(1, defconState.currentDefconLevel - 1) as any, 'SYSTEM', 'AI Nuclear Signal', currentTick);
+                } else if (chosenInst === 'MILITARY_BUILDUP') {
+                  worldState.addGlobalEvent(`[SOVEREIGN_AI] ${nid} announces military buildup.`, 'WARNING');
+                } else if (chosenInst === 'DIPLOMATIC_PRESSURE') {
+                  worldState.addGlobalEvent(`[SOVEREIGN_AI] ${nid} applies diplomatic pressure on ${targetId}.`, 'INFO');
+                } else if (chosenInst === 'ECONOMIC_COERCION') {
+                  worldState.addGlobalEvent(`[SOVEREIGN_AI] ${nid} deploys economic coercion against ${targetId}.`, 'WARNING');
+                  economyState.imposeSanction(nid, targetId);
+                } else if (chosenInst === 'COVERT_OPERATION') {
+                  useConsequenceStore.getState().triggerBlowback(targetId, 20, `AI Covert Operation from ${nid}`);
                 }
               }
             }

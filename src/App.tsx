@@ -308,123 +308,18 @@ export default function App() {
   
   const [commsOpen, setCommsOpen] = useState(false);
   const [showBazaar, setShowBazaar] = useState(false);
-  const unreadCommsCount = useCommsStore((s) => s.unreadCount);
-
-  // Aftermath states
   const [aftermathCountdown, setAftermathCountdown] = useState<number | null>(null);
   const [showChoices, setShowChoices] = useState(false);
   const [spectatingAftermath, setSpectatingAftermath] = useState(false);
-
-  const uiStore = useUIStore();
-
-  const personaDef = PERSONAS[activePersona];
-  const availablePanels = React.useMemo(() => getAvailablePanels(currentDefconLevel, personaDef.authorityTier), [currentDefconLevel, personaDef.authorityTier]);
-  const isInputBlocked = useCinematicsStore((s) => s.isInputBlocked);
-
-  const globalEventLog = useWorldStore((s) => s.globalEventLog);
-  const prevLogLengthRef = React.useRef(globalEventLog.length);
-  
-  const mirrorWarningLevel = useMirrorStore((s) => (s as any).warningLevel || 'LOW');
-
-  useEffect(() => {
-    if (globalEventLog.length > prevLogLengthRef.current) {
-      // Find newly added events. Since they are unshifted to the front:
-      const addedCount = globalEventLog.length - prevLogLengthRef.current;
-      const newEvents = globalEventLog.slice(0, addedCount);
-      
-      newEvents.forEach((ev) => {
-        const text = ev.text.toLowerCase();
-        if (text.includes('thermonuclear') || text.includes('nuclear exchange') || text.includes('nuclear') || text.includes('detonation')) {
-          useFxStore.getState().triggerFx({
-            type: 'NUCLEAR_DETONATION',
-            severity: 'CATASTROPHIC',
-            triggerTick: currentTick,
-            expiryTick: currentTick + 8,
-            durationMs: 3800,
-            payload: { message: ev.text }
-          });
-        } else if (text.includes('declared war') || text.includes('war clerk') || text.includes('declared war')) {
-          useFxStore.getState().triggerFx({
-            type: 'WAR_DECLARED',
-            severity: 'HIGH',
-            triggerTick: currentTick,
-            expiryTick: currentTick + 5,
-            durationMs: 2000,
-            payload: { message: ev.text }
-          });
-          audio.playIntelPing('radar');
-        } else if (text.includes('coup') || text.includes('regime')) {
-          useFxStore.getState().triggerFx({
-            type: 'COUP_SUCCESS',
-            severity: 'HIGH',
-            triggerTick: currentTick,
-            expiryTick: currentTick + 4,
-            durationMs: 1800,
-            payload: { message: ev.text }
-          });
-          audio.sfxCoupStaticBurst();
-        } else if (text.includes('ceasefire')) {
-          useFxStore.getState().triggerFx({
-            type: 'CEASEFIRE_SIGNED',
-            severity: 'MEDIUM',
-            triggerTick: currentTick,
-            expiryTick: currentTick + 5,
-            durationMs: 2500,
-            payload: { message: ev.text }
-          });
-          // Wait, the scene takes care of the peace resolution
-        } else {
-          audio.playIntelPing('cyber');
-        }
-      });
-    }
-    prevLogLengthRef.current = globalEventLog.length;
-  }, [globalEventLog, currentTick]);
-
-  useEffect(() => {
-    // If the active panel is no longer available due to DEFCON or persona changes, reset it.
-    if (availablePanels.length > 0) {
-      const isAvailable = availablePanels.some(p => p.id === playerState.activeTab);
-      if (!isAvailable) {
-        playerState.setActiveTab(availablePanels[0].id);
-      }
-    }
-  }, [availablePanels, playerState.activeTab, playerState.setActiveTab]);
-
-  useEffect(() => {
-    // Synchronize DEFCON variables and classes on initial mount
-    const level = useDefconStore.getState().currentDefconLevel;
-    applyDefconPalette(level);
-    useSigintStore.getState().initializeSigintSystem();
-
-    // Stop tick timer only on true app unmount
-    return () => {
-      stopTickTimer();
-    };
-  }, []);
-
-  // Intro and game states
   const [showIntro, setShowIntro] = useState(true);
   const [lobbyActive, setLobbyActive] = useState(true);
   const [worldBuilderActive, setWorldBuilderActive] = useState(false);
   const [scenarioSelected, setScenarioSelected] = useState<ScenarioId | null>(null);
-
-  // Hook up instant scenario restoration from URL share tokens
-  useEffect(() => {
-    checkAndRestoreSharedScenario(window.location.search).then((success) => {
-      if (success) {
-        setShowIntro(false);
-        setLobbyActive(false);
-        setWorldBuilderActive(false);
-        // Clear search tokens safely to avoid re-hydrations on refresh
-        window.history.replaceState({}, document.title, window.location.pathname);
-      }
-    });
-  }, []);
-
-  // Map settings
   const [activeLayer, setActiveLayer] = useState<MapLayer>('POLITICAL');
   const [viewMode, setViewMode] = useState<'MAP' | 'GRAPH'>('MAP');
+
+  const unreadCommsCount = useCommsStore((s) => s.unreadCount);
+  const modesOnboardingActive = useModesStore(s => s.modes_isOnboarding);
 
   const playerExposureScore = useRegimePressureStore(s => s.playerExposureScore);
 
@@ -1184,62 +1079,46 @@ export default function App() {
   const isDebriefOpen = ((resolution !== 'ONGOING') || (playerState.aftermathActive && showChoices)) && !spectatingAftermath;
   const isMapFullyHidden = isDebriefOpen || (expandedWorkstation !== null) || showBazaar;
 
-  // 1. Cinematic Intro Phase
-  if (showIntro) {
-    return <CinematicIntro onComplete={() => setShowIntro(false)} />;
-  }
-
-  // 1.5. Modes Onboarding Phase
-  const modesOnboardingActive = useModesStore(s => s.modes_isOnboarding);
-  if (modesOnboardingActive) {
-    return <ModesOnboardingFlow />;
-  }
-
-  // 2. World Builder Sandbox Phase
-  if (worldBuilderActive) {
-    return (
-      <WorldBuilder
-        onLaunchSandbox={launchSandbox}
-        onBack={() => setWorldBuilderActive(false)}
-      />
-    );
-  }
-
-  // 3. Game Lobby Selection Phase
-  if (lobbyActive) {
-    return (
-      <GameLobby
-        onStartScenario={selectScenario}
-        onOpenWorldBuilder={() => setWorldBuilderActive(true)}
-        onResumeScenario={(pkg: ScenarioPackage) => {
-          audio.resume();
-          audio.sfxSuccessConfirmation();
-          const res = hydrateScenario(pkg);
-          if (res.success) {
-            setScenarioSelected(pkg.playerState.activeScenario);
-            setShowIntro(false);
-            setLobbyActive(false);
-            setWorldBuilderActive(false);
-            useUIStore.getState().pushAlert({
-              title: 'PROJECTION RESUMED',
-              message: `Restored active projection "${pkg.scenarioName}" at Tick ${pkg.worldState.currentTick}.`,
-              type: 'INFO'
-            });
-            playGlobeTransition(() => {
-              restartTickTimer();
-            });
-          } else {
-            audio.sfxCrisisWarning();
-            alert(`FAILED TO RESUME DIRECTIVE: ${res.error}`);
-          }
-        }}
-      />
-    );
-  }
-
   // 4. Main Dashboard Simulation View
   return (
-    <div className="h-screen w-screen flex flex-col bg-[#030503] relative text-xs font-mono overflow-hidden">
+    <>
+      {showIntro && <CinematicIntro onComplete={() => setShowIntro(false)} />}
+      {!showIntro && modesOnboardingActive && <ModesOnboardingFlow />}
+      {!showIntro && !modesOnboardingActive && worldBuilderActive && (
+        <WorldBuilder
+          onLaunchSandbox={launchSandbox}
+          onBack={() => setWorldBuilderActive(false)}
+        />
+      )}
+      {!showIntro && !modesOnboardingActive && !worldBuilderActive && lobbyActive && (
+        <GameLobby
+          onStartScenario={selectScenario}
+          onOpenWorldBuilder={() => setWorldBuilderActive(true)}
+          onResumeScenario={(pkg: ScenarioPackage) => {
+            audio.resume();
+            audio.sfxSuccessConfirmation();
+            const res = hydrateScenario(pkg);
+            if (res.success) {
+              setScenarioSelected(pkg.playerState.activeScenario);
+              setShowIntro(false);
+              setLobbyActive(false);
+              setWorldBuilderActive(false);
+              useUIStore.getState().pushAlert({
+                title: 'PROJECTION RESUMED',
+                message: `Restored active projection "${pkg.scenarioName}" at Tick ${pkg.worldState.currentTick}.`,
+                type: 'INFO'
+              });
+              playGlobeTransition(() => {
+                restartTickTimer();
+              });
+            } else {
+              audio.sfxCrisisWarning();
+              alert(`FAILED TO RESUME DIRECTIVE: ${res.error}`);
+            }
+          }}
+        />
+      )}
+      {!showIntro && !modesOnboardingActive && !worldBuilderActive && !lobbyActive && (
       <div id="sovereign-fx-shake-root" className="w-full h-full flex flex-col relative" style={{ willChange: 'transform', pointerEvents: isInputBlocked ? 'none' : 'auto' }}>
         {/* Popups, Alerts & Bazaar overlays */}
         <GlobalFXLayer />
@@ -1758,6 +1637,7 @@ export default function App() {
       <ArachneBriefingModal />
       <WhiteFlashOverlay />
       </div>
-    </div>
+      )}
+      </>
   );
 }

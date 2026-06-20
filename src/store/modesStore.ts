@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { produce } from 'immer';
-import { Scenario, Mode_PlayerSession, Mode_Debrief, Role_Type, Mode_ToneMode, Scenario_Status, Scenario_Objective } from '../types';
+import { Scenario, Mode_PlayerSession, Mode_Debrief, Role_Type, Mode_ToneMode, Scenario_Status, Scenario_Objective, Modes2State } from '../types';
 import { useWorldStore } from './worldStore';
 import { usePlayerStore } from './playerStore';
 import { useDefconStore } from './defconStore';
@@ -361,6 +361,7 @@ interface ModesStoreState {
   modes_isOnboarding: boolean;
   modes_onboardingStep: number;
   modes_lastProcessedTick: number;
+  modes2: Modes2State;
 }
 
 interface ModesStoreActions {
@@ -386,6 +387,29 @@ export const useModesStore = create<ModesStoreState & ModesStoreActions>((set, g
   modes_isOnboarding: true,
   modes_onboardingStep: 0,
   modes_lastProcessedTick: -1,
+  modes2: {
+    campaignDefinitions: {},
+    activeCampaignRun: null,
+    completedCampaignRuns: [],
+    rolePowerRecords: { SHADOW_DIRECTOR: [], SUPREME_COMMANDER: [], CHIEF_OF_INTELLIGENCE: [] },
+    achievements: [],
+    legacyRecord: {
+      totalScenarioScore: 0, totalCampaignScore: 0, achievementsUnlocked: [],
+      legacyScore: 0, legacyTitle: 'FIELD OFFICER',
+      nuclearExchangeCount: 0, covertOpsSucceeded: 0, covertOpsAttributed: 0,
+      diplomaticTreatiesSigned: 0, aptOperationsLaunched: 0,
+      scenariosCompleted: 0, scenariosFailedByTimeout: 0, totalTicksPlayed: 0,
+      rolesPlayed: { SHADOW_DIRECTOR: 0, SUPREME_COMMANDER: 0, CHIEF_OF_INTELLIGENCE: 0 },
+      toneModesPlayed: { REALISM: 0, TECHNO_THRILLER: 0, ALTERNATE_HISTORY: 0 },
+      favoriteScenarioId: null, worstScenarioId: null,
+      firstPlayedTick: null, lastPlayedTick: null
+    },
+    dynamicScenarioQueue: [],
+    toneModeProfiles: { REALISM: {} as any, TECHNO_THRILLER: {} as any, ALTERNATE_HISTORY: {} as any },
+    editorDrafts: [],
+    modes2EventLog: [],
+    modes2LastProcessedTick: -1
+  },
 
   modes_startSession: (scenarioId, role, toneMode, currentTick) => {
     // Basic scenario kick-off
@@ -740,6 +764,10 @@ export const useModesStore = create<ModesStoreState & ModesStoreActions>((set, g
         draft.modes_scenarios[scenarioId].isUnlocked = true;
      }
   })),
+
+  modes2_startCampaignRun: (campaignId, role, toneMode, currentTick) => {
+     // TODO: Implement
+  },
 
   modes_generateDebrief: (session) => {
      const scenarioId = session.scenarioId;

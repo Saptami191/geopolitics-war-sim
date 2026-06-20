@@ -56,6 +56,7 @@ interface CyberState {
   cyber_totalIncidentsDetected: number;
   cyber_totalZeroDaysDeployed: number;
   cyber_directorLog: string[];
+  cyber2: Cyber2State;
 }
 
 interface CyberActions {

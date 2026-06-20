@@ -21,8 +21,41 @@ import {
   Diplo_SoftPowerProgramme,
   Diplo_Ambassador,
   Diplo_CapitalPool,
-  Diplo_CapitalType
+  Diplo_CapitalType,
+  // Part 2 additions
+  Diplomacy2GameplayState,
+  NegotiationIssue,
+  NegotiationTactic,
+  IncidentResponse,
+  PublicDiplomacyChannel
 } from '../types';
+
+import {
+  initNegotiation,
+  processNegotiationRound,
+  resolveNegotiation
+} from '../sim/negotiationEngine';
+
+import {
+  computeLeverageScore,
+  computeLeverageExerciseDelta,
+  identifyLeverageOpportunities
+} from '../sim/leverageEngine';
+
+import {
+  resolveAllianceStressor
+} from '../sim/allianceStressEngine';
+
+import {
+  launchPublicDiplomacyCampaign
+} from '../sim/publicDiplomacyEngine';
+
+import {
+  processDiplomacy2Tick
+} from '../sim/diplomacyTickProcessor';
+
+import { computeAIUNSCVotingPosition } from '../sim/aiDiplomacyEngine';
+import { computeIncidentResponseConsequence } from '../sim/incidentManagementEngine';
 
 import { useWorldStore } from './worldStore';
 import { useMirrorStore } from './mirrorStore';
@@ -61,6 +94,7 @@ interface DiplomaticState {
   diplo_totalCrisesResolved: number;
   diplo_totalUNSCResolutionsPassed: number;
   diplo_directorLog: string[];
+  diplo2: Diplomacy2GameplayState;
 }
 
 interface DiplomaticActions {
@@ -85,6 +119,14 @@ interface DiplomaticActions {
   diplo_declareCrisis: (crisis: Omit<Diplo_Crisis, 'id' | 'status' | 'resolutionTick' | 'outcome' | 'chosenResponseId'>, currentTick: number) => string;
   diplo_respondToCrisis: (crisisId: string, responseId: string, currentTick: number) => void;
   diplo_processTick: (currentTick: number) => void;
+  
+  // Part 2 Actions
+  diplo2_startNegotiation: (counterpartNationId: string, issues: NegotiationIssue[], tactic: NegotiationTactic, isBackChannel: boolean, deadlineTick: number | null, currentTick: number) => string;
+  diplo2_advanceNegotiationRound: (negotiationId: string, playerTactic: NegotiationTactic, currentTick: number) => void;
+  diplo2_recordIncidentResponse: (incidentId: string, response: IncidentResponse, currentTick: number) => void;
+  diplo2_exerciseLeverage: (leverageRecordId: string, targetNationId: string, currentTick: number) => void;
+  diplo2_launchPublicDiplomacyCampaign: (targetNationId: string, channel: PublicDiplomacyChannel, theme: string, capitalBudget: number, currentTick: number) => string;
+  diplo2_resolveAllianceStressor: (stressRecordId: string, resolutionMethod: 'SUMMIT' | 'SIDE_PAYMENT' | 'STRATEGIC_REALIGNMENT' | 'COSMETIC_CONCESSION', currentTick: number) => void;
 }
 
 export function diplo_generateTreatyCodename(type: Treaty_Type, partyNationIds: string[], tick: number): string {
@@ -181,6 +223,17 @@ export const useDiplomaticStore = create<DiplomaticState & DiplomaticActions>()(
     diplo_totalCrisesResolved: 0,
     diplo_totalUNSCResolutionsPassed: 0,
     diplo_directorLog: [],
+    diplo2: {
+      activeNegotiations: [],
+      leverageRecords: [],
+      allianceStressRecords: [],
+      publicDiplomacyCampaigns: [],
+      diplomaticIncidents: [],
+      aiDiplomaticAgendas: {},
+      negotiationEventLog: ['[SYSTEM MONITOR] Geopolitical negotiation arrays initialized.'],
+      allianceEventLog: ['[SYSTEM MONITOR] Alliance integrity monitoring active.'],
+      incidentEventLog: ['[SYSTEM MONITOR] Crisis wire tap operational.']
+    },
 
     diplo_initRelationship: (nationAId, nationBId, initialScore, initialPosture) => set(produce(draft => {
       const key = getRelationshipKey(nationAId, nationBId);
@@ -494,6 +547,103 @@ export const useDiplomaticStore = create<DiplomaticState & DiplomaticActions>()(
           }
        });
 
+       // PART 2 TICK PIPELINE PROCESSOR INTEGRATION
+       const playerAllies = Object.values(draft.diplo_treaties)
+         .filter(t => t.type === 'MUTUAL_DEFENCE' && t.status === 'RATIFIED' && (t as any).partyNationIds.includes('US'))
+         .flatMap(t => (t as any).partyNationIds)
+         .filter(id => id !== 'US');
+
+       const neutralNations = Object.keys(useEconomyStore.getState().econ_nations)
+         .filter(id => id !== 'US' && !playerAllies.includes(id));
+
+       const hasSigint = useSigintStore.getState().u8200Signals?.length > 0 || false;
+       const activeIndicators = {
+          hasSigintActive: hasSigint,
+          hasNavalDeployed: true,
+          hasAptOpsActive: false,
+          hasConventionalOpsActive: false,
+          hasTargetedOpsCompleted: false,
+          hasFinintActive: false,
+          hasPsyopActive: false,
+          hasTreatyViolations: Object.values(draft.diplo_treaties).some(t => (t as any).violationLog?.length > 0)
+       };
+
+       const res2 = processDiplomacy2Tick(
+          draft.diplo2,
+          draft.diplo_relationships,
+          draft.diplo_treaties,
+          useEconomyStore.getState().econ_nations,
+          useDefconStore.getState().currentDefconLevel ?? 4,
+          'US',
+          playerAllies,
+          neutralNations,
+          activeIndicators,
+          currentTick
+       );
+
+       // Apply Part 2 State Changes
+       draft.diplo2 = res2.updatedState;
+
+       // Apply relationship adjustments from campaigns or events
+       Object.keys(res2.relationshipDeltas).forEach(k => {
+          if (draft.diplo_relationships[k]) {
+             draft.diplo_relationships[k].relationshipScore = Math.min(
+                100,
+                Math.max(0, draft.diplo_relationships[k].relationshipScore + res2.relationshipDeltas[k])
+             );
+          }
+       });
+
+       // Apply alliance withdrawals
+       res2.withdrawnAllies.forEach(wa => {
+          const t = draft.diplo_treaties[wa.treatyId];
+          if (t) {
+             t.signatoryNationIds = t.signatoryNationIds.filter(id => id !== wa.nationId);
+             if (t.signatoryNationIds.length < 2) {
+                t.status = 'TERMINATED';
+                t.terminatedAtTick = currentTick;
+             }
+          }
+       });
+
+       // Propagate AI requests
+       res2.negotiationRequests.forEach(req => {
+          const existing = draft.diplo2.activeNegotiations.some(
+             n => n.counterpartNationId === req.nationId && n.phase !== 'CONCLUDED' && n.phase !== 'COLLAPSED'
+          );
+          if (!existing) {
+             const neg = initNegotiation('US', req.nationId, [
+                { issueId: 'intel_share', title: 'Bilateral Intelligence Link', importanceWeightCounterpart: 60, importanceWeightPlayer: 50, initialStanceDifference: 45, currentConcessionDistance: 45, isResolved: false, agreedStance: null, isSacrificeable: false, linkageTargetId: null },
+                { issueId: 'trade_tarrifs', title: 'Tariff Reciprocity Terms', importanceWeightCounterpart: 40, importanceWeightPlayer: 40, initialStanceDifference: 30, currentConcessionDistance: 30, isResolved: false, agreedStance: null, isSacrificeable: false, linkageTargetId: null }
+             ], 'COMPROMISE', false, currentTick + 15, currentTick);
+             draft.diplo2.activeNegotiations.push(neg);
+             draft.diplo2.negotiationEventLog.push(`[INBOUND BRIEFING] ${req.nationId} state delegates initiated treaty discussions on official channels.`);
+          }
+       });
+
+       // Auto generate card opportunities periodically
+       const existingBigRelationshipsCount = Object.values(draft.diplo_relationships)
+         .filter(rel => rel.relationshipScore > 50)
+         .length;
+
+       const newLeverage = identifyLeverageOpportunities(
+         useEconomyStore.getState().econ_nations['US'] || { nationId: 'US', gdpEstimateUSD: 25e12, sanctionResistanceScore: 80, technologyAccessScore: 90, defenceIndustrialOutput: 100, currentSectorHealth: {}, energyExportRevenueUSD: 0 } as any,
+         useEconomyStore.getState().econ_nations,
+         draft.diplo2.leverageRecords,
+         {},
+         existingBigRelationshipsCount,
+         currentTick
+       );
+       newLeverage.forEach(lev => {
+          draft.diplo2.leverageRecords.push(lev);
+          useWorldStore.getState().addGlobalEvent(`LEVERAGE UNLOCKED: ${lev.leverageType} on ${lev.targetNationId}`, 'INFO');
+       });
+
+       // Dispatch notifications
+       res2.globalEvents.forEach(evt => {
+          useWorldStore.getState().addGlobalEvent(evt.text, evt.severity);
+       });
+
        // UNSC Voting
        draft.diplo_unscResolutions.forEach(res => {
           if (res.status === 'UNDER_DEBATE') {
@@ -504,13 +654,35 @@ export const useDiplomaticStore = create<DiplomaticState & DiplomaticActions>()(
              members.forEach(nid => {
                 const role = draft.diplo_unscMembership.permanentMembers.includes(nid) ? 'P5_PERMANENT' : 'ELECTED_MEMBER';
                 let voteOptions = ['YES', 'NO', 'ABSTAIN'];
-                let voteCast = voteOptions[Math.floor(Math.random()*3)] as any;
+                let voteCast = 'ABSTAIN' as any;
                 
-                if (nid === res.proposingNationId) voteCast = 'YES';
-                if (nid === res.targetNationId) voteCast = 'NO';
+                if (nid === res.proposingNationId) {
+                    voteCast = 'YES';
+                 } else if (nid === res.targetNationId) {
+                    voteCast = 'NO';
+                 } else {
+                    const agenda = draft.diplo2.aiDiplomaticAgendas[nid];
+                    const isArmsL = draft.diplo2.leverageRecords.some(
+                       l => l.holderNationId === 'US' && l.targetNationId === nid && l.leverageType === 'ARMS_DEPENDENCY' && l.isBeingExercised
+                    );
+                    const isTAlly = playerAllies.includes(res.targetNationId || '');
+                    const relK = getRelationshipKey(nid, res.proposingNationId || '');
+                    const relationshipVal = draft.diplo_relationships[relK]?.relationshipScore ?? 50;
+
+                    voteCast = computeAIUNSCVotingPosition(
+                       nid,
+                       res.proposingNationId === 'US',
+                       isArmsL,
+                       isTAlly,
+                       relationshipVal,
+                       relationshipVal,
+                       agenda
+                    );
+                 };
+                // already handled above
                 
                 res.votes.push({
-                   nationId: nid, role, vote: voteCast, wasCoerced: false, capitalSpent: 0, rationale: 'Standard rationale.'
+                   nationId: nid, role, vote: voteCast, wasCoerced: false, capitalSpent: 0, rationale: `${nid} voted ${voteCast} on resolution codename ${res.codename}.`
                 });
                 
                 if (voteCast === 'YES') yes++;
@@ -561,6 +733,235 @@ export const useDiplomaticStore = create<DiplomaticState & DiplomaticActions>()(
        });
 
        draft.diplo_lastProcessedTick = currentTick;
+    })),
+
+    diplo2_startNegotiation: (counterpartNationId, issues, tactic, isBackChannel, deadlineTick, currentTick) => {
+       let negId = '';
+       set(produce(draft => {
+          const neg = initNegotiation('US', counterpartNationId, issues, tactic, isBackChannel, deadlineTick, currentTick);
+
+          negId = neg.id;
+          draft.diplo2.activeNegotiations.push(neg);
+          draft.diplo2.negotiationEventLog.push(`[TALKS OPENED] Bilateral treaty negotiation panel established with ${counterpartNationId} on ${isBackChannel ? 'back-channel' : 'official'} secure lines.`);
+          useWorldStore.getState().addGlobalEvent(`NEGOTIATIONS_OPENED: US ⟷ ${counterpartNationId}`, 'INFO');
+       }));
+       return negId;
+    },
+
+    diplo2_advanceNegotiationRound: (negotiationId, playerTactic, currentTick) => set(produce(draft => {
+       const neg = draft.diplo2.activeNegotiations.find(n => n.id === negotiationId);
+       if (!neg || neg.phase === 'CONCLUDED' || neg.phase === 'COLLAPSED') return;
+
+       // Fetch companion AI agenda
+       let aiAgenda = draft.diplo2.aiDiplomaticAgendas[neg.counterpartNationId];
+       if (!aiAgenda) {
+          const relKey = getRelationshipKey('US', neg.counterpartNationId);
+          const rScore = draft.diplo_relationships[relKey]?.relationshipScore ?? 0;
+          // temporary default agenda
+          aiAgenda = {
+             nationId: neg.counterpartNationId,
+             primaryGoal: rScore < -20 ? 'ISOLATE_PLAYER' : 'LEGITIMIZE_OWN_POSITION',
+             secondaryGoals: [],
+             targetNationIds: [],
+             currentTacticBeingUsed: 'SALAMI_SLICING',
+             capitalAllocationPct: 20,
+             recentActionsLog: [],
+             successMetric: '',
+             agendaUpdateTick: currentTick
+          };
+       }
+
+       const aiTactic = aiAgenda.currentTacticBeingUsed || 'SALAMI_SLICING';
+       
+       // Execute the round
+       const nextNeg = processNegotiationRound(neg, playerTactic, aiTactic, currentTick);
+       
+       // Replace negotiation state
+       const index = draft.diplo2.activeNegotiations.findIndex(n => n.id === negotiationId);
+       if (index !== -1) {
+          draft.diplo2.activeNegotiations[index] = nextNeg;
+       }
+
+       draft.diplo2.negotiationEventLog.push(`[ROUND ${nextNeg.roundsCompleted}] Player applied ${playerTactic}, counter-action was ${aiTactic}. Momentum: ${nextNeg.rawMomentumAccumulator.toFixed(1)}%, Trust: ${nextNeg.bilateralTrustScore.toFixed(1)}%`);
+
+       // Check for resolution
+       if (nextNeg.phase === 'CONCLUDED') {
+          const resolved = resolveNegotiation(nextNeg, currentTick);
+          draft.diplo2.activeNegotiations[index] = resolved;
+
+          const msg = `[TALKS CONCLUDED] Session resolved with outcome: ${resolved.outcomeType.replace(/_/g, ' ')}. Agreement status locked.`;
+          draft.diplo2.negotiationEventLog.push(msg);
+          useWorldStore.getState().addGlobalEvent(`TREATY_CONCLUDED: ${resolved.counterpartNationId}`, 'INFO');
+
+          // Auto-generate standard treaty if signed
+          if (resolved.outcomeType === 'TREATY_SIGNED' || resolved.outcomeType === 'SECRET_PROTOCOL_ONLY') {
+             const termList: Treaty_Term[] = resolved.agreedIssues.map(iss => ({
+                id: `term_${iss.issueId}`,
+                treatyId: `treaty_${resolved.id}`,
+                termType: 'CUSTOM',
+                obligatingNationId: resolved.counterpartNationId,
+                description: `Assurance on geopolitical issue: ${iss.title}`,
+                complianceScore: 100,
+                violationThreshold: 40,
+                verificationMethod: 'TRUST'
+             }));
+
+             const codename = diplo_generateTreatyCodename('PEACE_TREATY', ['US', resolved.counterpartNationId], currentTick);
+             const t: Treaty = {
+                id: `treaty_auto_${resolved.id}`,
+                name: codename,
+                type: resolved.outcomeType === 'SECRET_PROTOCOL_ONLY' ? 'INTELLIGENCE_SHARING' : 'PEACE_TREATY',
+                status: 'RATIFIED',
+                signatoryNationIds: ['US', resolved.counterpartNationId],
+                proposedAtTick: currentTick,
+                ratifiedAtTick: currentTick,
+                terminatedAtTick: null,
+                terms: termList,
+                violationLog: [],
+                automaticTriggers: [],
+                secretProtocols: resolved.outcomeType === 'SECRET_PROTOCOL_ONLY' ? [{
+                   id: `sec_${resolved.id}`,
+                   treatyId: `treaty_auto_${resolved.id}`,
+                   codename: `PROTOCOL ${codename}`,
+                   clausePayload: `Classified agreement regarding security areas.`,
+                   unmaskProbability: 0.15,
+                   isUnmasked: false
+                }] : []
+             };
+
+             draft.diplo_treaties[t.id] = t;
+             draft.diplo_totalTreatiesRatified += 1;
+             draft.diplo2.allianceEventLog.push(`[TREATY SIGNED] Joint treaty ${codename} entered into force automatically based on negotiation conclusions.`);
+
+             // Trigger dramatic cue
+             try {
+                useCinematicsStore.getState().triggerCinematic('DIPLOMATIC_SUCCESS', {
+                   title: 'Strategic Treaty Signed',
+                   lines: [`Official treaties signed with ${resolved.counterpartNationId}`, `Geopolitical stability reinforced.`]
+                });
+             } catch (e) {}
+          }
+       } else if (nextNeg.phase === 'COLLAPSED') {
+          const collMsg = `[TALKS COLLAPSED] Bilateral talks with ${nextNeg.counterpartNationId} failed to find consensus.`;
+          draft.diplo2.negotiationEventLog.push(collMsg);
+          useWorldStore.getState().addGlobalEvent(`TREATY_COLLAPSED: ${nextNeg.counterpartNationId}`, 'WARNING');
+       }
+    })),
+
+    diplo2_recordIncidentResponse: (incidentId, response, currentTick) => set(produce(draft => {
+       const inc = draft.diplo2.diplomaticIncidents.find(i => i.id === incidentId);
+       if (!inc || inc.consequenceApplied) return;
+
+       inc.chosenResponse = response;
+
+       // Perform proof evaluations
+       const userHasProof = Math.random() < 0.5;
+       const oppHasProof = Math.random() < 0.4;
+
+       const cons = computeIncidentResponseConsequence(inc, response, oppHasProof, userHasProof);
+
+       // Apply cost
+       if (cons.capitalCost > 0) {
+          draft.diplo_capitalPool.political = Math.max(0, draft.diplo_capitalPool.political - cons.capitalCost);
+       }
+
+       // Apply relationship delta
+       const key = getRelationshipKey('US', inc.affectedNationId);
+       if (draft.diplo_relationships[key]) {
+          draft.diplo_relationships[key].relationshipScore = Math.min(100, Math.max(0, draft.diplo_relationships[key].relationshipScore + cons.relationshipDelta));
+       }
+
+       inc.consequenceApplied = true;
+       
+       draft.diplo2.incidentEventLog.push(`[RESPONSE RECORDED] Selection: ${response}. Action result narrative: ${cons.narrative}`);
+       useWorldStore.getState().addGlobalEvent(`INCIDENT_RESOLVED: ${inc.id}`, 'INFO');
+
+       if (cons.escalationTriggered) {
+          useDefconStore.getState().triggerSovereignConflictAlert?.(inc.affectedNationId);
+          useWorldStore.getState().addGlobalEvent(`BRINKMANSHIP_CRISIS: Rapid escalation triggered conflict alert on ${inc.affectedNationId} border zone!`, 'CRITICAL');
+       }
+    })),
+
+    diplo2_exerciseLeverage: (leverageRecordId, targetNationId, currentTick) => set(produce(draft => {
+       const lev = draft.diplo2.leverageRecords.find(l => l.id === leverageRecordId);
+       if (!lev) return; // check carefully
+
+       lev.isBeingExercised = true;
+
+       const relKey = getRelationshipKey('US', targetNationId);
+       const rScore = draft.diplo_relationships[relKey]?.relationshipScore ?? 50;
+
+       const deltas = computeLeverageExerciseDelta(lev, rScore);
+
+       // Apply changes
+       if (draft.diplo_relationships[relKey]) {
+          draft.diplo_relationships[relKey].relationshipScore = Math.min(100, Math.max(0, draft.diplo_relationships[relKey].relationshipScore + deltas.relationshipDelta));
+       }
+
+       if (deltas.capitalDelta > 0) {
+          draft.diplo_capitalPool.political += deltas.capitalDelta;
+        }
+
+       // Boost active negotiations momentum if economic dependency used
+       if (lev.leverageType === 'ECONOMIC_DEPENDENCY' && deltas.momentumDelta > 0) {
+          draft.diplo2.activeNegotiations.forEach(n => {
+             if (n.counterpartNationId === targetNationId && n.phase !== 'CONCLUDED' && n.phase !== 'COLLAPSED') {
+                n.rawMomentumAccumulator = Math.min(100, n.rawMomentumAccumulator + deltas.momentumDelta);
+             }
+          });
+       }
+
+       draft.diplo2.negotiationEventLog.push(deltas.narrative);
+       useWorldStore.getState().addGlobalEvent(`LEVERAGE_EXERCISED: ${lev.leverageType}`, 'INFO');
+    })),
+
+    diplo2_launchPublicDiplomacyCampaign: (targetNationId, channel, theme, capitalBudget, currentTick) => {
+       let campaignId = '';
+       set(produce(draft => {
+          // Target profiles
+          const oppProfile = useEconomyStore.getState().econ_nations[targetNationId];
+          const res = oppProfile ? oppProfile.sanctionResistanceScore : 50;
+          const tech = oppProfile ? oppProfile.technologyAccessScore : 50;
+
+          const campaign = launchPublicDiplomacyCampaign(
+             'US',
+             targetNationId,
+             channel,
+             theme,
+             capitalBudget,
+             currentTick,
+             res,
+             tech,
+             false
+          );
+
+          campaignId = campaign.id;
+
+          // Deduct capital cost
+          if (channel === 'FOREIGN_AID_ANNOUNCEMENT') {
+             draft.diplo_capitalPool.economic = Math.max(0, draft.diplo_capitalPool.economic - capitalBudget);
+          } else {
+             draft.diplo_capitalPool.political = Math.max(0, draft.diplo_capitalPool.political - capitalBudget);
+          }
+
+          draft.diplo2.publicDiplomacyCampaigns.push(campaign);
+          draft.diplo2.negotiationEventLog.push(`[CAMPAIGN LAUNCHED] ${theme} topic initiated over ${targetNationId} via ${channel}. Reach factor: ${campaign.audienceReachScore}/100.`);
+          useWorldStore.getState().addGlobalEvent(`PUBLIC_CAMPAIGN: ${theme}`, 'INFO');
+       }));
+       return campaignId;
+    },
+
+    diplo2_resolveAllianceStressor: (stressRecordId, resolutionMethod, currentTick) => set(produce(draft => {
+       const index = draft.diplo2.allianceStressRecords.findIndex(s => s.id === stressRecordId);
+       if (index === -1) return;
+
+       const str = draft.diplo2.allianceStressRecords[index];
+       const updated = resolveAllianceStressor(str, resolutionMethod, currentTick);
+
+       draft.diplo2.allianceStressRecords[index] = updated;
+
+       draft.diplo2.allianceEventLog.push(`[RESOLUTION] Stressor resolved via ${resolutionMethod}. Cohesion index restoring.`);
+       useWorldStore.getState().addGlobalEvent(`ALLIANCE_STRESS_MANAGED: ${updated.stressor}`, 'INFO');
     }))
   })
 );

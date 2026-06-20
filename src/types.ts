@@ -6658,7 +6658,11 @@ export type StrategicGoalClass =
   | 'MILITARY_BUILDUP'
   | 'TECHNOLOGICAL_CATCH_UP'
   | 'SOFT_POWER_ACCUMULATION'
-  | 'COVERT_PREPARATION';
+  | 'COVERT_PREPARATION'
+  | 'PROXY_ESCALATION'
+  | 'INFORMATION_SATURATION'
+  | 'INTERNAL_CONSOLIDATION'
+  | 'BORDER_EXPANSION';
 
 export interface StrategicGoal {
   id: string;
@@ -7862,6 +7866,7 @@ export interface CIAOperation {
   sigintSupport: boolean;              // is SIGINT collection supporting this op?
   arachneSupport: boolean;             // is Arachne network mapping supporting?
   finintSupport: boolean;              // is FININT tracking supporting?
+  currentPhase?: OperationPhase;
 }
 
 export interface CIABlowbackEvent {
@@ -8324,6 +8329,128 @@ export interface Sanctions_Budget {
   remaining: number;
 }
 
+// ── Sanction Tier System ────────────────────────────────────────────────────
+
+export type SanctionTier = 
+  | 'TIER_1_DIPLOMATIC_WARNING'     // verbal condemnation, no economic bite
+  | 'TIER_2_TARGETED_INDIVIDUAL'    // asset freezes on named individuals/entities
+  | 'TIER_3_SECTORAL'               // block one specific sector (e.g. ENERGY or TECHNOLOGY)
+  | 'TIER_4_COMPREHENSIVE'          // block all trade across all sectors
+  | 'TIER_5_TOTAL_ISOLATION';       // full SWIFT cutoff + energy + arms + tech + secondary sanctions
+
+export type SanctionsGameplayStatus =
+  | 'PROPOSED'      // player has initiated but not yet fully imposed
+  | 'ACTIVE'        // currently in force
+  | 'ERODING'       // losing bite due to evasion
+  | 'FATIGUED'      // sanctioner states are backing off
+  | 'LIFTED'        // formally removed
+  | 'COUNTERED';    // target nation has imposed counter-sanctions
+
+export type SanctionEvasionRoute =
+  | 'THIRD_PARTY_RELAY'       // trade rerouted through neutral nation
+  | 'SHADOW_FLEET'            // oil/commodity shipped via untracked vessels
+  | 'CRYPTO_SETTLEMENT'       // payments via digital assets bypassing SWIFT
+  | 'BARTER_ARRANGEMENT'      // direct commodity-for-commodity without currency
+  | 'SHELL_COMPANY_NETWORK'   // financial obfuscation through front entities
+  | 'DOMESTIC_SUBSTITUTION';  // internal production replaces blocked imports
+
+export type SanctionFatigueDriver =
+  | 'DOMESTIC_ENERGY_COSTS'        // sanctioner consumers suffer high energy prices
+  | 'TRADE_REVENUE_LOSS'           // sanctioner exporters lose market access
+  | 'ALLIED_DEFECTION'             // coalition member breaks ranks
+  | 'HUMANITARIAN_OPTICS'          // international criticism of civilian impact
+  | 'ELECTION_CYCLE_PRESSURE'      // domestic politics in sanctioning nation
+  | 'COUNTER_SANCTIONS_PAIN';      // target retaliates with effective counter
+
+export interface ActiveSanctionRecord {
+  id: string;
+  sourceId: string;                        // sanctioning nation (player or AI)
+  targetId: string;                        // sanctioned nation
+  tier: SanctionTier;
+  status: SanctionsGameplayStatus;
+  imposedTick: number;
+  lastEscalatedTick: number;
+  affectedSectors: Econ_Sector[];          // sectors hit by this sanction
+  coalitionMemberIds: string[];            // other nations co-sanctioning
+  coalitionCohesionScore: number;          // 0–100, decays over time
+  evasionRoutes: SanctionEvasionRoute[];   // active evasion methods being used
+  evasionEffectivenessScore: number;       // 0–100, how much bite is being neutralized
+  currentDamagePct: number;               // actual GDP damage being inflicted (0–60)
+  theoreticalDamagePct: number;           // damage if fully enforced (0–60)
+  sanctionerFatigueScore: number;         // 0–100, how close coalition is to collapsing
+  fatigueDrivers: SanctionFatigueDriver[];
+  counterSanctionActive: boolean;
+  counterSanctionSectors: Econ_Sector[];  // what the target is hitting back with
+  blowbackEventsLog: string[];            // recent narrative blowback events
+  secondarySanctionActive: boolean;       // whether sanctioner is pressuring third parties
+  secondarySanctionTargets: string[];     // third parties being pressured
+  lifetimeTicks: number;                  // how many ticks this sanction has been active
+}
+
+export interface SanctionCoalitionMember {
+  nationId: string;
+  joinedTick: number;
+  commitmentScore: number;   // 0–100, how committed; decays based on their domestic costs
+  defectionRisk: number;     // 0–100
+  lastContributionTick: number;
+}
+
+export interface SanctionEvasionState {
+  targetId: string;
+  activeRoutes: SanctionEvasionRoute[];
+  routeEffectiveness: Record<SanctionEvasionRoute, number>;  // 0–100 per route
+  totalEvasionNeutralizedPct: number;   // combined, how much damage is being offset
+  evasionBuildupTick: number;           // how many ticks evasion has been building
+  thirdPartyRelayNations: string[];     // nations being used as conduits
+  adaptationVelocity: number;           // how fast new routes are being found (0–10)
+}
+
+export interface SanctionFatigueState {
+  sanctionerNationId: string;
+  targetNationId: string;
+  fatigueScore: number;         // 0–100; above 75 → coalition starts to crack
+  activeDrivers: SanctionFatigueDriver[];
+  domesticEconomicPainScore: number;   // 0–100
+  politicalPressureScore: number;      // 0–100
+  alliedDefectionCount: number;
+  ticksWithNoProgress: number;         // sanction not increasing damage despite being active
+  breakpointReached: boolean;          // true when fatigue crosses 75
+}
+
+export interface CounterSanctionRecord {
+  id: string;
+  initiatorId: string;       // nation retaliating
+  targetId: string;          // original sanctioner being hit back
+  triggeredAtTick: number;
+  affectedSectors: Econ_Sector[];
+  intensityScore: number;    // 0–100
+  estimatedDamageToSanctionerPct: number;
+  status: 'ACTIVE' | 'WITHDRAWN' | 'ESCALATED';
+}
+
+export interface SanctionImpactAssessment {
+  sanctionId: string;
+  targetId: string;
+  totalGdpDamagePct: number;
+  sectorBreakdown: Record<Econ_Sector, number>;  // damage per sector 0–100
+  reserveDepletionAcceleration: number;          // extra drain per tick
+  inflationSurge: number;                        // extra inflation % added
+  foodSecurityImpact: number;                    // negative delta
+  populationUnrestDelta: number;                 // feeds worldStore political.popularUnrest
+  diplomaticReputationDelta: number;             // for sanctioner nation
+  effectivenessRating: 'CRUSHING' | 'EFFECTIVE' | 'MODERATE' | 'WEAK' | 'NEGLIGIBLE';
+}
+
+export interface SanctionsGameplayState {
+  activeSanctionRecords: ActiveSanctionRecord[];
+  evasionStates: Record<string, SanctionEvasionState>;         // keyed by targetId
+  fatigueStates: Record<string, SanctionFatigueState>;         // keyed by `${sanctionerId}_${targetId}`
+  counterSanctionRecords: CounterSanctionRecord[];
+  coalitionMembers: Record<string, SanctionCoalitionMember[]>; // keyed by sanctionId
+  impactAssessments: Record<string, SanctionImpactAssessment>; // keyed by sanctionId
+  sanctionEventLog: string[];                                   // rolling narrative log
+}
+
 // --- DIPLOMACY-1 MODULE TYPES ---
 
 export type Treaty_Type =
@@ -8494,11 +8621,14 @@ export interface Treaty_Trigger {
 
 export interface Treaty_SecretProtocol {
   id: string;
+  codename: string;
   description: string;
   knownToNationIds: string[];
   isExposed: boolean;
   exposedAtTick: number | null;
   exposureConsequence: string;
+  unmaskProbability: number;
+  clausePayload: string;
 }
 
 export interface UNSC_Resolution {
@@ -8728,6 +8858,7 @@ export interface APT_Group {
   specialisation: Cyber_TargetType[];
   sophisticationScore: number;
   activeOperationIds: string[];
+  attributedOperationIds: string[];
   knownTtps: string[];
   isAttributed: boolean;
   attributionConfidence: Cyber_AttributionConfidence;
@@ -8812,6 +8943,7 @@ export interface Cyber_Tool {
   isBurned: boolean;
   burnedAtTick: number | null;
   linkedZeroDayId: string | null;
+  lastUsedInOperationId: string | null;
 }
 
 export interface Cyber_InfrastructureNode {
@@ -9205,4 +9337,479 @@ export interface ArachneSource {
   lastActiveTick: number | null;
   activeStatus: 'ACTIVE' | 'DORMANT' | 'BURNED';
 }
+
+export type OperationPhase = 'PREPARATION' | 'INFILTRATION' | 'EXECUTION' | 'EXFILTRATION' | 'COMPLETE';
+
+export interface CIAMissionTemplate {
+  type: CIAOperationType;
+  requiredMinAccessLevel: number;
+  requiredOperativeCount: { min: number; max: number };
+  requiredAssetTiers: number[];
+  estimatedDurationRange: { min: number; max: number };
+  baseSuccessProbability: number;
+  baseDetectionRisk: number;
+  resourceCostRange: { min: number; max: number };
+  blowbackProfile: CIABlowbackSeverity[];
+  sigintBonus: number;
+  arachneBonus: number;
+  finintBonus: number;
+  effects: string[];
+}
+
+export interface MissionOutcomeResult {
+  outcome: 'SUCCEEDED' | 'PARTIALLY_SUCCEEDED' | 'FAILED' | 'BLOWN';
+  successProbabilityUsed: number;
+  detectionRiskUsed: number;
+  worldEffects: WorldEffect[];
+  operativeEffects: OperativeEffect[];
+  assetEffects: AssetEffect[];
+  blowbackSeverity: CIABlowbackSeverity | null;
+  narrativeSummary: string;
+}
+
+export interface WorldEffect {
+  effectType: string;
+  targetNationId: string;
+  magnitude: number;
+}
+
+export interface OperativeEffect {
+  operativeId: string;
+  heatDelta: number;
+  coverIntegrityDelta: number;
+  newStatus?: CIAOperativeStatus;
+}
+
+export interface AssetEffect {
+  assetId: string;
+  motivationDelta: number;
+  newStatus?: CIAAssetStatus;
+}
+
+export interface ExfiltrationResult {
+  success: boolean;
+  method: 'STATION_CHANNEL' | 'EMERGENCY_PICKUP' | 'COVER_IDENTITY' | 'WALK_IN';
+  heatReduction: number;
+  coverIntegrityImpact: number;
+  newStatus: CIAOperativeStatus;
+  durationTicks: number;
+  notes: string;
+}
+
+export interface RegimeChangeEffect {
+  targetNationId: string;
+  effectType: 'STABILITY_DAMAGE' | 'LEADER_CHANGE' | 'FACTION_FRACTURE' | 'MILITARY_DEFECTION' | 'POPULAR_UNREST' | 'ELECTION_INTERFERENCE';
+  magnitude: number;
+  description: string;
+}
+
+export interface PsyopEffect {
+  targetNationId: string;
+  effectType: 'UNREST_INCREASE' | 'TRUST_EROSION' | 'MEDIA_NARRATIVE_SHIFT' | 'ELECTION_INFLUENCE' | 'MILITARY_MORALE_DAMAGE';
+  magnitude: number;
+  durationTicks: number;
+  description: string;
+}
+
+export interface EscalationDecision {
+  shouldEscalate: boolean;
+  shouldDeEscalate: boolean;
+  escalationInstrument?: SovereignInstrument;
+  deEscalationInstrument?: SovereignInstrument;
+  rationale: string;
+}
+
+export interface ReplanningTriggerResult {
+  shouldReplan: boolean;
+  type: ReplanningType;
+  reason: string;
+}
+
+// ── Negotiation Architecture ────────────────────────────────────────────────
+
+export type NegotiationPhase =
+  | 'OPENING_POSITIONS'     // both sides state maximal demands
+  | 'EXPLORATORY'           // testing feasibility, no commitments
+  | 'SUBSTANTIVE'           // real concessions being traded
+  | 'FINAL_DRAFTING'        // text being agreed
+  | 'DEADLOCKED'            // talks stalled, crisis risk rises
+  | 'COLLAPSED'             // talks failed, relationship damaged
+  | 'CONCLUDED';            // agreement reached
+
+export type NegotiationTactic =
+  | 'GOOD_FAITH_OVERTURE'       // builds trust, slows down, better deal quality
+  | 'BRINKMANSHIP'              // high pressure, fast resolution or collapse
+  | 'SALAMI_SLICING'            // incremental concessions, disguises full intent
+  | 'LINKAGE'                   // tie this negotiation to another issue
+  | 'FAIT_ACCOMPLI'             // present the other side with a done fact
+  | 'BACK_CHANNEL_ONLY'         // deniable, no public positions
+  | 'MULTILATERAL_PRESSURE'     // involve third parties to pressure target
+  | 'TIME_PRESSURE'             // impose a deadline; accelerates or collapses
+  | 'CONCESSION_PACKAGE'        // offer visible concession to build momentum
+  | 'CONSTRUCTIVE_AMBIGUITY';   // leave key terms deliberately vague
+
+export type NegotiationOutcomeType =
+  | 'TREATY_SIGNED'
+  | 'JOINT_COMMUNIQUE'          // weaker than treaty, no binding terms
+  | 'MEMORANDUM_OF_UNDERSTANDING'
+  | 'FRAMEWORK_AGREEMENT'       // intent to negotiate further; buys time
+  | 'NO_AGREEMENT'              // talks ended without result
+  | 'SECRET_PROTOCOL_ONLY';     // public: nothing. private: binding side deal
+
+export interface NegotiationIssue {
+  id: string;
+  label: string;                // e.g. "Troop withdrawal timeline"
+  playerPosition: number;       // 0–100, where 0=full concession, 100=maximal demand
+  counterpartPosition: number;
+  currentLandingZone: number;   // agreed interim value, starts at midpoint
+  isResolved: boolean;
+  isSacrificeable: boolean;     // player willing to drop this to win others
+  linkageTargetId: string | null; // linked to another NegotiationIssue id
+}
+
+export interface ActiveNegotiation {
+  id: string;
+  playerNationId: string;
+  counterpartNationId: string;
+  phase: NegotiationPhase;
+  activeTactic: NegotiationTactic;
+  counterpartTactic: NegotiationTactic;
+  issues: NegotiationIssue[];
+  agreedIssues: NegotiationIssue[];
+  wavesCount: number;
+  rawMomentumAccumulator: number;
+  bilateralTrustScore: number;
+  roundsCompleted: number;
+  startedAtTick: number;
+  deadlineTick: number | null;
+  isBackChannel: boolean;
+  isSecretProtocolEnabled: boolean;
+  leakRisk: number;                    // 0–100: chance this negotiation becomes public
+  counterpartTrustScore: number;       // 0–100: how much they trust player's signals
+  momentumScore: number;               // -100 to +100: positive = progress, negative = deadlock
+  lastTacticAppliedTick: number;
+  narrativeLog: string[];
+  outcomeType: NegotiationOutcomeType | null;
+  concludedAtTick: number | null;
+  secretProtocolClauses: string[];     // text of any secret side agreements
+}
+
+// ── Diplomatic Leverage System ───────────────────────────────────────────────
+
+export type LeverageType =
+  | 'ECONOMIC_DEPENDENCY'      // target depends on player for trade/aid
+  | 'SECURITY_GUARANTEE'       // player protects target militarily
+  | 'INTELLIGENCE_SHARING'     // player provides intel the target needs
+  | 'DEBT_OWNERSHIP'           // player owns sovereign debt of target
+  | 'DIASPORA_INFLUENCE'       // player nation has influence via diaspora in target
+  | 'ENERGY_SUPPLY'            // player is primary energy supplier to target
+  | 'ARMS_DEPENDENCY'          // target uses player's weapons systems
+  | 'REPUTATION_CAPITAL';      // player's global standing gives them moral authority
+
+export interface DiplomaticLeverageRecord {
+  id: string;
+  holderNationId: string;       // who has the leverage
+  targetNationId: string;       // who it is over
+  leverageType: LeverageType;
+  intensityScore: number;       // 0–100
+  isBeingExercised: boolean;    // actively applying pressure
+  createdAtTick: number;
+  expiryTick: number | null;
+  narrativeDescription: string;
+}
+
+// ── Alliance Stress Architecture ─────────────────────────────────────────────
+
+export type AllianceStressor =
+  | 'BURDEN_SHARING_DISPUTE'       // one ally paying more than agreed
+  | 'STRATEGIC_DIVERGENCE'         // different threat perceptions
+  | 'DOMESTIC_POLITICAL_SHIFT'     // election in ally changes policy
+  | 'TRADE_FRICTION'               // economic disputes between allies
+  | 'NUCLEAR_UMBRELLA_DOUBT'       // credibility of extended deterrence questioned
+  | 'OUT_OF_AREA_DISAGREEMENT'     // conflict over operations outside treaty zone
+  | 'INTELLIGENCE_BREACH'          // one ally caught spying on another
+  | 'SANCTIONS_DIVERGENCE';        // allies disagree on sanction targets
+
+export interface AllianceStressRecord {
+  id: string;
+  allianceTreatyId: string;         // references Treaty in diplomaticStore
+  affectedNationIds: string[];      // which members are stressed
+  stressor: AllianceStressor;
+  stressIntensity: number;          // 0–100; above 70 → fracture risk
+  onsetTick: number;
+  unaddressedTickCount: number;     // each tick unaddressed raises stress
+  isResolved: boolean;
+  resolvedAtTick: number | null;
+  narrativeDescription: string;
+}
+
+// ── Public Diplomacy & Media Narrative ──────────────────────────────────────
+
+export type PublicDiplomacyChannel =
+  | 'STATE_MEDIA_BROADCAST'
+  | 'UN_GENERAL_ASSEMBLY_SPEECH'
+  | 'INTERNATIONAL_PRESS_CONFERENCE'
+  | 'CULTURAL_EXCHANGE_PROGRAMME'
+  | 'ACADEMIC_DIASPORA_OUTREACH'
+  | 'FOREIGN_AID_ANNOUNCEMENT'
+  | 'TRACK_TWO_DIALOGUE';           // non-governmental back-channel dialogue
+
+export interface PublicDiplomacyCampaign {
+  id: string;
+  playerNationId: string;
+  targetNationId: string;           // null = global audience
+  channel: PublicDiplomacyChannel;
+  narrativeTheme: string;           // e.g. "Counter-terrorism partnership", "Human rights leadership"
+  startedAtTick: number;
+  durationTicks: number;
+  capitalCostPerTick: number;       // informational capital
+  effectivenessScore: number;       // 0–100: how well it's landing
+  counterNarrativeActive: boolean;  // adversary running counter-campaign
+  counterNarrativeStrength: number; // 0–100
+  audienceReachScore: number;       // 0–100: how many elites/publics are exposed
+  reputationDeltaPerTick: number;   // relationship score delta per tick
+  isActive: boolean;
+  cumulativeReputationDelta: number;
+}
+
+// ── Diplomatic Incident Management ──────────────────────────────────────────
+
+export type DiplomaticIncidentType =
+  | 'SPY_PLANE_INTERCEPT'
+  | 'NAVAL_STANDOFF'
+  | 'CYBER_ATTRIBUTION_DISPUTE'
+  | 'TERRITORIAL_INTRUSION'
+  | 'ASSASSINATION_ALLEGATION'
+  | 'ECONOMIC_ESPIONAGE_EXPOSURE'
+  | 'DEFECTION_EVENT'
+  | 'PROPAGANDA_REVELATION'
+  | 'TREATY_BREACH_ALLEGATION';
+
+export type DiplomaticIncidentSeverity =
+  | 'MINOR'       // manageable through normal channels
+  | 'SERIOUS'     // requires senior-level response
+  | 'GRAVE'       // cabinet-level; relationship at risk
+  | 'CRITICAL';   // existential to relationship; may trigger crisis
+
+export type IncidentResponse =
+  | 'DENY_AND_DEFLECT'
+  | 'ACKNOWLEDGE_AND_APOLOGIZE'
+  | 'COUNTER_ACCUSE'
+  | 'DEMAND_INQUIRY'
+  | 'INVOKE_TREATY_ARBITRATION'
+  | 'ESCALATE_TO_UNSC'
+  | 'IMPOSE_IMMEDIATE_SANCTION'
+  | 'ISSUE_ULTIMATUM';
+
+export interface DiplomaticIncident {
+  id: string;
+  type: DiplomaticIncidentType;
+  severity: DiplomaticIncidentSeverity;
+  initiatorNationId: string;
+  affectedNationId: string;
+  occurredAtTick: number;
+  isPublic: boolean;                 // has it leaked to media
+  playerAwareness: boolean;          // does player know
+  chosenResponse: IncidentResponse | null;
+  responseDeadlineTick: number;      // miss the deadline → automatic 'DENY_AND_DEFLECT'
+  consequenceApplied: boolean;
+  relationshipDamage: number;        // pre-computed; applied when response chosen
+  escalationRisk: number;            // 0–100
+  narrativeDescription: string;
+}
+
+// ── AI Nation Diplomatic Agenda ──────────────────────────────────────────────
+
+export type DiplomaticAgendaGoal =
+  | 'ISOLATE_PLAYER'              // build coalition against player nation
+  | 'COURT_PLAYER_AS_ALLY'        // seek formal alliance
+  | 'EXPAND_BLOC_INFLUENCE'       // recruit neutral nations into own bloc
+  | 'UNDERMINE_PLAYER_ALLIANCE'   // sow discord in player's alliances
+  | 'SECURE_BUFFER_NATION'        // ensure neutral nation stays non-aligned
+  | 'EXTRACT_CONCESSION'          // win specific treaty term from player
+  | 'DELAY_NEGOTIATION'           // stall talks to gain time
+  | 'LEGITIMIZE_OWN_POSITION';    // build UNSC/multilateral cover for own actions
+
+export interface AIDiplomaticAgenda {
+  nationId: string;
+  primaryGoal: DiplomaticAgendaGoal;
+  secondaryGoals: DiplomaticAgendaGoal[];
+  targetNationIds: string[];              // nations being actively courted or pressured
+  currentTacticBeingUsed: NegotiationTactic;
+  capitalAllocationPct: number;           // what % of their capital they're spending on diplomacy
+  recentActionsLog: string[];
+  successMetric: string;                  // plain English description of what success looks like
+  agendaUpdateTick: number;
+}
+
+// ── Master Diplomacy Part 2 State ────────────────────────────────────────────
+
+export interface Diplomacy2GameplayState {
+  activeNegotiations: ActiveNegotiation[];
+  leverageRecords: DiplomaticLeverageRecord[];
+  allianceStressRecords: AllianceStressRecord[];
+  publicDiplomacyCampaigns: PublicDiplomacyCampaign[];
+  diplomaticIncidents: DiplomaticIncident[];
+  aiDiplomaticAgendas: Record<string, AIDiplomaticAgenda>;   // keyed by nationId
+  negotiationEventLog: string[];                              // rolling narrative log
+  incidentEventLog: string[];
+  allianceEventLog: string[];
+}
+
+// ── Cyber Part 2 Types ──────────────────────────────────────────────────────
+
+export type OPSEC_Level = 'BLACK' | 'GREY' | 'WHITE' | 'BURNED';
+export type OPSEC_ViolationType = 'TOOL_REUSE' | 'INFRASTRUCTURE_REUSE' | 'TIMING_SIGNATURE' | 'LANGUAGE_ARTEFACT' | 'TTP_OVERLAP' | 'BEACON_INTERVAL_MATCH' | 'ALLY_EXPOSURE';
+export interface OPSEC_Profile {
+  operationId: string;
+  level: OPSEC_Level;
+  violations: Array<{ type: OPSEC_ViolationType; detectedAtTick: number; attributionRiskIncrease: number; isRemediated: boolean }>;
+  c2InfrastructureScore: number;
+  tradecraftScore: number;
+  coverProfileId: string | null;
+  falseFlagActive: boolean;
+  falseFlagTargetNationId: string | null;
+  falseFlagPlausibilityScore: number;
+  opsecDecayPerTick: number;
+  lastMaintainedTick: number;
+}
+export type CoverStoryType = 'CRIMINAL_RANSOMWARE_GROUP' | 'HACKTIVIST_COLLECTIVE' | 'NATION_STATE_FRAMING' | 'COMMERCIAL_ESPIONAGE' | 'UNKNOWN_ACTOR';
+export interface Cyber_CoverStory {
+  id: string; type: CoverStoryType; targetFramedNationId: string | null; plausibilityScore: number;
+  supportingArtefacts: string[]; createdAtTick: number; isExposed: boolean; exposedAtTick: number | null;
+}
+export type SupplyChainImplantTarget = 'FIRMWARE_UPDATE' | 'SOFTWARE_SUPPLY_CHAIN' | 'HARDWARE_INTERDICTION' | 'TRUSTED_VENDOR_PIVOT' | 'OPEN_SOURCE_POISONING' | 'CERTIFICATE_AUTHORITY';
+export interface Cyber_SupplyChainImplant {
+  id: string; codename: string; implantType: SupplyChainImplantTarget; sponsoringNationId: string;
+  targetVendorId: string; affectedNationIds: string[]; isActivated: boolean; dormantSince: number;
+  activatedAtTick: number | null; dormantDetectionRiskPerTick: number; activeDetectionRiskPerTick: number;
+  accessLevel: 'READ_ONLY' | 'LATERAL_ACCESS' | 'FULL_CONTROL'; currentCompromisedNodeIds: string[]; exfiltrationBandwidth: number;
+  isDiscovered: boolean; discoveredAtTick: number | null; estimatedDuration: number;
+}
+export type CYBINT_SourceType = 'IMPLANT_TELEMETRY' | 'HONEYPOT_CAPTURE' | 'SIGINT_INTERCEPT' | 'ZERO_DAY_REVERSE_ENGINEER' | 'DEFECTOR_TECHNICAL_BRIEF' | 'OSINT_DARK_WEB' | 'PARTNER_LIAISON';
+export type CYBINT_ProductType = 'THREAT_ACTOR_PROFILE' | 'VULNERABILITY_REPORT' | 'CAPABILITY_ASSESSMENT' | 'INFRASTRUCTURE_MAP' | 'OPERATION_WARNING' | 'ZERO_DAY_INTELLIGENCE';
+export interface CYBINT_RawCollect {
+  id: string; sourceType: CYBINT_SourceType; sourceNationId: string; collectedAtTick: number;
+  rawContent: string; technicalIndicators: string[]; confidence: 'LOW' | 'MEDIUM' | 'HIGH' | 'CONFIRMED';
+  isProcessed: boolean; linkedProductId: string | null;
+}
+export interface CYBINT_Product {
+  id: string; productType: CYBINT_ProductType; aboutNationId: string; aboutAPTGroupId: string | null;
+  producedAtTick: number; analystConfidence: number; sourceCollectIds: string[]; keyFindings: string[];
+  actionableRecommendation: string; expiresAtTick: number; isActedUpon: boolean; strategicValue: number;
+}
+export type CyberCampaignObjective = 'STRATEGIC_PARALYSIS' | 'INTELLIGENCE_HARVEST' | 'ECONOMIC_COERCION' | 'ELECTION_INTERFERENCE' | 'MILITARY_BLINDING' | 'DETERRENCE_SIGNALLING' | 'COUNTER_CYBER';
+export type CyberCampaignPhase = 'PREPARATION' | 'POSITIONING' | 'SHAPING' | 'CULMINATION' | 'EXPLOITATION' | 'WITHDRAWAL';
+export interface Cyber_Campaign {
+  id: string; codename: string; sponsoringNationId: string; targetNationIds: string[]; objective: CyberCampaignObjective;
+  currentPhase: CyberCampaignPhase; linkedOperationIds: string[]; startedAtTick: number; estimatedCulminationTick: number;
+  isPlayerControlled: boolean; coordinationScore: number; adversaryAwarenessLevel: number; campaignBudget: number;
+  campaignBudgetSpent: number; narrativeLog: string[]; status: 'ACTIVE' | 'CULMINATING' | 'WITHDRAWN' | 'DISRUPTED' | 'SUCCEEDED' | 'FAILED'; successMetrics: string[];
+}
+export type CyberDeterrenceSignalType = 'CAPABILITY_DEMONSTRATION' | 'INFRASTRUCTURE_PRE_POSITIONING' | 'RED_LINE_DECLARATION' | 'RETALIATORY_STRIKE' | 'ALLY_CYBER_GUARANTEE';
+export interface Cyber_DeterrenceRecord {
+  id: string; playerNationId: string; targetNationId: string; signalType: CyberDeterrenceSignalType;
+  issuedAtTick: number; credibilityScore: number; deterrenceEffect: number; counterpartAcknowledged: boolean;
+  isActive: boolean; expiresAtTick: number | null;
+}
+export type HackBackAuthorityLevel = 'NO_AUTHORITY' | 'PASSIVE_COLLECT' | 'DISRUPTION_ONLY' | 'FULL_HACK_BACK';
+export interface Cyber_HackBackEvent {
+  id: string; triggeringIncidentId: string; authorityLevel: HackBackAuthorityLevel; targetNationId: string;
+  targetNodeType: string; launchedAtTick: number; effectMagnitude: number; wasSuccessful: boolean;
+  isAttributed: boolean; escalationRisk: number; narrativeDescription: string;
+}
+export type RecoveryStrategy = 'HOT_STANDBY_FAILOVER' | 'COLD_RESTORE_FROM_BACKUP' | 'MANUAL_OVERRIDE' | 'DEGRADED_MODE_OPERATION' | 'FULL_SHUTDOWN_ISOLATION';
+export interface Cyber_ResilienceRecord {
+  nodeId: string; currentRecoveryStrategy: RecoveryStrategy | null; redundancyScore: number;
+  isolationCapability: number; backupFreshnessTick: number; estimatedRecoveryTicks: number;
+  isInRecovery: boolean; recoveryStartedAtTick: number | null; recoveryCompletedAtTick: number | null;
+}
+
+export interface Cyber2State {
+  opsecProfiles: Record<string, OPSEC_Profile>; 
+  coverStories: Cyber_CoverStory[]; supplyChainImplants: Cyber_SupplyChainImplant[];
+  cybintCollects: CYBINT_RawCollect[]; cybintProducts: CYBINT_Product[]; activeCampaigns: Cyber_Campaign[];
+  deterrenceRecords: Cyber_DeterrenceRecord[]; hackBackEvents: Cyber_HackBackEvent[];
+  hackBackAuthorityLevel: HackBackAuthorityLevel; resilienceRecords: Record<string, Cyber_ResilienceRecord>;
+  aiCyberCampaigns: Cyber_Campaign[]; cyberEventLog: string[]; campaignEventLog: string[]; deterrenceEventLog: string[];
+}
+
+// ── Modes Part 2 Types ──────────────────────────────────────────────────────
+
+export type CampaignBranch = 'DIPLOMATIC' | 'COVERT' | 'MILITARY' | 'ECONOMIC' | 'HYBRID';
+export type CampaignAct = 'PROLOGUE' | 'ACT_I' | 'ACT_II' | 'ACT_III' | 'EPILOGUE';
+export interface Campaign_Node {
+  nodeId: string; scenarioId: string; act: CampaignAct; title: string; description: string;
+  branches: Array<{ branchType: CampaignBranch; nextNodeId: string; unlockCondition: string; narrativeConsequence: string; worldStateModifiers: Array<{ storeTarget: string; field: string; delta: number; description: string }> }>;
+  isTerminal: boolean; terminalOutcome: 'VICTORY' | 'DEFEAT' | 'PYRRHIC' | null;
+}
+export interface Campaign_Definition {
+  id: string; title: string; subtitle: string; classificationLevel: 'TOP_SECRET' | 'UMBRA' | 'COMPARTMENTED';
+  synopsis: string; rootNodeId: string; nodes: Record<string, Campaign_Node>; totalActs: number;
+  estimatedPlaytimeHours: number; availableRoles: Role_Type[]; availableToneModes: Mode_ToneMode[];
+  isUnlocked: boolean; unlockCondition: string | null; historicalInspiration: string;
+}
+export interface Campaign_Run {
+  id: string; campaignId: string; currentNodeId: string; currentAct: CampaignAct;
+  chosenBranch: CampaignBranch | null; startedAtTick: number; currentTick: number;
+  role: Role_Type; toneMode: Mode_ToneMode; completedNodeIds: string[];
+  persistentWorldModifiers: Array<{ storeTarget: string; field: string; delta: number; description: string; appliedAtNode: string }>;
+  cumulativeScore: number; isActive: boolean; finalStatus: 'ONGOING' | 'VICTORY' | 'DEFEAT' | 'PYRRHIC' | null;
+  campaignLog: string[];
+}
+export type RolePower = 'EXECUTIVE_OVERRIDE' | 'DEEP_COVER_NETWORK' | 'PLAUSIBLE_DENIABILITY_FIELD' | 'DIRECT_COMMAND_CHANNEL' | 'FORCE_POSTURE_SHIFT' | 'BATTLEFIELD_MOMENTUM' | 'EYES_ON_EVERYTHING' | 'NATIONAL_TECHNICAL_MEANS' | 'DOUBLE_AGENT_FLIP' | 'EMERGENCY_POWERS';
+export type RolePowerStatus = 'AVAILABLE' | 'ACTIVE' | 'COOLDOWN' | 'EXHAUSTED';
+export interface Role_PowerRecord {
+  power: RolePower; role: Role_Type; status: RolePowerStatus; cooldownTicks: number; totalCooldownDuration: number;
+  activeDurationTicks: number | null; activeSince: number | null; usesRemaining: number; totalUses: number;
+  narrativeDescription: string; mechanicalEffect: string;
+}
+export type RoleRestriction = 'NO_PUBLIC_MILITARY_DEPLOYMENT' | 'NO_UNILATERAL_TREATY_SIGNING' | 'NO_KINETIC_COVERT_OPS' | 'NO_DIRECT_NUCLEAR_COMMAND' | 'OVERSIGHT_COMMITTEE_REVIEW';
+export type AchievementTier = 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM';
+export type AchievementCategory = 'NUCLEAR_DETERRENCE' | 'COVERT_OPERATIONS' | 'CYBER_WARFARE' | 'DIPLOMATIC_MASTERY' | 'ECONOMIC_WARFARE' | 'INTELLIGENCE_DOMINANCE' | 'STRATEGIC_COMMAND' | 'CRISIS_MANAGEMENT' | 'CAMPAIGN_COMPLETION' | 'SPEEDRUN' | 'PACIFIST' | 'ESCALATION_ARCHITECT';
+export interface Achievement {
+  id: string; title: string; description: string; flavourText: string; category: AchievementCategory;
+  tier: AchievementTier; scoreValue: number; isUnlocked: boolean; unlockedAtTick: number | null;
+  unlockedInScenario: string | null; triggerCondition: string; isSecret: boolean; progressCurrent: number; progressTarget: number;
+}
+export interface Legacy_Record {
+  totalScenarioScore: number; totalCampaignScore: number; achievementsUnlocked: string[];
+  legacyScore: number; legacyTitle: string; nuclearExchangeCount: number; covertOpsSucceeded: number;
+  covertOpsAttributed: number; diplomaticTreatiesSigned: number; aptOperationsLaunched: number;
+  scenariosCompleted: number; scenariosFailedByTimeout: number; totalTicksPlayed: number;
+  rolesPlayed: Record<Role_Type, number>; toneModesPlayed: Record<Mode_ToneMode, number>;
+  favoriteScenarioId: string | null; worstScenarioId: string | null; firstPlayedTick: number | null; lastPlayedTick: number | null;
+}
+export type DynamicScenarioTrigger = 'DEFCON_SPIKE' | 'ECONOMIC_COLLAPSE' | 'ROGUE_NUCLEAR_SIGNAL' | 'INTELLIGENCE_VACUUM' | 'ALLIANCE_FRACTURE' | 'CYBER_CRITICAL_ATTACK' | 'DIPLOMATIC_ISOLATION' | 'LEADERSHIP_CRISIS';
+export interface Dynamic_Scenario {
+  id: string; triggerType: DynamicScenarioTrigger; generatedAtTick: number; title: string; subtitle: string;
+  briefingText: string; objectives: Scenario_Objective[]; tickLimit: number; suggestedRole: Role_Type;
+  worldStateSnapshot: Record<string, any>; isAccepted: boolean; isDeclined: boolean; declinedConsequence: string;
+}
+export type ToneMode_ModifierTarget = 'INTEL_ACCURACY' | 'PROBABILITY_VARIANCE' | 'ESCALATION_SPEED' | 'AI_AGENT_AGGRESSION' | 'COVERT_OP_SUCCESS_FLOOR' | 'ECONOMIC_SHOCK_MULTIPLIER' | 'DIPLOMATIC_FRICTION' | 'NUCLEAR_LAUNCH_THRESHOLD' | 'ALTERNATE_EVENT_POOL';
+export interface ToneMode_Profile {
+  mode: Mode_ToneMode; label: string; description: string; modifiers: Record<ToneMode_ModifierTarget, number>;
+  alternateHistoryEventPool: string[]; classificationVisual: string; uiPrefix: string;
+}
+export type EditorValidationStatus = 'VALID' | 'WARNING' | 'ERROR';
+export interface ScenarioEditor_Draft {
+  id: string; title: string; subtitle: string; classificationLevel: 'TOP_SECRET' | 'UMBRA' | 'COMPARTMENTED';
+  briefingText: string; executiveSummaryText: string; availableRoles: Role_Type[]; availableToneModes: Mode_ToneMode[];
+  primaryAdversaryNationId: string; keyNationIds: string[]; tickLimit: number | null; objectives: Scenario_Objective[];
+  startingConditions: Array<{ storeTarget: string; field: string; value: number; description: string }>;
+  restrictedInstruments: string[]; forcedEvents: Array<{ id: string; triggerTick: number; triggerCondition: string | null; eventType: string; eventPayload: Record<string, any>; description: string; isMandatory: boolean }>;
+  historicalContext: string; createdAtTick: number; lastModifiedAtTick: number; validationStatus: EditorValidationStatus;
+  validationMessages: string[]; isPublished: boolean;
+}
+
+export interface Modes2State {
+  campaignDefinitions: Record<string, Campaign_Definition>; activeCampaignRun: Campaign_Run | null;
+  completedCampaignRuns: Campaign_Run[]; rolePowerRecords: Record<Role_Type, Role_PowerRecord[]>;
+  achievements: Achievement[]; legacyRecord: Legacy_Record; dynamicScenarioQueue: Dynamic_Scenario[];
+  toneModeProfiles: Record<Mode_ToneMode, ToneMode_Profile>; editorDrafts: ScenarioEditor_Draft[];
+  modes2EventLog: string[]; modes2LastProcessedTick: number;
+}
+
+
+
 
