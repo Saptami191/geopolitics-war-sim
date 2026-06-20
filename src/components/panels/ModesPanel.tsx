@@ -534,7 +534,7 @@ export default function ModesPanel() {
   };
 
   return (
-    <PanelFxShell panelId="modes_panel" relevantFxTypes={['SYSTEM']}>
+    <PanelFxShell panelId="modes_panel" relevantFxTypes={['CYBER_ATTACK' as any]}>
       <div className="w-[800px] h-[85vh] bg-slate-950 flex shadow-2xl overflow-hidden border border-slate-800 text-slate-200 pointer-events-auto">
         <div className="w-56 bg-slate-900/50 border-r border-slate-800 flex flex-col p-2 space-y-1">
           <div className="p-4 mb-4 border-b border-slate-800">

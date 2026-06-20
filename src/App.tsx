@@ -121,6 +121,9 @@ import CinematicIntro from './components/intro/CinematicIntro';
 import GameLobby from './components/intro/GameLobby';
 import WorldBuilder from './components/worldbuilder/WorldBuilder';
 import StockMarketTicker from './components/reactive/StockMarketTicker';
+import { useModesStore } from './store/modesStore';
+import ModesOnboardingFlow from './components/intro/ModesOnboardingFlow';
+import DirectiveObjectiveOverlay from './components/hud/DirectiveObjectiveOverlay';
 
 // Arachne additions
 import { useArachneStore } from './store/arachneStore';
@@ -1164,6 +1167,12 @@ export default function App() {
     return <CinematicIntro onComplete={() => setShowIntro(false)} />;
   }
 
+  // 1.5. Modes Onboarding Phase
+  const modesOnboardingActive = useModesStore(s => s.modes_isOnboarding);
+  if (modesOnboardingActive) {
+    return <ModesOnboardingFlow />;
+  }
+
   // 2. World Builder Sandbox Phase
   if (worldBuilderActive) {
     return (
@@ -1224,6 +1233,11 @@ export default function App() {
       {/* Top command status HUD bar */}
       <DefconBar />
       <FlashPrecedenceBanner />
+
+      {/* Dynamic Objective Completion Widget Overlay */}
+      <div className="absolute right-4 top-20 z-40 pointer-events-none">
+        <DirectiveObjectiveOverlay />
+      </div>
 
       {/* Header bar */}
       <header className="w-full h-11 bg-[#040804] border-b border-[#1a3a1a] flex justify-between items-center px-4 shrink-0 select-none">

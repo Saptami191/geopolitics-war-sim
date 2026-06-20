@@ -6,6 +6,7 @@ import { useUIStore } from './uiStore';
 import { useClockStore } from './clockStore';
 import { useUnitStore } from './unitStore';
 import { useBlackMarketStore } from './blackMarketStore';
+import { useModesStore } from './modesStore';
 
 interface PlayerStoreActions {
   setHUDMode: (mode: HUDMode) => void;
@@ -448,10 +449,18 @@ export const usePlayerStore = create<PlayerState & PlayerStoreActions>((set, get
   })),
 
   player_endScenario: (status, currentTick) => {
-     // A lot of debrief generation belongs in modesStore or here. 
-     // We construct a mock debrief for now that satisfies the type.
      const { player_currentScenarioId, player_role, player_toneMode } = get();
-     const debrief: Mode_Debrief = {
+
+     // Cleanly sync and generate modes debrief
+     const session = useModesStore.getState().modes_activeSession;
+     let modesDebrief: Mode_Debrief | null = null;
+     if (session && session.isActive) {
+       session.isActive = false;
+       session.finalStatus = status;
+       modesDebrief = useModesStore.getState().modes_generateDebrief(session);
+     }
+
+     const debrief: Mode_Debrief = modesDebrief || {
        scenarioId: player_currentScenarioId || 'SANDBOX_OPEN',
        role: player_role || 'SHADOW_DIRECTOR',
        toneMode: player_toneMode || 'TECHNO_THRILLER',
@@ -461,12 +470,13 @@ export const usePlayerStore = create<PlayerState & PlayerStoreActions>((set, get
        objectivesFailed: [],
        keyDecisions: [],
        criticalMoments: [],
-       alternativePathways: [],
+       alternativePathways: ['A different diplomatic stance could have lowered tensions earlier.'],
        historicalComparison: 'Completed exercise.',
        directorAssessment: 'The operation concluded with acceptable parameters given the constraints.',
        achievementsUnlocked: [],
        nextRecommendedScenario: null
      };
+
      set(produce(draft => {
         draft.player_totalPlaythroughs++;
         if (status === 'SUCCESS' || status === 'PARTIAL_SUCCESS') {

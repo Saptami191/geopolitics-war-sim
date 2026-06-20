@@ -28,6 +28,7 @@ import {
   Cpu
 } from 'lucide-react';
 import { WorldState, PlayerState } from '../../types';
+import { useModesStore } from '../../store/modesStore';
 import { StatBlock } from './StatBlock';
 import { ShareCard } from './ShareCard';
 import { TacticalRadarMap } from './TacticalRadarMap';
@@ -90,6 +91,9 @@ export const PostGameDebrief: React.FC<PostGameDebriefProps> = ({
   const [decryptionProgress, setDecryptionProgress] = useState(0);
   const [decryptionLog, setDecryptionLog] = useState<string[]>([]);
   const [expandedTurningPoint, setExpandedTurningPoint] = useState<number | null>(null);
+
+  const modesDebriefs = useModesStore(s => s.modes_debriefs);
+  const latestModesDebrief = modesDebriefs.length > 0 ? modesDebriefs[modesDebriefs.length - 1] : null;
 
   const playerCountry = worldState.countries[playerState.countryId];
   const playerCountryName = playerCountry?.name || 'Sovereign Command';
@@ -488,6 +492,45 @@ export const PostGameDebrief: React.FC<PostGameDebriefProps> = ({
                                <span>Decision Duration: <span className="text-slate-200 font-extrabold">{worldState.currentTick} Ticks</span></span>
                              </div>
                            </div>
+
+                            {latestModesDebrief && (
+                              <div className="p-5 bg-slate-950 border border-amber-900/40 rounded-[2px] relative overflow-hidden shadow-lg space-y-4" style={{ background: 'linear-gradient(135deg, rgba(8,8,8,0.95), rgba(4,4,4,0.98))' }}>
+                                <div className="absolute right-0 top-0 text-[10px] bg-amber-500/10 text-amber-500 border-l border-b border-amber-500/20 px-2.5 py-1 font-mono uppercase tracking-widest font-black">
+                                  Directorate Debrief
+                                </div>
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Terminal className="w-4.5 h-4.5 text-amber-500 animate-pulse animate-duration-1000" />
+                                  <span className="font-mono text-[9px] uppercase tracking-widest text-amber-500 font-extrabold">
+                                    DIRECTIVE ASSESSMENT & ALTERNATIVES
+                                  </span>
+                                </div>
+
+                                <div className="space-y-4">
+                                  <div>
+                                    <h4 className="text-[10px] font-mono text-slate-500 uppercase tracking-widest font-bold mb-1">I. DIRECTOR BRIEF ASSESSMENT</h4>
+                                    <p className="text-xs text-slate-300 font-serif leading-relaxed italic border-l-2 border-amber-500/40 pl-3.5 py-1">
+                                      "{latestModesDebrief.directorAssessment}"
+                                    </p>
+                                  </div>
+
+                                  <div>
+                                    <h4 className="text-[10px] font-mono text-slate-500 uppercase tracking-widest font-bold mb-1">II. HISTORICAL COLD WAR PARALLELS</h4>
+                                    <p className="text-xs text-slate-400 font-serif leading-relaxed pl-3.5 border-l-2 border-slate-800">
+                                      {latestModesDebrief.historicalComparison}
+                                    </p>
+                                  </div>
+
+                                  <div>
+                                    <h4 className="text-[10px] font-mono text-slate-500 uppercase tracking-widest font-bold mb-1.5">III. STRATEGIC ALTERNATIVE PATHWAYS</h4>
+                                    <ul className="text-[11px] font-mono text-slate-400 space-y-1.5 pl-5 list-disc">
+                                      {latestModesDebrief.alternativePathways.map((path, pIdx) => (
+                                        <li key={pIdx} className="leading-relaxed">{path}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
 
                            {/* Brief Cabinets Specifications layout */}
                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

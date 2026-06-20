@@ -5,6 +5,15 @@ import { useWorldStore } from './worldStore';
 import { usePlayerStore } from './playerStore';
 import { useDefconStore } from './defconStore';
 import { useCinematicsStore } from './cinematicsStore';
+import { useCiaStore } from './ciaStore';
+import { useCyberStore } from './cyberStore';
+import { useOversightStore } from './oversightStore';
+import { useDiplomaticStore } from './diplomaticStore';
+import { useSanctionsStore } from './sanctionsStore';
+import { useSigintStore } from './sigintStore';
+import { useEconomyStore } from './economyStore';
+import { useBlocStore } from './blocStore';
+import { useRegimePressureStore } from './regimePressureStore';
 
 // Note: Additional stores like ciaStore, cyberStore, etc., will be imported/used as needed 
 // for evaluating win conditions during processTick.
@@ -452,17 +461,214 @@ export const useModesStore = create<ModesStoreState & ModesStoreActions>((set, g
           return;
         }
 
-        // --- Mock Evaluation Logic ---
-        // You would read from defconStore, worldStore, etc. here based on obj.winTrigger
-        if (obj.winTrigger === 'DEFCON_MAINTAINED' && currentTick > (activeScen.tickLimit || 999)) {
-          // If we reached end without dropping below
-          obj.status = 'ACHIEVED';
-          obj.achievedAtTick = currentTick;
-          obj.currentProgress = 100;
+        // --- Fully Reactive Store Checks ---
+        if (obj.winTrigger === 'NUCLEAR_EXCHANGE_AVOIDED') {
+          if (useWorldStore.getState().nuclearExchangeOccurred) {
+            obj.status = 'FAILED';
+            obj.failedAtTick = currentTick;
+            obj.currentProgress = 0;
+          } else if (activeScen.tickLimit && currentTick >= session.startedAtTick + activeScen.tickLimit) {
+            obj.status = 'ACHIEVED';
+            obj.achievedAtTick = currentTick;
+            obj.currentProgress = 100;
+          } else if (activeScen.tickLimit) {
+            const ratio = (currentTick - session.startedAtTick) / activeScen.tickLimit;
+            obj.currentProgress = Math.min(99, Math.round(ratio * 100));
+          }
+        }
+
+        else if (obj.winTrigger === 'DEFCON_MAINTAINED') {
+          const threshold = obj.targetThreshold || 2;
+          const currentDefcon = useDefconStore.getState().currentDefconLevel || 5;
+          if (currentDefcon < threshold) {
+            obj.status = 'FAILED';
+            obj.failedAtTick = currentTick;
+            obj.currentProgress = 0;
+          } else if (activeScen.tickLimit && currentTick >= session.startedAtTick + activeScen.tickLimit) {
+            obj.status = 'ACHIEVED';
+            obj.achievedAtTick = currentTick;
+            obj.currentProgress = 100;
+          } else if (activeScen.tickLimit) {
+            const ratio = (currentTick - session.startedAtTick) / activeScen.tickLimit;
+            obj.currentProgress = Math.min(99, Math.round(ratio * 100));
+          }
+        }
+
+        else if (obj.winTrigger === 'COVERT_OBJECTIVE_COMPLETE') {
+          const ciaOps = useCiaStore.getState().cia_operations || [];
+          const regimeOps = useRegimePressureStore.getState().completedOps || [];
+          const okCovert = ciaOps.some(op => op.status === 'SUCCEEDED' && (op.targetNationId === 'RU' || op.targetNationId === 'CN' || op.targetNationId === 'NATION_ADVERSARY_01')) ||
+                            regimeOps.some(op => op.targetCountryId === 'RU' || op.targetCountryId === 'CN' || op.targetCountryId === 'NATION_ADVERSARY_01');
+          if (okCovert) {
+            obj.status = 'ACHIEVED';
+            obj.achievedAtTick = currentTick;
+            obj.currentProgress = 100;
+          } else if (activeScen.tickLimit && currentTick >= session.startedAtTick + activeScen.tickLimit) {
+            obj.status = 'FAILED';
+            obj.failedAtTick = currentTick;
+          } else if (activeScen.tickLimit) {
+            const ratio = (currentTick - session.startedAtTick) / activeScen.tickLimit;
+            obj.currentProgress = Math.min(99, Math.round(ratio * 100));
+          }
+        }
+
+        else if (obj.winTrigger === 'DIPLOMATIC_RESOLUTION') {
+          const treaties = useDiplomaticStore.getState().diplo_treaties || {};
+          const isSigned = Object.values(treaties).some((t: any) => t.status === 'RATIFIED' && (t.partyNationIds.includes('RU') || t.partyNationIds.includes('CN') || t.partyNationIds.includes('NATION_ADVERSARY_01')));
+          if (isSigned) {
+            obj.status = 'ACHIEVED';
+            obj.achievedAtTick = currentTick;
+            obj.currentProgress = 100;
+          } else if (activeScen.tickLimit && currentTick >= session.startedAtTick + activeScen.tickLimit) {
+            obj.status = 'FAILED';
+            obj.failedAtTick = currentTick;
+          } else if (activeScen.tickLimit) {
+            const ratio = (currentTick - session.startedAtTick) / activeScen.tickLimit;
+            obj.currentProgress = Math.min(99, Math.round(ratio * 100));
+          }
+        }
+
+        else if (obj.winTrigger === 'TICK_LIMIT_REACHED_WITH_LEAD') {
+          const econNations = useEconomyStore.getState().econ_nations || {};
+          const playerGdp = econNations['US']?.gdpEstimateUSD || 28000;
+          const adversaryGdp = econNations['CN']?.gdpEstimateUSD || 19000;
+          const econLead = playerGdp > adversaryGdp;
+
+          const intelSignals = useSigintStore.getState().u8200Signals || [];
+          const playerIntelCount = intelSignals.filter(s => s.status === 'CONFIRMED').length;
+          const intelLead = playerIntelCount > 3;
+
+          const aptOps = useCyberStore.getState().cyber_aptOperations || [];
+          const cyberLead = aptOps.filter(o => o.targetNationId === 'CN' && o.currentPhase === 'IMPACT').length > 0 || (aptOps.length > 1);
+
+          const treatiesList = Object.values(useDiplomaticStore.getState().diplo_treaties || {});
+          const diplomaticCount = treatiesList.filter((t: any) => t.status === 'RATIFIED' && t.partyNationIds.includes('US')).length;
+          const diploLead = diplomaticCount >= 1;
+
+          const activePatrols = useCiaStore.getState().cia_operatives.length;
+          const militaryLead = activePatrols > 0;
+
+          let leads = 0;
+          if (econLead) leads++;
+          if (intelLead) leads++;
+          if (cyberLead) leads++;
+          if (diploLead) leads++;
+          if (militaryLead) leads++;
+
+          obj.currentProgress = Math.min(100, Math.round((leads / (obj.targetThreshold || 3)) * 100));
+
+          if (activeScen.tickLimit && currentTick >= session.startedAtTick + activeScen.tickLimit) {
+            if (leads >= (obj.targetThreshold || 3)) {
+              obj.status = 'ACHIEVED';
+              obj.achievedAtTick = currentTick;
+              obj.currentProgress = 100;
+            } else {
+              obj.status = 'FAILED';
+              obj.failedAtTick = currentTick;
+            }
+          }
+        }
+
+        else if (obj.winTrigger === 'ALLIANCE_INTACT') {
+          const orgs = useBlocStore.getState().organizations || {};
+          const exits = orgs['NATO']?.exits || [];
+          const suspensions = orgs['NATO']?.suspensions || [];
+          const cohesion = orgs['NATO']?.cohesion?.cohesionScore ?? 50;
+
+          if (exits.length > 0 || suspensions.length > 0 || cohesion < 20) {
+            obj.status = 'FAILED';
+            obj.failedAtTick = currentTick;
+            obj.currentProgress = 0;
+          } else if (activeScen.tickLimit && currentTick >= session.startedAtTick + activeScen.tickLimit) {
+            obj.status = 'ACHIEVED';
+            obj.achievedAtTick = currentTick;
+            obj.currentProgress = 100;
+          } else if (activeScen.tickLimit) {
+            const ratio = (currentTick - session.startedAtTick) / activeScen.tickLimit;
+            obj.currentProgress = Math.min(99, Math.round(ratio * 100));
+          }
+        }
+
+        else if (obj.winTrigger === 'ECONOMIC_DOMINANCE') {
+          const econNations = useEconomyStore.getState().econ_nations || {};
+          const playerGdp = econNations['US']?.gdpEstimateUSD || 28000;
+          const adversaryGdp = econNations['CN']?.gdpEstimateUSD || 19000;
+          const ratio = playerGdp / adversaryGdp;
+
+          obj.currentProgress = Math.min(100, Math.round((ratio / (obj.targetThreshold || 1.3)) * 100));
+
+          if (activeScen.tickLimit && currentTick >= session.startedAtTick + activeScen.tickLimit) {
+            if (ratio >= (obj.targetThreshold || 1.3)) {
+              obj.status = 'ACHIEVED';
+              obj.achievedAtTick = currentTick;
+              obj.currentProgress = 100;
+            } else {
+              obj.status = 'FAILED';
+              obj.failedAtTick = currentTick;
+            }
+          }
+        }
+
+        else if (obj.winTrigger === 'NUCLEAR_CAPABILITY_DESTROYED') {
+          const isArmed = useWorldStore.getState().countries['IR']?.arsenal?.nuclearCapable || false;
+          const ciaOps = useCiaStore.getState().cia_operations || [];
+          const stuxCheck = ciaOps.some(o => (o.targetNationId === 'IR' || o.targetNationId === 'NATION_ADVERSARY_03') && o.status === 'SUCCEEDED');
+          
+          if (isArmed || useWorldStore.getState().nuclearExchangeOccurred) {
+            obj.status = 'FAILED';
+            obj.failedAtTick = currentTick;
+            obj.currentProgress = 0;
+          } else if (stuxCheck) {
+            obj.status = 'ACHIEVED';
+            obj.achievedAtTick = currentTick;
+            obj.currentProgress = 100;
+          } else if (activeScen.tickLimit && currentTick >= session.startedAtTick + activeScen.tickLimit) {
+            obj.status = 'FAILED';
+            obj.failedAtTick = currentTick;
+          } else if (activeScen.tickLimit) {
+            const ratio = (currentTick - session.startedAtTick) / activeScen.tickLimit;
+            obj.currentProgress = Math.min(99, Math.round(ratio * 100));
+          }
+        }
+
+        else if (obj.winTrigger === 'NO_ATTRIBUTION') {
+          const scandals = useOversightStore.getState().activeScandals || {};
+          const leaks = useOversightStore.getState().publishedLeaks || [];
+          const exposure = useRegimePressureStore.getState().playerExposureScore ?? 0;
+
+          if (Object.keys(scandals).length > 0 || leaks.length > 0 || exposure > 40) {
+            obj.status = 'FAILED';
+            obj.failedAtTick = currentTick;
+            obj.currentProgress = 0;
+          } else if (activeScen.tickLimit && currentTick >= session.startedAtTick + activeScen.tickLimit) {
+            obj.status = 'ACHIEVED';
+            obj.achievedAtTick = currentTick;
+            obj.currentProgress = 100;
+          } else if (activeScen.tickLimit) {
+            const ratio = (currentTick - session.startedAtTick) / activeScen.tickLimit;
+            obj.currentProgress = Math.min(99, Math.round(ratio * 100));
+          }
+        }
+
+        else if (obj.winTrigger === 'REGIME_TRANSITION_COMPLETE') {
+          const completedOps = useRegimePressureStore.getState().completedOps || [];
+          const isChanged = completedOps.some(o => (o.targetCountryId === 'IR' || o.targetCountryId === 'NATION_ADVERSARY_04') && (o.outcome === 'REGIME_COLLAPSED' || o.outcome === 'COUP_SUCCEEDED' || o.outcome === 'LEADER_REMOVED' || o.outcome === 'PARTIAL_SUCCESS'));
+          
+          if (isChanged) {
+            obj.status = 'ACHIEVED';
+            obj.achievedAtTick = currentTick;
+            obj.currentProgress = 100;
+          } else if (activeScen.tickLimit && currentTick >= session.startedAtTick + activeScen.tickLimit) {
+            obj.status = 'FAILED';
+            obj.failedAtTick = currentTick;
+          } else if (activeScen.tickLimit) {
+            const ratio = (currentTick - session.startedAtTick) / activeScen.tickLimit;
+            obj.currentProgress = Math.min(99, Math.round(ratio * 100));
+          }
         }
         
-        // Timeout check for time-constrained objectives
-        if (activeScen.tickLimit && currentTick >= session.startedAtTick + activeScen.tickLimit) {
+        // Timeout check fallback for any unspecified active objectives
+        else if (activeScen.tickLimit && currentTick >= session.startedAtTick + activeScen.tickLimit) {
            if (obj.status === 'ACTIVE') {
               obj.status = 'FAILED';
               obj.failedAtTick = currentTick;
@@ -536,22 +742,106 @@ export const useModesStore = create<ModesStoreState & ModesStoreActions>((set, g
   })),
 
   modes_generateDebrief: (session) => {
+     const scenarioId = session.scenarioId;
+     const status = session.finalStatus || 'FAILURE';
+     const isSuccess = status === 'SUCCESS' || status === 'PARTIAL_SUCCESS';
+
+     let directorAssessment = "Action met basic command directives.";
+     let historicalComparison = "A standard sandbox exercise.";
+     let alternativePathways: string[] = ["Alternative diplomatic approaches were available but untried."];
+     let finalScore = 400;
+
+     if (scenarioId === 'SCENARIO_NUCLEAR_STANDOFF_01') {
+       if (isSuccess) {
+         directorAssessment = "Excellent work. You successfully defused the nuclear crisis without conceding critical strategic boundaries. Your command posture retained the baseline deterrence value of our conventional and nuclear arsenals while safely de-escalating the command framework. Deep regional security restored.";
+         historicalComparison = "Strongly mirrors the resolution of the Cuban Missile Crisis of 1962, where firm public posture was backed by secret de-escalating diplomatic channels to prevent a global catastrophe.";
+         alternativePathways = [
+           "Early deployment of defensive HAARP/cyber shields could have lowered readiness requirements sooner.",
+           "Maintaining an aggressive nuclear doctrine first-strike stance longer would have increased leverage but with extreme DEFCON risk."
+         ];
+         finalScore = 1400;
+       } else {
+         directorAssessment = "Catastrophic failure of statecraft. The command escalation cycle entered an irreversible feedback loop, terminating in multiple tactical and strategic nuclear releases. The operational theater has suffered absolute fallout damage. Active national continuity is compromised.";
+         historicalComparison = "Parallels the narrow escapes of the 1983 Able Archer and Stanislav Petrov incidents, but underscores the terminal risk of automated or rigid response mechanisms when de-escalation protocols fail.";
+         alternativePathways = [
+           "Should have activated de-escalation protocols earlier before the DEFCON meter reached Level 2.",
+           "Deploying advanced cyber firewall shields could have intercepted rogue command signaling before physical authorization codes were released."
+         ];
+         finalScore = 200;
+       }
+     } else if (scenarioId === 'SCENARIO_GREAT_POWER_01') {
+       if (isSuccess) {
+         directorAssessment = "Superb long-term strategic performance. You carefully balanced domestic approval while outmaneuvering near-peer rivals across cyber, economic, and intelligence domains. Our economic dominance has successfully exhausted the competitor's central budget capacity.";
+         historicalComparison = "Direct parallel to the conclusion of the Cold War (1989-1991), where the United States exhausted the Soviet Union through technological, economic, and strategic pressure without resorting to a direct kinetic confrontation.";
+         alternativePathways = [
+           "An earlier and more focused SIGINT sig-harvest campaign would have unlocked valuable developmental intelligence sooner.",
+           "Forming strict bilateral trade-embargo treaties could have isolated the adversary's central resource core much earlier in the timeline."
+         ];
+         finalScore = 1200;
+       } else {
+         directorAssessment = "Strategic stagnation. Your administration failed to secure a meaningful margin of dominance over the adversary before exhaustion took a tool on our domestic economy. The multipolar order is now locked, permanently diluting our global hegemon status.";
+         historicalComparison = "Reflects the decline of Rome or British Imperial overreach, where massive defense commitments on unstable boundaries coupled with internal trade deficit and public approval decay triggered rapid status fracturing.";
+         alternativePathways = [
+           "Concentrate national resources on trade and GDP growth earlier instead of scattering attention on minor proxy wars.",
+           "Utilizing financial sanctions earlier would have slowed some of the adversary's technological advances."
+         ];
+         finalScore = 300;
+       }
+     } else if (scenarioId === 'SCENARIO_COUNTER_PROLIFERATION_01') {
+       if (isSuccess) {
+         directorAssessment = "Counter-proliferation operation fully accomplished. The target nation's facilities have been precisely degraded through deniable cyber and covert campaigns. No public attribution occurred, preserving our baseline diplomatic leverage.";
+         historicalComparison = "Recalls Israel's preemptive Operation Opera (1981) and the joint US-Israeli Stuxnet cyber operation (2010), displaying unmatched precision in covert preemptive deterrence.";
+         alternativePathways = [
+           "A conventional tactical strike would have expedited facility collapse but with unacceptable international backlash.",
+           "Better SIGINT intercepts early on could have pinpointed research centers to optimize sabotage success rates."
+         ];
+         finalScore = 1500;
+       } else {
+         directorAssessment = "Operational parameters breached. The target state crossed the threshold, successfully assembling and arming a deliverable nuclear warhead. This fundamentally destabilizes the regional balance and curtails our security guarantees.";
+         historicalComparison = "Comparable to North Korea's crossing of the nuclear threshold in 2006, where slow diplomatic leverage and hesitation allowed the regime to complete atomic weapons calibration.";
+         alternativePathways = [
+           "More continuous and aggressive cyber sabotage sweeps were required to disrupt centrifuge calibration before they reached high Enrichment levels.",
+           "Deploying extra CIA operative assets inside IR boundaries could have delayed physical engineering work."
+         ];
+         finalScore = 150;
+       }
+     } else if (scenarioId === 'SCENARIO_COVERT_CAMPAIGN_01') {
+       if (isSuccess) {
+         directorAssessment = "Exquisite clandestine execution. A favorable regime transition happened in the target zone with complete, bulletproof deniability. No oversight active scandals or leaks were recorded, verifying the supreme competence of your command.";
+         historicalComparison = "Parallels the highly successful covert regime shifts in Iran (1953) and Guatemala (1954), illustrating absolute mastery of deniable proxy action and political warfare.";
+         alternativePathways = [
+           "Leveraging black market procurement networks could have lowered the starting cost of local cyber operations.",
+           "Combining political pressure with targeted financial campaign closures would have starved loyalist forces sooner."
+         ];
+         finalScore = 1600;
+       } else {
+         directorAssessment = "Clandestine catastrophe. Hostile exposure reached critical levels, triggering oversight alerts, media leaks, and active scandals. Our government's direct involvement is widely proven, resulting in diplomatic isolation and massive domestic backlash.";
+         historicalComparison = "Directly echoes the Bay of Pigs fiasco (1961) and the Iran-Contra affair (1986), where poor operational deniability and sloppy signaling led to terminal exposure, public hearings, and systemic loss of trust.";
+         alternativePathways = [
+           "Operatives should have been withdrawn immediately if local risk parameters spiked past safe margins.",
+           "Relying solely on non-military cyber intrusion limits public exposure metrics."
+         ];
+         finalScore = 100;
+       }
+     }
+
      const debrief: Mode_Debrief = {
-       scenarioId: session.scenarioId,
+       scenarioId,
        role: session.role,
        toneMode: session.toneMode,
-       status: session.finalStatus || 'FAILURE',
-       finalScore: 0,
+       status,
+       finalScore,
        objectivesAchieved: [],
        objectivesFailed: [],
        keyDecisions: [],
        criticalMoments: [],
-       alternativePathways: ['A different diplomatic stance could have lowered tensions earlier.'],
-       historicalComparison: 'Matches key aspects of cold war operations.',
-       directorAssessment: 'Action met command parameters.',
+       alternativePathways,
+       historicalComparison,
+       directorAssessment,
        achievementsUnlocked: [],
        nextRecommendedScenario: null
      };
+
      set(produce(draft => {
         draft.modes_debriefs.push(debrief);
      }));
