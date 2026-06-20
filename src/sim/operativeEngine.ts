@@ -1,7 +1,7 @@
 import { useOperativeStore } from '../store/operativeStore';
 import { useWorldStore } from '../store/worldStore';
 import { useUIStore } from '../store/uiStore';
-import { Operative, Cell, Handler } from '../types/operative';
+import { Operative, Cell, Handler } from '../types';
 
 // ==========================================
 // T5.1 - OPERATIVE NETWORK ENGINE

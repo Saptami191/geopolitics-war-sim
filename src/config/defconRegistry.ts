@@ -1,4 +1,4 @@
-import { PersonaDef, PanelRegistryDef, PersonaId } from '../types/defconPersona';
+import { PersonaDef, PanelRegistryDef, PersonaId } from '../types';
 import { DefconLevel } from '../store/defconStore';
 
 export const PERSONAS: Record<PersonaId, PersonaDef> = {

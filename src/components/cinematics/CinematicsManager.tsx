@@ -913,6 +913,21 @@ function CounterProliferationSceneRenderer({ scene, onComplete }: { scene: any; 
   );
 }
 
+function SigintPlaceholderRenderer({ scene, onComplete }: { scene: any; onComplete: () => void }) {
+  const payload = scene.payload || {};
+  return (
+    <div className="absolute inset-0 bg-black/95 flex flex-col items-center justify-center p-8 z-[9000] font-mono select-none">
+      <div className="max-w-xl mx-auto border border-blue-500/30 bg-slate-950 p-6 rounded-xl shadow-[0_0_50px_rgba(59,130,246,0.12)] text-center">
+        <h1 className="text-xl font-black tracking-[0.2em] text-blue-400 uppercase mb-4">{scene.type.replace(/_/g, ' ')}</h1>
+        <p className="text-slate-400 text-xs mb-8">{payload.message || 'Signal intelligence operation report generating...'}</p>
+        <button onClick={onComplete} className="px-5 py-2 border border-blue-500/30 text-blue-400 hover:text-white hover:border-blue-500 hover:bg-blue-950/20 text-[10px] font-black tracking-widest transition-all">
+          ACKNOWLEDGE
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // =========================================================================
 // MASTER MANAGER COMPONENT
 // =========================================================================
@@ -945,6 +960,11 @@ export default function CinematicsManager() {
       case 'MIRROR_AI_WARNING': return <MirrorAiWarningScene scene={activeScene} onComplete={completeScene} />;
       case 'LEADER_BREAKDOWN': return <LeaderBreakdownScene scene={activeScene} onComplete={completeScene} />;
       case 'NATION_AGENDA_EXPOSED': return <NationAgendaExposedScene scene={activeScene} onComplete={completeScene} />;
+      case 'SIGINT_BREAKTHROUGH':
+      case 'DECEPTION_EXPOSED':
+      case 'COLLECTION_COMPROMISED':
+      case 'PATTERN_OF_LIFE_SHIFT':
+        return <SigintPlaceholderRenderer scene={activeScene} onComplete={completeScene} />;
       case 'NETWORK_DISCOVERED':
       case 'VERIFICATION_THRESHOLD_MET':
       case 'INTERDICTION_AUTHORIZED':

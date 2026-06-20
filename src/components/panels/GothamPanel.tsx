@@ -3,7 +3,7 @@ import { PanelFxShell } from '../fx/PanelFxShell';
 import { useWorldStore } from '../../store/worldStore';
 import { usePlayerStore } from '../../store/playerStore';
 import { useGothamStore } from '../../store/gothamStore';
-import { RelationshipDimension, GraphNode, GraphEdge, ForecastSignal } from '../../types/gotham';
+import { RelationshipDimension, GraphNode, GraphEdge, ForecastSignal } from '../../types';
 import { 
   Network, 
   Coins, 

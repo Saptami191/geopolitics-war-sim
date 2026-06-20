@@ -34,7 +34,7 @@ import {
 } from 'lucide-react';
 import { useEnergyStore, EnergyEmbargoPreview } from '../../store/energyStore';
 import { useWorldStore } from '../../store/worldStore';
-import { EnergySourceType } from '../../types/energy';
+import { EnergySourceType } from '../../types';
 
 // SOURCE METADATA
 const SOURCE_INFO: Record<EnergySourceType, { label: string; icon: any; color: string; bg: string; border: string; desc: string }> = {

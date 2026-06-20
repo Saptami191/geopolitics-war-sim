@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { useTradeStore, EscalationPreview } from '../../store/tradeStore';
 import { useWorldStore } from '../../store/worldStore';
-import { StrategicTradeCategory, BilateralTradeProfile, RouteNode, RouteSegment } from '../../types/trade';
+import { StrategicTradeCategory, BilateralTradeProfile, RouteNode, RouteSegment } from '../../types';
 
 // Category color mappings for UI badges and charts
 const CATEGORY_METADATA: Record<StrategicTradeCategory, { label: string; icon: string; color: string; bg: string; border: string }> = {

@@ -1,6 +1,6 @@
 import { CanonicalWorld, TreatyState } from '../../types';
 import { useTreatyStore } from '../../store/treatyStore';
-import { RichTreatyState } from '../../types/treaty';
+import { RichTreatyState } from '../../types';
 
 export function resolveTreaties(world: CanonicalWorld, currentTick: number): { updatedTreaties: Record<string, TreatyState>; logs: string[] } {
   const updatedTreaties = { ...world.treatiesById };

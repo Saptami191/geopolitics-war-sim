@@ -4,7 +4,7 @@ import { useArachneStore } from '../../store/arachneStore';
 import { useWorldStore } from '../../store/worldStore';
 import { usePlayerStore } from '../../store/playerStore';
 import { useLinkedAnalysisStore } from '../../store/linkedAnalysisStore';
-import { ArachneTheme, ArachneSourceClass, ArachneUrgency, ArachneConfidence, ArachneFreshness, ArachneIntelItem } from '../../types/arachne';
+import { ArachneTheme, ArachneSourceClass, ArachneUrgency, ArachneConfidence, ArachneFreshness, ArachneIntelItem } from '../../types';
 import { audio } from '../../utils/audio';
 
 export default function ArachnePanel() {

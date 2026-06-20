@@ -4,7 +4,7 @@ import {
   Handler, 
   Cell, 
   CompartmentalizationGraph 
-} from '../types/operative';
+} from '../types';
 
 interface OperativeStateModel {
   operatives: Record<string, Operative>;
@@ -20,6 +20,7 @@ interface OperativeStateModel {
   addNetworkLink: (source: string, target: string, type: 'KNOWS' | 'CONTACT' | 'FUNDS') => void;
   exposeOperative: (id: string, reason: string, tick: number) => void;
   burnOperative: (id: string, reason: string, tick: number) => void;
+  getNetworkMultiplierForCountry: (countryId: string) => number;
 }
 
 export const useOperativeStore = create<OperativeStateModel>((set, get) => ({
@@ -96,5 +97,12 @@ export const useOperativeStore = create<OperativeStateModel>((set, get) => ({
         }
       }
     };
-  })
+  }),
+
+  getNetworkMultiplierForCountry: (countryId: string) => {
+    const ops = Object.values(get().operatives).filter(op => op.regionOfOperation === countryId && op.state === 'ACTIVE');
+    if (ops.length >= 3) return 1.5;
+    if (ops.length >= 1) return 1.3;
+    return 1.0;
+  }
 }));

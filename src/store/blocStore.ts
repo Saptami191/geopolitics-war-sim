@@ -38,7 +38,7 @@ import {
   BlocEscalationAgreement,
   MutualAssuranceProfile,
   BlocIntelligenceState
-} from '../types/bloc';
+} from '../types';
 import { useWorldStore } from './worldStore';
 import { usePlayerStore } from './playerStore';
 import { useUIStore } from './uiStore';

@@ -3,7 +3,7 @@ import { useDefconStore } from '../../store/defconStore';
 import { useWorldStore } from '../../store/worldStore';
 import { usePlayerStore } from '../../store/playerStore';
 import { audio } from '../../utils/audio';
-import { PersonaId } from '../../types/defconPersona';
+import { PersonaId } from '../../types';
 import { restartTickTimer, stopTickTimer } from '../../sim/tickEngine';
 
 export default function DefconBar() {

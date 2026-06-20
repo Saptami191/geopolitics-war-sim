@@ -3,7 +3,7 @@ import { PanelFxShell } from '../fx/PanelFxShell';
 import { useWorldStore } from '../../store/worldStore';
 import { usePlayerStore } from '../../store/playerStore';
 import { useFoundryStore } from '../../store/foundryStore';
-import { CommodityType, RouteStatus, ChokepointStatus, CommodityFlow, Chokepoint, SupplyDependencyRecord } from '../../types/foundry';
+import { CommodityType, RouteStatus, ChokepointStatus, CommodityFlow, Chokepoint, SupplyDependencyRecord } from '../../types';
 import { 
   Anchor, 
   Droplet, 

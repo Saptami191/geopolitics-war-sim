@@ -7,7 +7,7 @@ import { useTreatyStore } from '../../store/treatyStore';
 import { useUIStore } from '../../store/uiStore';
 import GlowSlider from '../shared/GlowSlider';
 import { audio } from '../../utils/audio';
-import { RichTreatyState, TreatyObligation, TreatyConcessionItem } from '../../types/treaty';
+import { RichTreatyState, TreatyObligation, TreatyConcessionItem } from '../../types';
 import { 
   Globe, 
   BookOpen, 

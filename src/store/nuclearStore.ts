@@ -1298,7 +1298,7 @@ export const useNuclearStore = create<NuclearState>((set, get) => ({
     }
 
     const sigintState = useSigintStore.getState();
-    const hasCyberIntel = sigintState.collectionBudgetByChannel?.CYBER > 20 || Object.keys(sigintState.activeCollectionCampaigns || {}).length > 0;
+    const hasCyberIntel = sigintState.collectionBudgetByChannel?.CYBER > 20 || Object.keys(sigintState.campaigns || {}).length > 0;
     if (hasCyberIntel) {
       self.degradeNC3Channel('NMCC_LANDLINE', 8, 'CYBER');
     } else {

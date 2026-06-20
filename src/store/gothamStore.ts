@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { produce } from 'immer';
 import { ScenarioId, WorldState, Country } from '../types';
-import { GraphNode, GraphEdge, RelationshipDimension, ForecastSignal, RelationshipChangeRecord, RelationshipSnapshot } from '../types/gotham';
+import { GraphNode, GraphEdge, RelationshipDimension, ForecastSignal, RelationshipChangeRecord, RelationshipSnapshot } from '../types';
 import { useWorldStore } from './worldStore';
 import { usePlayerStore } from './playerStore';
 

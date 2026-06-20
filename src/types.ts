@@ -204,7 +204,7 @@ export type WeaponType = 'ICBM' | 'SLBM' | 'CRUISE_MISSILE' | 'HYPERSONIC' | 'FI
                  'STEALTH_BOMBER' | 'CARRIER_GROUP' | 'SUBMARINE' | 'TANK_DIVISION' |
                  'ARTILLERY' | 'DRONE_SWARM' | 'CYBER_WEAPON' | 'EMP_DEVICE' | 'DIRTY_BOMB';
 
-export type CommodityType = 'OIL' | 'NATURAL_GAS' | 'WHEAT' | 'RARE_EARTH' | 'SILICON' | 'WEAPONS_GRADE_URANIUM' | 'ARMS';
+export type CommodityType = 'OIL' | 'NATURAL_GAS' | 'WHEAT' | 'RARE_EARTH' | 'SILICON' | 'WEAPONS_GRADE_URANIUM' | 'ARMS' | 'oil' | 'gas' | 'semiconductors' | 'food' | 'rareearths' | 'strategic';
 
 export type FactionType = 'MILITARY_HARDLINERS' | 'REFORMERS' | 'ISLAMISTS' | 'NATIONALISTS' |
                   'OLIGARCHS' | 'TECHNOCRATS' | 'SEPARATISTS' | 'FOREIGN_BACKED';
@@ -346,7 +346,7 @@ export interface PoliticalProfile {
   diasporaInfluence: number;       // 0-100 — expats sending money/info back
   corruption?: number;             // 0-100
   infoWarfare?: InformationCampaign;
-  regimePressure?: RegimePressureState;
+  regimePressure?: NationRegimePressureState;
 }
 
 export interface SatelliteAsset {
@@ -3250,7 +3250,7 @@ export interface SupplyRoute {
   name: string;
   fromRegionId: string;
   toRegionId: string;
-  type: RouteType;
+  type: TradeRouteType;
   capacityTons: number;
   currentThroughput: number;
   contestedLevel: number;          // 0–1
@@ -4383,3 +4383,3052 @@ export interface CyberAlert {
   tick: number;
   read: boolean;
 }
+
+// FROM arachne.ts
+export type ArachneSourceClass = 'RUMINT' | 'OSINT' | 'SIGINT' | 'HUMINT' | 'CONFIRMED';
+
+export type ArachneTheme = 
+  | 'DIPLOMACY'
+  | 'MILITARY'
+  | 'ECONOMIC'
+  | 'SANCTIONS'
+  | 'CYBER'
+  | 'UNREST'
+  | 'LEADERSHIP'
+  | 'ALLIANCES'
+  | 'PROLIFERATION'
+  | 'INTELLIGENCE'
+  | 'ENERGY'
+  | 'TRADE'
+  | 'COVERT_RISK'
+  | 'HUMANITARIAN';
+
+export type ArachneUrgency = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+export type ArachneConfidence = 'LOW' | 'MEDIUM' | 'HIGH' | 'TOTAL';
+export type ArachneFreshness = 'BREAKING' | 'ACTIVE' | 'WATCH' | 'BACKGROUND' | 'STALE' | 'RESOLVED' | 'ARCHIVED';
+export type ArachnePriority = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'BACKGROUND';
+export type ArachneBriefGroup = 'TOP_STORY' | 'ACTIVE_WATCH' | 'BACKGROUND_SIGNAL';
+
+export interface ArachneIntelItem {
+  id: string;
+  title: string;
+  summary: string;
+  fullBrief: string;
+  whyItMatters: string;
+  countryIds: string[];
+  regionIds: string[];
+  relatedLeaderIds: string[];
+  themeTags: ArachneTheme[];
+  urgency: ArachneUrgency;
+  confidence: ArachneConfidence;
+  sourceType: ArachneSourceClass;
+  sourceLabel: string;
+  timestampTick: number;
+  freshnessState: ArachneFreshness;
+  linkedIntelFactIds: string[];
+  linkedWorldEventIds: string[];
+  linkedOperationIds: string[];
+  relatedTreatyIds: string[];
+  alertScore: number;
+  strategicPriority: ArachnePriority;
+  visibility: 'PUBLIC' | 'PLAYER_ONLY' | 'CLASSIFIED';
+  status: 'ACTIVE' | 'ARCHIVED';
+  requiresAttention: boolean;
+  briefingCategory: ArachneBriefGroup;
+  icon?: string;
+  hasFollowUp?: boolean;
+  storyId?: string; // clustered storyline identifier
+}
+
+export interface ArachneFilterState {
+  searchQuery: string;
+  country: string;
+  region: string;
+  theme: ArachneTheme | 'ALL';
+  urgency: ArachneUrgency | 'ALL';
+  sourceType: ArachneSourceClass | 'ALL';
+  confidence: ArachneConfidence | 'ALL';
+  freshness: 'ALL_ACTIVE' | 'BREAKING_ONLY' | 'ARCHIVED' | 'ALL';
+}
+
+
+// FROM bloc.ts
+export type BlocType = 'NATO' | 'SCO' | 'ASEAN' | 'AFRICAN_UNION' | 'ARAB_LEAGUE' | 'BRICS';
+
+export interface BlocGovernanceRuleSet {
+  agendaSettingStyle: 'HEGEMON_FORWARD' | 'CONSENSUS' | 'COALITION_VOTE' | 'DIRECTORATE';
+  decisionThreshold: 'UNANIMITY' | 'TWO_THIRDS' | 'SIMPLE_MAJORITY' | 'CONSENSUS_NO_VETO';
+  canBlockVetoCountries: string[]; // P5 or anchor powers
+  isBinding: boolean;
+  reputationalCostOfIgnore: number; // 0-100 index
+  allowOptOuts: boolean;
+  allowSidePayments: boolean;
+}
+
+export interface ContributionObligation {
+  id: string;
+  contributorId: string;
+  type: 'MILITARY_SPENDING' | 'PEACEKEEPING_FORCES' | 'INFRASTRUCTURE_FUND' | 'SANCTIONS_COMPLIANCE' | 'REFUGEE_HOSTING' | 'CYBER_DEFENSE_SHARING';
+  targetValue: number; // numerical goal (e.g., % of GDP or million USD)
+  currentValue: number;
+  status: 'COMPLIANT' | 'SHORTFALL' | 'NON_COMPLIANT';
+  consequences: string;
+}
+
+export interface BurdenSharingDispute {
+  id: string;
+  initiatingCountryId: string;
+  targetCountryId: string;
+  disputeType: 'MILITARY_UNDERFUNDING' | 'REFUSION_OF_BASES' | 'EXCESSIVE_REFUGEE_EXPOSURE' | 'SANCTIONS_EVASION' | 'FINANCIAL_UNDERCONTRIBUTION';
+  intensity: number; // 0-100
+  unresolvedTicks: number;
+  narrative: string;
+}
+
+export interface BlocFractureVector {
+  type: 'IDEOLOGY' | 'THREAT_PERCEPTION' | 'BURDEN_RESENTMENT' | 'EXTERNAL_ALIGNMENT' | 'ECONOMIC_ASYMMETRY' | 'TERRITORIAL_DISPUTE' | 'SANCTION_EXPOSURE';
+  description: string;
+  severity: number; // 0-100
+  primaryOpposingPairs: [string, string]; // [Country A, Country B]
+}
+
+export interface BlocCohesionState {
+  overallScore: number; // 0-100
+  strategicCoherence: number; // 0-100
+  militaryReliability: number; // 0-100
+  economicCoordination: number; // 0-100
+  proceduralLegitimacy: number; // 0-100
+  leadershipTrust: number; // 0-100
+  sanctionsResilience: number; // 0-100
+}
+
+export interface BlocMemberState {
+  countryId: string;
+  role: 'ANCHOR_POWER' | 'SPOILER' | 'MEDIATOR' | 'FREE_RIDER' | 'FRONT_LINE_STATE' | 'DEVELOPMENT_DEMANDER' | 'FINANCE_PROVIDER' | 'NORM_ENTREPRENEUR' | 'HEDGING_INSIDER' | 'RELUCTANT_PARTICIPANT';
+  entranceTick: number;
+  accumulatedContributions: number; // USD millions equiv
+  trustScore: number; // 0-100
+  fractureVulnerability: number; // 0-100
+  leveragePoints: number; // internal currency
+}
+
+export interface CollectiveDefenseTriggerRecord {
+  id: string;
+  attackerId: string;
+  victimId: string;
+  triggerTick: number;
+  status: 'PENDING_CONSULTATION' | 'ACTIVATED_COMMAND' | 'DILUTED' | 'FAILED_TO_ACT';
+  confidenceIndex: number; // 0-100
+  contributingNations: string[];
+  refusingNations: string[];
+}
+
+export interface BlocAgendaItem {
+  id: string;
+  title: string;
+  description: string;
+  type: 'CRISIS_RESPONSE' | 'SECURITY_EXERCISE' | 'DEVELOPMENT_PACKAGE' | 'LOCAL_CURRENCY_VOTE' | 'ENLARGEMENT_BID' | 'SANCTIONS_CARVEOUT' | 'COMMUNIQUE_WORDING';
+  initiatorId: string;
+  targetId?: string; // Optional target country/pact
+  requiredFundingB?: number;
+  votesFor: string[];
+  votesAgainst: string[];
+  abstentions: string[];
+  status: 'PENDING_EXAMINATION' | 'PASSED' | 'BLOCKED_BY_CONSENSUS' | 'VETOED' | 'DEFEATED';
+}
+
+export interface BlocCommitmentRecord {
+  id: string;
+  agendaItemId: string;
+  type: 'MILITARY_GUARANTEE' | 'FINANCIAL_POOLED_AID' | 'LOCAL_CURRENCY_SETTLEMENT' | 'MEDIATION_PIPELINE' | 'EXERCISE_PARTICIPATION' | 'SANCTIONS_COMPLIANCE_HARD';
+  obligatedCountryIds: string[];
+  complianceRates: Record<string, number>; // countryId -> 0-100% compliance
+}
+
+export interface MembershipAccessionsRecord {
+  id: string;
+  applicantCountryId: string;
+  stage: 'DIALOGUE_PARTNER' | 'OBSERVER' | 'PROBATION' | 'PENDING_VOTE' | 'ADMITTED' | 'REJECTED';
+  startTick: number;
+  vetoingMembers: string[];
+  readyScore: number; // 0-100
+}
+
+export interface MembershipSuspensionRecord {
+  id: string;
+  countryId: string;
+  reason: 'COUP' | 'FRACTURE_DISREGARD' | 'ECONOMIC_DEFAULT' | 'RIVAL_BLOC_ALIGN';
+  suspensionTick: number;
+  status: 'ACTIVE_SUSPENSION' | 'RECONCILED' | 'EXPULSION_PENDING';
+}
+
+export interface MembershipExitRecord {
+  id: string;
+  countryId: string;
+  exitTick: number;
+  style: 'FORMAL_WITHDRAWAL' | 'DRIFT' | 'EXPULSION';
+  unrestTriggered: boolean;
+}
+
+export interface SwingStateProfile {
+  countryId: string;
+  alignmentFlexibility: number; // 0-100 (high = easily pivots)
+  autonomyPreference: number; // 0-100 (high = resents bloc constraints)
+  coercionSensitivity: number; // 0-100
+  aidResponsiveness: number; // 0-100
+  securityAnxiety: number; // 0-100
+  sanctionsVulnerability: number; // 0-100
+  domesticEliteDivision: number; // 0-100 (high = half stays pro-West, half pro-East)
+  publicOpinionSplit: number; // 0-100
+  tradeDependenceMix: string; // descriptive
+  militaryProcurementDiversity: 'WEST_ONLY' | 'EAST_ONLY' | 'MIXED_DIVERSIFIED' | 'DOMESTIC_HEAVY';
+}
+
+export interface HedgingPostureState {
+  countryId: string;
+  primaryMilitaryTilt: 'WEST' | 'EAST' | 'NEUTRAL';
+  primaryEconomicTilt: 'WEST' | 'EAST' | 'NEUTRAL';
+  tacticalAmbiguityRating: number; // 0-100 (high = masters double gameplay)
+  concessionsExtractedB: number;
+  activeEconomicCorridors: string[]; // e.g. ["BRI", "IMEC"]
+  lastHedgingAction: string;
+}
+
+export interface CrossBlocChannel {
+  id: string;
+  originBloc: BlocType;
+  targetBloc: BlocType;
+  channelType: 'BACK_CHANNEL' | 'TRACK_2' | 'MIL_MIL_HOTLINE' | 'DECONFLICTION_JOINT_COMMISSION';
+  integrityIndex: number; // 0-100
+  lastActivityTick: number;
+  agreedConfidenceMeasures: string[];
+}
+
+export interface ConfidenceBuildingMeasure {
+  id: string;
+  channelId: string;
+  title: string;
+  costAP: number;
+  benefitTensionReduction: number; // 0-100
+  riskOfPublicBacklash: number; // 0-100
+  status: 'PROPOSED' | 'RATIFIED' | 'BROKEN' | 'EXPIRED';
+}
+
+export interface BlocInstitutionalMemory {
+  blocId: BlocType;
+  historyLog: {
+    tick: number;
+    description: string;
+    impactType: 'COHESION_GAIN' | 'COHESION_LOSS' | 'TRUST_BOOST' | 'TRUST_DRAIN' | 'FRACTURE_RISK';
+    relatedCountryId?: string;
+  }[];
+}
+
+export interface BlocEconomicMechanism {
+  localCurrencySettlementActive: boolean;
+  localCurrencyTradeShare: number; // percent 0-100
+  developmentBankReservesB: number;
+  fundedInfrastructureProjects: {
+    id: string;
+    countryId: string;
+    projectCostB: number;
+    deliveryProgress: number; // 0-100
+    leverageYieldPoints: number;
+  }[];
+}
+
+export interface BlocSecurityMechanism {
+  hasJointCommand: boolean;
+  commandConfidence: number; // 0-100
+  lastExerciseTick: number;
+  jointExerciseReadinessBonus: number; // 0-100
+}
+
+export interface BlocMediationProcess {
+  id: string;
+  blocId: BlocType;
+  disputeId: string;
+  mediatorCountryId: string;
+  concessionsProposedB: number;
+  successProbability: number;
+  status: 'ONGOING' | 'RESOLVED_SUCCESS' | 'COLLAPSED';
+}
+
+export interface BlocActionPreview {
+  estimatedSupportPercentage: number;
+  likelyBlockers: string[];
+  cohesionRisk: number; // 0-50
+  burdenSharingShiftRate: number; // -10 to +10
+  expectedCounterReaction: string;
+}
+
+export interface RegionalOrganization {
+  id: BlocType;
+  name: string;
+  flagSymbol: string;
+  primaryAnchorPowerId: string;
+  governanceRules: BlocGovernanceRuleSet;
+  members: Record<string, BlocMemberState>;
+  cohesion: BlocCohesionState;
+  fractureVectors: BlocFractureVector[];
+  burdenSharingDisputes: BurdenSharingDispute[];
+  agenda: BlocAgendaItem[];
+  commitments: BlocCommitmentRecord[];
+  activeCollectiveDefenseTriggers: CollectiveDefenseTriggerRecord[];
+  accessions: MembershipAccessionsRecord[];
+  suspensions: MembershipSuspensionRecord[];
+  exits: MembershipExitRecord[];
+  economicMechanism: BlocEconomicMechanism;
+  securityMechanism: BlocSecurityMechanism;
+
+  // Module 4.4 specific extensions
+  objectives?: SharedObjectiveStack;
+  memberProfiles?: Record<string, BlocMemberProfile>;
+  cohesionModel?: BlocCohesionModel;
+  fractureModel?: BlocFractureRiskModel;
+  intelSharingPolicy?: BlocIntelSharingPolicy;
+  escalationAgreement?: BlocEscalationAgreement;
+  mutualAssurance?: MutualAssuranceProfile;
+  coalitionTasking?: CoalitionTaskingPlan;
+  sharedThreatAssessment?: SharedThreatAssessment;
+  intelState?: BlocIntelligenceState;
+}
+
+// Module 4.4: Alliance and Bloc Intelligence interfaces
+export interface AllianceObjective {
+  id: string;
+  name: string;
+  category: 'REGIONAL_DETERRENCE' | 'SANCTIONS_ENFORCEMENT' | 'REGIME_STABILIZATION' | 'TRADE_PROTECTION' | 'ENERGY_CORRIDOR' | 'MILITARY_CONTAINMENT' | 'INTELLIGENCE_SHARING' | 'ESCALATION_MANAGEMENT' | 'DIPLOMATIC_VETO';
+  priority: number; // 1-10
+  timeLimitTicks?: number;
+  costAP: number;
+  costFinancialB: number;
+  confidenceRating: Record<string, number>; // countryId -> confidence % (player visibility via intel)
+  politicalPressure: number; // 0-100
+  domesticConstraints: string;
+  status: 'ACTIVE' | 'ACCOMPLISHED' | 'FAILED' | 'ABANDONED';
+}
+
+export interface SharedObjectiveStack {
+  objectives: AllianceObjective[];
+  lastEvaluationTick: number;
+  globalPrioritiesDescription: string;
+}
+
+export interface MemberReliabilityScore {
+  military: number; // 0-100
+  diplomatic: number; // 0-100
+  intelligence: number; // 0-100
+  sanctions: number; // 0-100
+  crisis: number; // 0-100
+  treaty: number; // 0-100
+  publicRating: number; // Overt alignment
+  hiddenRating: number; // True reliability under high stress
+}
+
+export interface MemberBurdenShareModel {
+  expectedContribution: {
+    financialB: number;
+    militaryForces: number; // index (e.g. brigades equivalent)
+    basingRightsAuthorized: boolean;
+    sanctionsSupport: boolean;
+    diplomaticCapital: number; // 0-100
+    intelligenceExposureRisk: number; // 0-100
+    escalationRiskTier: number; // 1-5
+    domesticPoliticalCostLimit: number; // 0-100
+  };
+  actualContribution: {
+    financialB: number;
+    militaryForces: number;
+    basingRightsProvided: boolean;
+    sanctionsSupport: boolean;
+    diplomaticCapital: number;
+    intelligenceExposureRisk: number;
+    escalationRiskTier: number;
+    domesticPoliticalCostIncurred: number;
+  };
+  willingnessToPay: number; // 0-100
+  willingnessToRisk: number; // 0-100
+  strainRating: number; // Current strain (high = likely to default)
+}
+
+export interface MemberContributionHistory {
+  tick: number;
+  objectiveId?: string;
+  actionType: 'KEPT_PROMISE' | 'BROKEN_PROMISE' | 'HESITATED' | 'FREE_RODE' | 'BACK_PUBLIC_RESIST_PRIVATE';
+  description: string;
+  costIncurredB: number;
+}
+
+export interface FreeRidePressureModel {
+  currentFreeRideIndex: number; // 0-100
+  accumulatedResentment: number; // 0-100
+  targetWillingnessToCorrect: number; // 0-100
+  activeAuditing: boolean;
+  proposedPenalties: string[];
+}
+
+export interface BlocMemberProfile {
+  countryId: string;
+  reliability: MemberReliabilityScore;
+  burdenShare: MemberBurdenShareModel;
+  contributionHistory: MemberContributionHistory[];
+  freeRidePressure: FreeRidePressureModel;
+  threatAssessment: string;
+}
+
+export interface BlocCohesionModel {
+  overallScore: number;
+  sharedThreatCohesionBonus: number;
+  ideologicalProximityBonus: number;
+  tradeInterdependenceFactor: number;
+  burdenFairnessIndex: number;
+  unresolvedDisputesPenalty: number;
+  domesticPoliticalDrag: number;
+}
+
+export interface BlocFractureRiskModel {
+  fractureRiskIndex: number; // 0-100
+  warningTriggerTick?: number;
+  primaryStressSource: string;
+  splinterFactionCountryIds: string[];
+  reconciliationFeasibility: number; // 0-100
+}
+
+export interface PivotStateProfile {
+  countryId: string;
+  name: string;
+  strategicLocationDescription: string;
+  tradeDependencyWest: number; // 0-100
+  tradeDependencyEast: number; // 0-100
+  securityDependencyWest: number; // 0-100
+  securityDependencyEast: number; // 0-100
+  regimeType: string;
+  eliteFactionBalance: { proWestPercent: number; proEastPercent: number; neutralPercent: number };
+  domesticAlignmentPressure: number; // 0-100
+  externalCourtingPressure: number; // 0-100
+  toleranceForHedging: number; // 0-100
+  allianceAttractivenessWest: number; // 0-100
+  allianceAttractivenessEast: number; // 0-100
+  neutralityStability: number; // 0-100
+}
+
+export interface UnalignedPowerProfile {
+  countryId: string;
+  name: string;
+  strengthIndex: number; // 0-100
+  accessSellingOptions: string[];
+  hedgingParameterTicks: number;
+  sidePaymentsDemandedB: number;
+  rivalryExploitationLevel: number; // 0-100
+  threatToSwingAlignment: boolean;
+  mediationEffortsHosted: string[];
+  governanceStance: 'GENUINE_NON_ALIGNED' | 'OPPORTUNISTIC_BALANCER';
+}
+
+export interface InfluenceCompetitionRecord {
+  targetCountryId: string;
+  influenceWeightWest: number; // 0-100
+  influenceWeightEast: number; // 0-100
+  tradeTiesWest: number; // 0-100
+  tradeTiesEast: number; // 0-100
+  securityDependenceWest: number; // 0-100
+  securityDependenceEast: number; // 0-100
+  intelligenceAccessWest: number; // 0-100
+  intelligenceAccessEast: number; // 0-100
+  publicNarrativePullWest: number; // 0-100
+  publicNarrativePullEast: number; // 0-100
+  eliteFactionLeaning: 'WEST_LEANING' | 'EAST_LEANING' | 'BALANCED' | 'STRICT_NEUTRAL';
+  recentDiplomacyLogs: string[];
+  covertPenetrationIndexWest: number; // 0-100
+  covertPenetrationIndexEast: number; // 0-100
+}
+
+export interface CommitmentCredibilityModel {
+  overtPledgeIntegrity: number; // 0-100
+  backchannelCommitmentScore: number; // 0-100
+  crisisDefectionRisk: number; // 0-100
+  historyBrokenPledges: number;
+}
+
+export interface CoalitionTaskingPlan {
+  activeTasks: {
+    id: string;
+    assigneeCountryId: string;
+    taskType: 'PATROL_ZONE' | 'ENFORCE_SANCTIONS' | 'PROVIDE_BASING' | 'SHARE_INTEL' | 'FRONT_MESSAGING' | 'HOST_EXERCISE' | 'SUPPLY_LOGISTICS' | 'ABSORB_SANCTIONS_BLOWBACK' | 'BLOCKADE_SUPPORT';
+    assignedBurdenScore: number; // 1-100
+    expectedCompletionTick: number;
+    actualProgress: number; // 0-100
+    complianceStatus: 'FULL' | 'PARTIAL' | 'SYMBOLIC' | 'OVERT_DEFECTION' | 'QUIET_RESISTANCE';
+    delayTicks: number;
+    narrative: string;
+  }[];
+}
+
+export interface SharedThreatAssessment {
+  adversaryBlocId: string;
+  perceivedThreatLevel: number; // 0-100
+  sharedIntelAlertsCount: number;
+  leakedDirectivesCount: number;
+  criticalVulnIdentified: string;
+}
+
+export interface BlocIntelSharingPolicy {
+  clearanceLevelRequired: 'RESTRICTED' | 'CONFIDENTIAL' | 'SECRET' | 'TOP_SECRET';
+  sharingFrictionIndex: number; // 0-100
+  jointIntrusionsAuthorized: boolean;
+  bannedTargetCountryIds: string[];
+}
+
+export interface BlocEscalationAgreement {
+  authorizedResponseTier: 'PROPORTIONAL_SYMMETRIC' | 'ASYMMETRIC_ESCALATORY' | 'RESTRAINED_DIPLOMATIC' | 'PRE_EMPTIVE';
+  nuclearBackstopInvoked: boolean;
+  escalationCapCostB: number;
+}
+
+export interface MutualAssuranceProfile {
+  sovereignGuaranteesActive: string[]; // countryIds
+  retaliatoryTriggersCount: number;
+  crisisSummitBufferTicks: number;
+}
+
+export interface BlocIntelligenceState {
+  compiledDate: string;
+  overallThreatLandscape: string;
+  highestDefectionRiskMemberId?: string;
+  activeInformationOperationsCount: number;
+}
+
+
+// FROM defconPersona.ts
+import { DefconLevel } from './store/defconStore';
+
+export type PersonaId = 
+  | 'ANALYST' // Peacetime Coordinator
+  | 'WATCH_OFFICER' 
+  | 'CRISIS_LEAD' 
+  | 'JOINT_COMMANDER' 
+  | 'STRATEGIC_COMMAND'; // National Authority
+
+export interface PersonaDef {
+  id: PersonaId;
+  name: string;
+  authorityTier: number; // 1-5
+  minDefconLevel: DefconLevel; // What DEFCON levels this persona is valid for. e.g. Analyst is 1-5, Strategic command is 1-3.
+  description: string;
+}
+
+export type PanelCategory = 
+  | 'STRATEGIC_MAP'
+  | 'INTELLIGENCE'
+  | 'DIPLOMACY'
+  | 'ECONOMY'
+  | 'COVERT'
+  | 'REGIME_PRESSURE'
+  | 'MILITARY'
+  | 'CYBER'
+  | 'NUCLEAR'
+  | 'ALERTS'
+  | 'SYSTEM'
+  | 'COMMAND_SUMMARY';
+
+export interface PanelRegistryDef {
+  id: number;
+  name: string;
+  category: PanelCategory;
+  primaryPurpose: string;
+  minDefconAvailability: DefconLevel; // e.g. 5 means available at 5 through 1
+  minPersonaTier: number; // 1 to 5
+  layoutPriority: 'PRIMARY' | 'SECONDARY' | 'LOWER' | 'CONTEXTUAL';
+  isNuclearRestricted?: boolean;
+}
+
+export interface DefconTransitionLog {
+  id: string;
+  tick: number;
+  fromLevel: DefconLevel;
+  toLevel: DefconLevel;
+  reason: string;
+  source: 'SYSTEM' | 'PLAYER' | 'SCENARIO';
+}
+
+
+// FROM economicForecast.ts
+
+export type ForestHorizon = '1T' | '3T' | '6T' | '12T'; // ticks
+export type StressLabel = 'Stable' | 'Tightening' | 'Fragile' | 'Shock Propagation' | 'Systemic Stress' | 'Crisis Transmission' | 'Partial Recovery';
+
+export interface ForecastTimelinePoint {
+  tick: number;
+  baselineValue: number;
+  proposedValue: number;
+  bestCaseValue: number;
+  worstCaseValue: number;
+  volatility: number;
+}
+
+export interface ForecastConfidenceBand {
+  horizon: ForestHorizon;
+  low: number;
+  high: number;
+  confidence: number; // 0-100%
+  volatilityWarning: boolean;
+}
+
+export interface ForecastBranch {
+  branchId: 'BASELINE' | 'PROPOSED' | 'STRESS_ALT' | 'RECOVERY_ALT';
+  name: string;
+  probability: number; // %
+  narrative: string;
+  gdpPath: number[]; // future values
+  inflationPath: number[];
+  unrestPath: number[];
+}
+
+export interface EconomicForecastSnapshot {
+  countryId: string;
+  baseTick: number;
+  horizons: Record<ForestHorizon, {
+    gdpGrowth: number;
+    inflation: number;
+    unemployment: number;
+    economicStress: number;
+    confidence: number;
+  }>;
+  confidenceBands: Record<string, ForecastConfidenceBand>;
+  branches: ForecastBranch[];
+  latestNarrative: string;
+}
+
+export interface ActionSecondOrderEffect {
+  title: string;
+  sourceSystem: 'TRADE' | 'ENERGY' | 'SANCTIONS' | 'FININT' | 'GOTHAM';
+  description: string;
+  probability: 'HIGH' | 'MEDIUM' | 'LOW';
+  escalationRiskScore: number; // 0-100
+}
+
+export interface ActionEconomicPreview {
+  id: string;
+  actionKey: string;
+  title: string;
+  initiatingActor: string;
+  targetActor?: string;
+  likelihoodTopLine: string;
+  winners: string[];
+  losers: string[];
+  mostExposedSectors: string[];
+  mostAffectedCommodities: CommodityType[];
+  gdpImpactPercentage: number; // proposed delta % vs baseline
+  inflationImpactPercentage: number; // proposed delta CPI
+  secondOrderEffects: ActionSecondOrderEffect[];
+  confidenceScore: number; // 0-100
+  blowbackEscalationRisk: number; // 0-100
+  underlyingAssumptions: string[];
+  realizedImpact?: {
+    ticksElapsed: number;
+    realizedGdpChange: number;
+    realizedInflationChange: number;
+    accuracyScore: number; // how close forecast was vs actual
+  };
+}
+
+export interface SectorContributionBreakdown {
+  contributionToGdpPct: number;
+  growthContribution: number; // raw value contribution to local growth rate
+  importShortageImpact: number; // 0-10
+  exportConstraintImpact: number; // 0-10
+  energyShockVulnerability: number; // 0-10
+  sanctionsExposureScore: number; // 0-10
+  routeFrictionImpact: number; // 0-10
+  laborStressScore: number; // 0-10
+}
+
+export interface SectorDrilldownModel {
+  countryId: string;
+  sectorKey: string;
+  displayName: string;
+  currentValueUSD: number; // in billions
+  shareOfGDP: number; // % of country GDP
+  status: 'RESILIENT' | 'NOMINAL' | 'STRESSED' | 'CRITICAL';
+  trend: 'STABLE' | 'GROWING' | 'RECOVERING' | 'DECLINING' | 'COLLAPSING';
+  decomposition: SectorContributionBreakdown;
+  substitutionCapacityScore: number; // 0-100 (resilience indicator)
+  forecastHorizonOutlook: Record<ForestHorizon, 'STABLE' | 'EXPANSION' | 'SLOWDOWN' | 'CONTRACTION' | 'CRITICAL'>;
+}
+
+export interface CommodityStressRecord {
+  commodity: CommodityType;
+  priceStress: number; // 0-100
+  supplyTightness: number; // 0-100
+  demandSurge: number; // 0-100
+  routeFragility: number; // 0-100
+  sanctionsExposure: number; // 0-100
+  importerVulnerability: number; // 0-100
+  volatilityIndex: number; // 0-100
+  forecastedDirection: 'SPIKING' | 'RISING' | 'STABLE' | 'SOFTENING' | 'CRASHING';
+  confidenceScore: number; // 0-100
+}
+
+export interface CommodityHeatmapCell {
+  rowId: string; // commodity
+  colId: string; // country ID or Region or Horizon or Stress Dimension
+  value: number; // normalized 0-100 for the color gradient
+  rawString: string; // readable hover representation
+}
+
+export interface WorldStressRibbonSegment {
+  dimension: 'INFLATION' | 'ENERGY' | 'TRADE' | 'SANCTIONS' | 'FINANCE' | 'COMMODITY' | 'DEBT' | 'CHOKEPOINT' | 'CONFIDENCE';
+  stressScore: number; // 0-100
+  weight: number; // contribution to overall ribbon sum
+  trend: 'UP' | 'DOWN' | 'STABLE';
+  primaryHotspots: string[]; // countries or regions driving the stress
+}
+
+export interface WorldEconomicStressState {
+  globalStressIndex: number; // 0-100 overall score
+  prevTickIndex: number;
+  directionVelocity: number; // rate of change
+  synchronizedScale: 'LOCALIZED' | 'REGIONAL_PROPAGATION' | 'SECTORAL_CRISIS' | 'SYNCHRONIZED_STRESS' | 'GLOBAL_SYSTEMIC_CRISIS';
+  label: StressLabel;
+  components: WorldStressRibbonSegment[];
+  narrativeOverview: string;
+}
+
+export interface CountryEconomicSummary {
+  countryId: string;
+  name: string;
+  isoCode: string;
+  currentGdpB: number;
+  headlineGrowth: number;
+  headlineInflation: number;
+  debtToGdpRatio: number;
+  macroTrend: 'BOOMING' | 'STABLE' | 'STAGNANT' | 'DETERIORATING' | 'CRISIS';
+  topStressedSectors: { sector: string; score: number }[];
+  topStressedCommodities: { commodity: CommodityType; stress: number }[];
+  tradeVulnerabilityIndex: number; // 0-100
+  energyVulnerabilityIndex: number; // 0-100
+  financeFragilityIndex: number; // 0-100
+  sanctionsBlowbackExposure: number; // 0-100
+  worldStressContributionPct: number; // % contribution to global stress index
+}
+
+export interface EconomicRiskFlag {
+  id: string;
+  countryId: string;
+  severity: 'WARNING' | 'CRITICAL' | 'CATASTROPHIC';
+  systemSource: 'MACRO' | 'TRADE' | 'ENERGY' | 'SANCTIONS' | 'FININT';
+  title: string;
+  triggerCondition: string;
+  description: string;
+}
+
+export interface EconomicWatchItem {
+  id: string;
+  title: string;
+  type: 'COMMODITY' | 'ROUTE' | 'NATION' | 'SECTOR';
+  targetLabel: string;
+  activeTrend: 'HEATING_UP' | 'COOLING_DOWN' | 'STABLE_STRESS';
+  stressLevel: number;
+  arachneReferenceAlertId?: string;
+}
+
+export interface EconomicUISelectionState {
+  activeCountryId: string;
+  activeSectorKey: string;
+  activeCommodityKey: CommodityType;
+  heatmapGridMode: 'COMMODITY_X_COUNTRY' | 'COMMODITY_X_REGION' | 'COMMODITY_X_HORIZON' | 'COMMODITY_X_DIMENSION';
+  forecastHorizon: ForestHorizon;
+  forecastBranchId: 'BASELINE' | 'PROPOSED' | 'STRESS_ALT' | 'RECOVERY_ALT';
+  workspaceComparableCountries: string[];
+  workspaceComparableSectors: string[];
+  workspaceComparableCommodities: CommodityType[];
+}
+
+
+// FROM energy.ts
+export type EnergySourceType = 'oil' | 'gas' | 'coal' | 'nuclear' | 'hydro' | 'solar' | 'wind';
+
+export interface EnergySourceState {
+  type: EnergySourceType;
+  domesticProduction: number;      // Mtoe or units
+  domesticConsumption: number;     // Mtoe or units
+  importRequirement: number;       // positive if needs imports, negative if surplus exporter
+  substitutability: number;        // 1-10 difficulty to replace
+  stressSensitivity: number;       // 0-100 baseline vulnerability
+  strategicImportance: number;     // 1-10 priority (e.g. oil/gas high, solar/wind growing)
+  disruptionConsequences: string[]; // custom indicators (e.g. "Industrial power outages", "Transport cost spike")
+}
+
+export interface EnergyImportDependency {
+  sourceType: EnergySourceType;
+  supplierCountryId: string;
+  volumeMtoe: number;              // volume imported
+  routeId: string;                 // segment or node ID representing the main route (from tradeStore or road/lane ID)
+  routeType: 'pipeline' | 'sealane' | 'port' | 'corridor' | 'mixed';
+  routeChokepointRisk: number;     // 0-100 risk score
+  rerouteFlexibility: number;      // 0-100 ease of rerouting (pipeline is low, tanker/oil is high)
+  isDisrupted: boolean;
+  actualDeliveryPct: number;       // 100% is normal, can drift down during embargo or blockage
+}
+
+export interface EnergyExportProfile {
+  sourceType: EnergySourceType;
+  recipientCountryId: string;
+  volumeMtoe: number;
+  routeId: string;
+}
+
+export interface EnergyVulnerabilityProfile {
+  vulnerabilityScore: number;      // 0-100
+  diversificationScore: number;    // 0-100 (high is good, meaning diversified sources/suppliers)
+  routeConcentrationScore: number; // 0-100 (high is risky, meaning dependent on one chokepoint)
+  embargoSensitivity: number;      // 0-100
+  rerouteFlexibilityScore: number; // 0-100
+  criticalDrivers: string[];       // top reasons for exposure/vulnerability
+}
+
+export interface EnergyRerouteOption {
+  sourceType: EnergySourceType;
+  alternativeSupplierId: string;
+  routeId: string;
+  availableCapacityFraction: number; // 0.0 - 1.0
+  frictionCostMultiplier: number;    // e.g. 1.25 representing longer route costing more
+  coerciveRiskScore: number;         // 0-100 vulnerability with alternative supplier
+}
+
+export interface EnergyEmbargoAction {
+  id: string;
+  actorCountryId: string;
+  targetCountryId: string;
+  affectedSources: EnergySourceType[];
+  affectedRoutes: string[];          // routes locked down
+  intensity: number;                 // 0-100 % enforcement
+  tickEnacted: number;
+  isActive: boolean;
+}
+
+export interface EnergyStressRecord {
+  householdStress: number;           // 0-100 (hitting heating, power bills)
+  industrialStress: number;          // 0-100 (factory slowdowns, power allocation)
+  strategicStress: number;           // 0-100 (drawdowns of state strategic reserves)
+  aggregatedStressScore: number;     // 0-100 combined
+  lastShockTick: number;
+}
+
+export interface EnergyShockRecord {
+  id: string;
+  countryId: string;
+  sourceType: EnergySourceType;
+  impactGdpFallPercent: number;
+  impactInflationPercent: number;
+  unemploymentSpikePercent: number;
+  socialFragilityDelta: number;
+  description: string;
+  tickOccurred: number;
+}
+
+export interface CountryEnergyProfile {
+  countryId: string;
+  sourceStates: Record<EnergySourceType, EnergySourceState>;
+  totalEnergyProduction: number;   // Gross output
+  totalEnergyConsumption: number;  // Gross usage
+  energySufficiencyIndex: number;  // 0-100% or above (representing domestic / demand ratio)
+  importDependencyPct: number;     // 0-100 percentage exposed externally
+  exportRole: 'EXPORTER' | 'IMPORTER' | 'BALANCED' | 'SELF_SUFFICIENT';
+  
+  // Scoring
+  diversificationScore: number;
+  dependencyScore: number;
+  vulnerabilityScore: number;
+  resilienceScore: number;
+  domesticStressScore: number;
+  
+  // Sectoral Exposure
+  industrialEnergyExposure: number; // 0-100
+  householdStressExposure: number;  // 0-100
+  routeConcentration: number;       // 0-100
+  strategicBufferDays: number;      // size of country supply buffer e.g. 90 days EPR
+  recoveryAdaptationMomentum: number; // 0-100
+  lastUpdatedTick: number;
+
+  dependencies: EnergyImportDependency[];
+  activeEmbargoes: EnergyEmbargoAction[];
+  stressState: EnergyStressRecord;
+}
+
+export interface EnergyDependencyGraphNode {
+  id: string;
+  label: string;
+  flag: string;
+  type: 'SUPPLIER' | 'CONSUMER' | 'BALANCED';
+  energyVulnerability: number;
+  energyStress: number;
+}
+
+export interface EnergyDependencyGraphEdge {
+  id: string;
+  source: string;                  // supplier
+  target: string;                  // importer
+  sourceType: EnergySourceType;
+  volumeMtoe: number;
+  routeType: 'pipeline' | 'sealane' | 'port' | 'corridor' | 'mixed';
+  routeId: string;
+  isDisrupted: boolean;
+  flowPct: number;                 // current actual vs contracted flow
+}
+
+export interface EnergyIncident {
+  id: string;
+  tick: number;
+  type: 'EMBARGO_IMPOSED' | 'GAS_FLOW_DISRUPTED' | 'PIPELINE_DEPENDENCY_EXPOSED' | 'ENERGY_REROUTE_ATTEMPTED' | 'DOMESTIC_ENERGY_STRESS_ESCALATED' | 'ENERGY_VULNERABILITY_THRESHOLD_CROSSED' | 'ENERGY_BUFFER_IMPROVED' | 'ENERGY_SHOCK_MACRO_SPILLOVER';
+  actorCountryId: string;
+  targetCountryId?: string;
+  routeId?: string;
+  sourceType?: EnergySourceType;
+  summary: string;
+  economicSeverity: 'MINIMAL' | 'STRESSED' | 'SEVERE';
+}
+
+
+// FROM finint.ts
+export type FinancialActorType = 'oligarch' | 'sovereign_wealth_fund' | 'proxy_vehicle' | 'strategic_enterprise' | 'central_bank' | 'covert_broker';
+
+export type ShellEntityStatus = 'ACTIVE' | 'FLAGGED' | 'FROZEN' | 'DISSOLVED' | 'MIGRATED';
+
+export type SanctionStatus = 'NONE' | 'MONITORED' | 'PRIMARY_SANCTIONS' | 'SECONDARY_REDUX' | 'FROZEN_ASSETS';
+
+export type JurisdictionSecrecyRating = 'LOW' | 'MEDIUM' | 'HIGH';
+
+export type FinancialCoercionType = 'ASSET_FREEZE' | 'RESERVE_ATTACK' | 'DEBT_PRESSURE' | 'SWIFT_EXCLUSION';
+
+export interface FinancialActor {
+  id: string; // e.g. 'volkov_holding', 'qd_strategic'
+  name: string;
+  actorType: FinancialActorType;
+  linkedCountryId: string;
+  associatedSanctionStatus: SanctionStatus;
+  visibilityScore: number; // 0-100 (how hidden they are)
+  capitalWeight: number; // Millions/Billions index (e.g. 150)
+  jurisdictionIds: string[]; // Hosted in
+  networkRole: string; // "Shadow Procurement", "Clearing Broker", "Symmetric Wealth Reserve"
+  knownExposureLevel: number; // 0-100
+  plausibleDeniabilityIndex: number; // 0-100
+}
+
+export interface ShellEntity {
+  id: string;
+  name: string;
+  linkedActorId: string; // Beneficiary Owner
+  jurisdictionId: string; // e.g. 'cayman', 'cyprus'
+  secrecyLevel: number; // 0-100
+  assetClasses: string[]; // ['Maritime fleets', 'Real estate', 'Tech equities']
+  exposureRisk: number; // 0-100
+  status: ShellEntityStatus;
+  linkedRoutes: string[]; // Shared with Foundry segments
+}
+
+export interface JurisdictionProfile {
+  id: string; // e.g. 'cayman', 'cyprus', 'switzerland', 'seychelles', 'uk'
+  countryId?: string; // If sovereign
+  name: string;
+  secrecyRating: JurisdictionSecrecyRating;
+  compliancePosture: 'HIGHLY_COOPERATIVE' | 'PARTIALLY_COOPERATIVE' | 'NON_COMPLIANT';
+  enforcementRisk: number; // 0-100
+  attractivenessForShells: number; // 0-100
+  sovereignShieldingPower: number; // 0-100
+  currentCooperationMultiplier: number; // Dynamic slider
+}
+
+export interface CoerciveFinancialAction {
+  id: string;
+  type: FinancialCoercionType;
+  actorCountryId: string;
+  targetCountryId: string;
+  targetActorId?: string;
+  intensityScore: number; // 0-100
+  activeTick: number;
+}
+
+export interface FinancialActionPreview {
+  actionType: FinancialCoercionType;
+  targetCountryId: string;
+  targetActorId?: string;
+  intendedStrength: number; // 0-100
+  expectedLeverageLevel: number; // 0-100
+  allianceDiscomfortPenalty: number; // 0-100
+  reputationalErosion: number; // 0-100 Override penalty
+  paymentFragmentationRisk: number; // 0-100
+  dollarDominanceErosion: number; // 0-100
+  expectedTotalBlowback: number; // Cumulative sum
+  firstOrderFinancialImpact: string;
+  firstOrderStrategicRetaliationRisk: string;
+  confidenceScore: 'LOW' | 'MEDIUM' | 'HIGH';
+}
+
+export interface FinancialIncident {
+  tick: number;
+  actorId: string;
+  actionType: FinancialCoercionType | 'DISCOVERY' | 'EXCLOSURE';
+  title: string;
+  summary: string;
+  severity: 'INFO' | 'WARNING' | 'CRITICAL';
+}
+
+
+// FROM foundry.ts
+
+export type RouteMode = 'maritime' | 'pipeline' | 'land' | 'manufacturing' | 'mixed';
+
+export type RouteStatus = 'STABLE' | 'STRESSED' | 'REROUTED' | 'BLOCKED';
+
+export type ChokepointStatus = 'SECURE' | 'CONGESTED' | 'BLOCKED';
+
+export interface CommodityFlow {
+  id: string;
+  commodityType: CommodityType;
+  sourceCountryId: string;
+  destinationCountryId: string;
+  transitPath: string[]; // List of intermediate countries / transit states
+  transitChokepointIds: string[]; // Chokepoints crossed
+  mode: RouteMode;
+  volumeScore: number; // 0-100 (amount of throughput)
+  strategicImportance: number; // 0-100 (criticality to importer/exporter)
+  substitutability: number; // 0-100 (availability of alternate partners)
+  disruptionSensitivity: number; // 0-100 (vulnerability level)
+  routeStatus: RouteStatus;
+  linkedTreatyIds: string[];
+  linkedWorldEventIds: string[];
+  linkedIntelFactIds: string[];
+  lastChangedTick: number;
+  dependenciesSummary: string;
+}
+
+export interface Chokepoint {
+  id: string; // e.g. 'hormuz', 'malacca', 'suez', 'panama', 'taiwan_strait', 'bosphorus', 'bab_el_mandeb'
+  name: string;
+  coordinates: { x: number; y: number }; // Relative coordinate mapping for visual layout overlay
+  chokepointType: 'strait' | 'canal' | 'corridor' | 'hub';
+  connectedCommodities: CommodityType[];
+  throughputImportance: number; // 0-100
+  exposureScore: number; // 0-100 (calculated dynamic exposure risk)
+  controllingCountryIds: string[]; // Adjacent/controlling sovereign entities
+  vulnerabilityTags: string[];
+  currentDisruptionStatus: ChokepointStatus;
+  strategicSummary: string;
+}
+
+export interface SupplyDependencyRecord {
+  countryId: string;
+  commodityType: CommodityType;
+  dependenceRatio: number; // 0-100%
+  primarySourceCountryId: string;
+  primaryRouteId: string;
+  chokepointExposureScore: number; // 0-100
+  substituteAvailability: 'NONE' | 'LIMITED' | 'SUFFICIENT';
+  resilienceRating: number; // 0-100% (strategic stockpile depth etc)
+}
+
+export interface DisruptionSignal {
+  id: string;
+  type: 'SUPPLY_ROUTE_DISRUPTED' | 'CHOKEPOINT_STRESSED' | 'COMMODITY_SHORTAGE_RISK_RISING' | 'ENERGY_FLOW_IMPAIRED' | 'FOOD_IMPORT_VULNERABILITY_SPIKE' | 'SEMICONDUCTOR_CHAIN_STRAIN' | 'STRATEGIC_MATERIAL_BOTTLENECK';
+  countryId: string;
+  commodityType: CommodityType;
+  severity: number; // 0-100
+  durationTicks: number; // dynamic persistence
+  sourceId: string; // flow ID or chokepoint ID of the trigger
+  description: string;
+  affectedSystems: string[]; // e.g. ['MILITARY_READINESS', 'GDP_OUTPUT', 'POPULAR_STABILITY']
+}
+
+export interface ImpactPreview {
+  actionType: 'EMBARGO' | 'SANCTION' | 'INTERDICTION' | 'ROUTE_CLOSURE';
+  actorCountryId: string;
+  targetCountryId: string;
+  affectedCommodities: CommodityType[];
+  disruptionSeverity: number; // 0-100
+  firstOrderEconomicImpact: string;
+  firstOrderMilitaryImpact: string;
+  diplomaticFalloutRisk: 'LOW' | 'MEDIUM' | 'HIGH';
+  affectedAllies: string[];
+  expectRerouting: boolean;
+  reroutingDelayTicks: number;
+  confidenceLabel: 'LOW' | 'MEDIUM' | 'HIGH';
+}
+
+
+// FROM gotham.ts
+
+export type RelationshipDimension = 'trade' | 'ideology' | 'military' | 'treaty' | 'hostility';
+
+export interface ForecastSignal {
+  type: 'PROVOCATION_RISK' | 'ALLIANCE_STRAIN' | 'PRESSURE_OPPORTUNITY';
+  score: number; // 0-100
+  drivers: string[];
+  confidenceLabel: 'LOW' | 'MEDIUM' | 'HIGH';
+  trendDirection: 'STABLE' | 'RISING' | 'DECAYING';
+  mitigations?: string[];
+}
+
+export interface RelationshipChangeRecord {
+  tick: number;
+  dimension: RelationshipDimension | 'ALL';
+  changeType: 'IMPROVED' | 'DETERIORATED' | 'STABILIZED' | 'INITIALIZED';
+  description: string;
+  linkedEventId?: string;
+  linkedIntelId?: string;
+  linkedTreatyId?: string;
+}
+
+export interface GraphNodeMetrics {
+  degree: number;
+  centrality: number; // calculated centrality proxy (0-1)
+  dependencyCount: number; // count of states dependent on this node
+  vulnerabilityIndex: number; // calculated exposure rating (0-100)
+}
+
+export interface GraphNode {
+  countryId: string;
+  displayName: string;
+  region: string;
+  blocTags: string[];
+  currentStrategicPostureSummary: string;
+  aggregateInfluenceScore: number; // 0-100 derived
+  riskFlags: string[];
+  graphMetrics: GraphNodeMetrics;
+}
+
+export interface GraphEdge {
+  id: string; // source_target
+  sourceCountryId: string;
+  targetCountryId: string;
+  directional: boolean; // many ties are asymmetric
+  activeDimensions: RelationshipDimension[];
+  
+  // Dimensional raw scores (0 to 100)
+  tradeScore: number;             // Economic interdependence, exposure, depth
+  ideologyScore: number;          // Regime affinity, matching values
+  militaryLinkScore: number;      // Defense alignment, basing, command ties
+  treatyObligationScore: number;  // binding commitments
+  covertHostilityScore: number;   // shadow conflict, subversion
+
+  // Aggregated evaluation indexes (0 to 100)
+  overallAffinityScore: number;   // friendship proxy
+  overallTensionScore: number;    // conflict proxy
+  dependencyScore: number;        // unidirectional exposure
+  volatilityScore: number;        // fluctuations trigger likelihood
+
+  visibility: 'PUBLIC' | 'CLASSIFIED' | 'PLAYER_ONLY';
+  lastChangedTick: number;
+  changeReasons: RelationshipChangeRecord[];
+  
+  linkedWorldEventIds: string[];
+  linkedIntelFactIds: string[];
+  linkedTreatyIds: string[];
+  linkedOperationIds: string[];
+  
+  relationshipStatus: string;    // Label e.g., "Militant Bloc Ally", "Proxy Rivalry", "Symmetric Trade Dependency"
+  forecastSignals: ForecastSignal[];
+}
+
+export interface RelationshipSnapshot {
+  tick: number;
+  scenarioId: ScenarioId;
+  edges: Omit<GraphEdge, 'changeReasons'>[];
+}
+
+
+// FROM influence.ts
+export interface PropagandaCampaign {
+  id: string;
+  codename: string;
+  adversaryCountryId: string; // e.g. 'RU', 'CN', 'KP', 'IR'
+  targetChannelId: string; // e.g. 'domestic_media', 'foreign_media', 'social_platforms', 'diplomatic_backchannels'
+  narrativeFrame: 'PLAYER_IS_AGGRESSOR' | 'PLAYER_IS_ISOLATED' | 'PLAYER_IS_BLUFFING' | 'MILITARY_SUPERIORITY_POSTURING' | 'ALLIES_WILL_ABANDON_YOU';
+  reachIndex: number; // 0-100
+  susceptibilityIndex: number; // 0-100
+  seedingTick: number;
+  stage: 'SETUP' | 'SEEDING' | 'AMPLIFICATION' | 'REINFORCEMENT' | 'EXPLOITATION' | 'DECAY';
+  decayRate: number; // how fast the campaign dies down
+  unrestImpact: number; // unrest delta per tick
+  credibilityScars: number; // permanent opinion damage
+  isExposed: boolean;
+  investmentB: number;
+}
+
+export interface AdversarialDeceptionCampaign {
+  id: string;
+  codename: string;
+  adversaryCountryId: string;
+  objective: 'DELAY_PLAYER_RESPONSE' | 'PROVOKE_OVERREACTION' | 'SPLIT_COALITION' | 'PROTECT_HIDDEN_BUILDUP' | 'COMPLACENCY_TRAP';
+  baitAssumptionId: string;
+  active: boolean;
+  intensityAndScope: number; // 0-100
+  successProbability: number;
+  blowbackRisk: number;
+  exposureHistory: string[];
+}
+
+export interface PlantedIntelligencePacket {
+  id: string;
+  sourceType: 'COMPROMISED_AGENT' | 'FORGED_INTERCEPT' | 'MANIPULATED_LEAK' | 'CORRUPTED_DOCUMENT' | 'FALSE_OSINT' | 'STAGED_SIGNAL';
+  format: 'TACTICAL_FACT_FALSE_STRATEGIC' | 'ACCURATE_DETAIL_WRONG_CONCLUSION' | 'BELIEVABLE_INCOMPLETE' | 'FORGED_PROVENANCE' | 'MIXED_TRUTH_LIE';
+  provenanceSource: string; // e.g., "MI6 Secure Vault Extract"
+  headline: string;
+  content: string;
+  analyzed: boolean;
+  isExposed: boolean;
+  perceivedCredibility: number; // 0-100
+  actualAccuracy: number; // 0-100 (usually low but nonzero!)
+  implantedBeliefId: string;
+  detectionDifficulty: number; // 0-100
+  tickPlanted: number;
+}
+
+export interface CounterintelligenceResponseModel {
+  id: string;
+  title: string;
+  type: 'SOURCE_VALIDATION' | 'TRUST_RECALIBRATION' | 'CHANNEL_QUARANTINE' | 'DISINFO_COUNTER' | 'LEAK_CONTAINMENT' | 'DOUBLE_AGENT_REVERSAL';
+  costCashB: number;
+  costAP: number;
+  successProbability: number;
+  active: boolean;
+  tickActivated: number;
+  cooldownRemaining: number;
+  narrativeOnTrigger: string;
+}
+
+export interface AssumptionProfile {
+  id: string; // countryId (adversary or player)
+  expectedAttackVectorBias: 'SIBERIA_CORRIDOR' | 'NORTH_SEA_STRIKE' | 'PACIFIC_BAIT' | 'MIDDLE_EAST_FLANK';
+  trustBias: 'SIGINT_OVERRELIANCE' | 'HUMINT_OVERRELIANCE' | 'OSINT_OVERRELIANCE';
+  escalationExpectation: 'BLUFF_ANCHORED' | 'KINETIC_EXPECTED' | 'EQUAL_PROBABILITY';
+  allianceReliabilityExpectation: 'ALLIES_WILL_HOLD' | 'ALLIES_WILL_DEFECT' | 'UNRELIABLE';
+  intelligenceConfidenceBias: number; // 0-100
+  bluffDetectionBias: number; // 0-100
+  threatSalienceBias: number; // 0-100
+}
+
+export interface PlayerBeliefModel {
+  dominantNarrative: string;
+  perceivedMainThreatVector: 'SIBERIA_CORRIDOR' | 'NORTH_SEA_STRIKE' | 'PACIFIC_BAIT' | 'MIDDLE_EAST_FLANK';
+  allianceConfidenceRating: number; // 0-100
+  bluffConfidenceRating: number; // 0-100
+  anchoredAssumptions: string[];
+  activeMisperceptions: string[];
+  estimatedAdversaryBuildupConfidence: number; // 0-100
+}
+
+export interface TrustChannelProfile {
+  id: string;
+  channelName: string;
+  category: 'DOMESTIC_MEDIA' | 'FOREIGN_MEDIA' | 'SOCIAL_PLATFORMS' | 'DIPLOMATIC_BACKCHANNELS' | 'FORGED_DOCUMENTS' | 'THINK_TANKS';
+  baseReliability: number; // 0-100
+  currentPoisoningLevel: number; // 0-100
+  reachingCoverage: number; // 0-100
+  susceptibilityRating: number; // 0-100
+  burnedCount: number;
+}
+
+export interface NarrativeFramingModel {
+  id: string;
+  opponentId: string;
+  frameType: 'PLAYER_IS_AGGRESSOR' | 'PLAYER_IS_ISOLATED' | 'PLAYER_IS_BLUFFING' | 'PLAYER_UNSTABLE' | 'COLLAPSED_SUPPORT';
+  intensity: number; // 0-100
+  disseminationReach: number; // 0-100
+  status: 'INFRA_SEEDED' | 'AMPLIFYING' | 'DOMINANT' | 'DEFEATED';
+}
+
+export interface MisperceptionRiskModel {
+  riskScore: number; // 0-100
+  primaryFactor: string;
+  escalationSensitivity: number; // multiplier e.g. 1.2
+  confirmationBiasAnchor: string;
+}
+
+export interface FalseCertaintyVector {
+  id: string;
+  beliefStatement: string;
+  perceivedCertainty: number; // 0-100
+  actualRealityInverted: boolean; // if true, the reverse of the statement is true
+  implantedByCampaignId: string;
+}
+
+export interface InfluenceExposureHistory {
+  campaignId: string;
+  tickExposed: number;
+  blowbackSeverity: 'LOW' | 'MEDIUM' | 'CIVIC_OUTRAGE' | 'DIPLOMATIC_CRISIS';
+  outcomeNarrative: string;
+}
+
+export interface CounterNarrativeAsset {
+  id: string;
+  name: string;
+  mediaCategory: string;
+  credibilityIndex: number; // 0-100
+  costPerTick: number; // $B
+  active: boolean;
+}
+
+export interface SourceCredibilityAttack {
+  id: string;
+  targetSourceId: string;
+  opponentCountryId: string;
+  successProbability: number;
+  damageInflicted: number;
+  status: 'PENDING' | 'EXECUTED' | 'EXPOSED';
+}
+
+export interface ManipulationObjective {
+  id: string;
+  codename: string;
+  type: 'DELAY_PLAYER_RESPONSE' | 'PROVOKE_OVERREACTION' | 'SPLIT_COALITION' | 'PROTECT_HIDDEN_BUILDUP' | 'COMPLACENCY_TRAP';
+  status: 'PENDING' | 'ACTIVE' | 'EXPLOITED' | 'FAILED';
+  targetValue: number; // evaluation benchmark
+}
+
+export interface BaitBeliefOpportunity {
+  id: string;
+  statement: string;
+  baitType: 'FALSE_WEAK_POINT_HARDENED' | 'FALSE_READY_GAP' | 'FALSE_ALLIANCE_SPLIT' | 'FAKE_DIPLOMATIC_OPENING';
+  attractivenessScore: number; // 0-100
+  timesInvestigated: number;
+  revealedAsTrap: boolean;
+  actualTroopCountOffset?: number; // e.g. reveals 10 units but actually is 100 !
+}
+
+export interface IntelligencePoisoningRecord {
+  id: string; // e.g. SIGINT, satellite
+  sourceId: string;
+  noiseLevelDelta: number;
+  conflictingReportsEnabled: boolean;
+  timesFlaggedByCI: number;
+}
+
+export interface InfluenceOutcomeTrace {
+  tick: number;
+  campaignCodename: string;
+  effectDescription: string;
+  outcomeType: 'DELIBERATE_HESITATION' | 'RASH_OVERREACTION' | 'ALLY_COHESION_LOSS' | 'PUBLIC_LEGITIMACY_SAP';
+}
+
+export interface AdversarialInfluenceState {
+  propagandaCampaigns: PropagandaCampaign[];
+  deceptionCampaigns: AdversarialDeceptionCampaign[];
+  plantedPackets: PlantedIntelligencePacket[];
+  counterintelligenceResponses: CounterintelligenceResponseModel[];
+  playerBelief: PlayerBeliefModel;
+  assumptionProfiles: Record<string, AssumptionProfile>;
+  trustChannels: TrustChannelProfile[];
+  narrativeFraming: NarrativeFramingModel[];
+  misperceptionRisk: MisperceptionRiskModel;
+  falseCertaintyVectors: FalseCertaintyVector[];
+  exposureHistory: InfluenceExposureHistory[];
+  counterAssets: CounterNarrativeAsset[];
+  credibilityAttacks: SourceCredibilityAttack[];
+  manipulationObjectives: ManipulationObjective[];
+  baitOpportunities: BaitBeliefOpportunity[];
+  poisoningRecords: Record<string, IntelligencePoisoningRecord>;
+  outcomeTraces: InfluenceOutcomeTrace[];
+  difficultyLevel: 'EASY' | 'NORMAL' | 'HARD' | 'COGNITIVE_WARFARE';
+  warningMetrics: {
+    rumorPressure: number;
+    anomalyPressure: number;
+    deceptionSuspicion: number;
+    sourceBurnRisk: number;
+    contaminationLevel: number;
+  };
+}
+
+
+// FROM mirror.ts
+export type PlayerStrategyFingerprint =
+  | 'SANCTIONS_GRINDER'
+  | 'COVERT_OPERATOR'
+  | 'MILITARY_BLITZER'
+  | 'ALLIANCE_BROKER'
+  | 'ECONOMIC_STRANGLER'
+  | 'INFORMATION_WAR_SPECIALIST'
+  | 'BALANCED_GRAND_STRATEGIST'
+  | 'DECEPTIVE_TACTICIAN'
+  | 'DEFENSIVE_TURTLER';
+
+export type MirrorWarningLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+
+export interface PlayerProfileVector {
+  sanctionsUseCount: number;
+  covertOpsCount: number;
+  militaryStrikesCount: number;
+  diplomaticAgreementsCount: number;
+  cyberAttacksCount: number;
+  economyDecisionsCount: number;
+  totalActionsLogged: number;
+
+  sanctionsBias: number;         // 0 - 100
+  covertBias: number;            // 0 - 100
+  militaryBias: number;          // 0 - 100
+  diplomacyBias: number;         // 0 - 100
+  cyberBias: number;             // 0 - 100
+  economicBias: number;          // 0 - 100
+}
+
+export interface PlayerHabitRecord {
+  habitId: string;
+  actionCategory: string; // e.g. 'SANCTION', 'COVERT', 'STRIKE', 'TREATY'
+  triggerStatus: string;  // e.g. 'CRISIS_ESCALATION', 'STABILITY_LOW'
+  frequencyCount: number;
+  lastTickSeen: number;
+  stabilityScore: number; // 0 - 100
+}
+
+export interface PlayerPreferenceModel {
+  primaryInstrument: string; // 'SANCTIONS' | 'COVERT' | 'MILITARY' | 'DIPLOMACY'
+  secondaryInstrument: string;
+  preferredTargetCountryId?: string;
+  negotiationStiffness: number; // 0-100 (preference to stand firm)
+  unrestExploitationPropensity: number; // 0-100
+}
+
+export interface PlayerRiskPatternModel {
+  riskToleranceScore: number; // 0 - 100
+  bluffPropensity: number;    // 0 - 100
+  retreatFrequency: number;   // count of backing off
+  earlyCommitmentRate: number;// committing forces or sanctions in early cycles
+}
+
+export interface PlayerTempoModel {
+  averageResponseTime: number; // in ticks between events
+  escalationSpeed: 'RAPID' | 'SLOW' | 'CALCULATED'; 
+  actionsPerTenTicks: number;
+}
+
+export interface PlayerEscalationPatternModel {
+  humiliationReactionRatio: number; // escalation rate when humiliated by AI (0-1)
+  nuclearSovereignReadiness: number; // how quickly they load/target nuclear systems basic
+  retaliatoryMultiplier: number;     // 1.0 to 3.0 scale of retorts
+}
+
+export interface PlayerToolBiasModel {
+  cyberIntrusionPropensity: number; // 0 - 100
+  propagandaSlanderRate: number;    // 0 - 100
+  backchannelUtilScore: number;     // 0 - 100
+}
+
+export interface PlayerBaitSusceptibilityModel {
+  summitTrapsAttempted: number;
+  summitTrapsCaught: number;
+  fakeVulnerabilitiesExploited: number;
+  deceptiveLeakersTrusted: number;
+  susceptibilityScore: number; // 0 - 100
+  lastTrapTriggeredTick?: number;
+}
+
+export interface CounterStrategyTemplate {
+  templateId: string;
+  name: string;
+  description: string;
+  targetBiasTrigger: string; // e.g. 'SANCTIONS', 'COVERT', 'MILITARY', 'DIPLOMACY'
+  tactics: string[];
+  systemModifiers: {
+    intelBoost: number;
+    economicResilience: number;
+    militaryFortification: number;
+    counterIntelligenceMultiplier: number;
+  };
+}
+
+export interface CounterStrategyCandidate {
+  candidateId: string;
+  templateId: string;
+  scoreMatch: number; // 0 - 100 matching bias score
+  tickGenerated: number;
+  estimatedSuccessProbability: number;
+}
+
+export interface CounterStrategyCommitment {
+  activeStrategyId?: string;
+  candidateId?: string;
+  name: string;
+  description: string;
+  ticksActive: number;
+  effectivenessScore: number; // 0 - 100
+  threatCounteredCategory: string;
+}
+
+export interface HoneypotOpportunity {
+  id: string;
+  targetId: string; // countryId hosting this trap
+  name: string;
+  description: string;
+  baitType: 'MILITARY_GAP' | 'DIPLOMATIC_OPEN_STALL' | 'COVERT_LEAK' | 'ECONOMIC_CHOKE_CORRIDOR';
+  attractivenessIndex: number; // 0 - 100
+  isDiscovered: boolean; // discovered by player intelligence?
+  isTriggered: boolean;  // triggered by player action?
+  rewardToPlayerIfSucceeds: string;
+  penaltyToPlayerIfTrapped: string;
+}
+
+export interface BaitSituation {
+  id: string;
+  description: string;
+  requiredPlayerInstrument: string; // e.g., 'COVERT_OPS', 'MILITARY_STRIKES', 'SANCTION'
+  consequencesLocked: boolean;
+  trapReady: boolean;
+}
+
+export interface ExploitWindow {
+  id: string;
+  countryId: string;
+  description: string;
+  reason: string;
+  remainingTicks: number;
+  exploitMultiplier: number; // e.g. 1.5x damage, or 2x success rate
+  isExposed: boolean;
+}
+
+export interface AdaptationMemory {
+  id: string;
+  tickOccurred: number;
+  playerActionContext: string;
+  aiCounterActionExecuted: string;
+  successOutcome: boolean;
+  learnedWeightShift: number;
+}
+
+export interface CountermeasureHistory {
+  strategyName: string;
+  tickDeployed: number;
+  effectiveness: 'EXCELLENT' | 'MODERATE' | 'FAILURE';
+  playerRetaliationRecorded: boolean;
+}
+
+export interface DeceptionExposureState {
+  playerSuspectsAdaptation: boolean; // 0-100 tracker represents if player is poisoning model
+  aiFalseCertaintyScore: number;     // AI holds false confidence due to player deceit
+  poisonedHabitIds: string[];
+}
+
+export interface LearningConfidence {
+  generalConfidence: number; // 0 - 100
+  historyScaleTicks: number; // total duration tracked
+  relearningActive: boolean; 
+}
+
+export interface PatternStabilityScore {
+  coreStability: number; // 0 - 100 representing low strategic variance
+  driftDetected: boolean;
+}
+
+export interface MirrorAdaptationState {
+  profile: PlayerProfileVector;
+  fingerprint: PlayerStrategyFingerprint;
+  habits: PlayerHabitRecord[];
+  preferenceModel: PlayerPreferenceModel;
+  riskPattern: PlayerRiskPatternModel;
+  tempo: PlayerTempoModel;
+  escalationPattern: PlayerEscalationPatternModel;
+  toolBias: PlayerToolBiasModel;
+  baitSusceptibility: PlayerBaitSusceptibilityModel;
+  
+  availableTemplates: CounterStrategyTemplate[];
+  activeCounterCommitment?: CounterStrategyCommitment;
+  candidates: CounterStrategyCandidate[];
+  honeypots: HoneypotOpportunity[];
+  baitSituations: BaitSituation[];
+  exploitWindows: ExploitWindow[];
+  memories: AdaptationMemory[];
+  confidence: LearningConfidence;
+  stability: PatternStabilityScore;
+  counterHistory: CountermeasureHistory[];
+  deception: DeceptionExposureState;
+  warningLevel: MirrorWarningLevel;
+
+  learningSpeedMultiplier: number; // e.g. 1.0, 1.5, 2.0 based on difficulty
+  difficultySetting: 'EASY' | 'MEDIUM' | 'HARD' | 'NIGHTMARE';
+  confrontationPlayed: boolean;
+}
+
+
+
+// FROM operative.ts
+export type OperativeSkill =
+  | 'SURVEILLANCE'
+  | 'RECRUITMENT'
+  | 'SABOTAGE'
+  | 'INFILTRATION'
+  | 'TECHNICAL_COLLECTION'
+  | 'COUNTER_SURVEILLANCE'
+  | 'EXFILTRATION_SUPPORT'
+  | 'INFLUENCE_PERSUASION'
+  | 'DECEPTION_HANDLING'
+  | 'REGION_NAVIGATION';
+
+export type CoverType =
+  | 'DIPLOMATIC'
+  | 'COMMERCIAL'
+  | 'MEDIA'
+  | 'ACADEMIC'
+  | 'HUMANITARIAN'
+  | 'CRIMINAL'
+  | 'CUTOUT';
+
+export type MotivationChannel =
+  | 'IDEOLOGY'
+  | 'MONEY'
+  | 'COERCION'
+  | 'EGO';
+
+export type OperativeState =
+  | 'ACTIVE'
+  | 'DORMANT'
+  | 'COMPROMISED'
+  | 'BURNED'
+  | 'EXTRACTED';
+
+export interface RegionFamiliarity {
+  regionId: string; // e.g., 'NORTH_AMERICA', 'EAST_ASIA'
+  score: number;    // 0-100
+}
+
+export interface OperationalHistoryEntry {
+  tick: number;
+  missionType: string;
+  success: boolean;
+  notes: string;
+}
+
+export interface Operative {
+  id: string;
+  name: string;
+  alias: string;
+  trueIdentity: string | null;
+  cellId: string | null;
+  handlerId: string | null;
+  
+  regionOfOperation: string;
+  regionFamiliarity: Record<string, number>; // Object mapping region ID to 0-100 score
+  
+  coverType: CoverType;
+  coverQuality: number; // 0-100
+  coverExposureRisk: number; // 0-100
+  coverConsistency: number; // 0-100
+  
+  skills: Record<OperativeSkill, number>; // Mapping skill to 0-100 score
+  
+  loyalty: number; // 0-100
+  stress: number;  // 0-100
+  burnRisk: number; // 0-100
+  exposureLevel: number; // 0-100
+  accessLevel: number; // 0-100
+  
+  motivationProfile: Record<MotivationChannel, number>; // 0-100 weight per channel
+  leverageProfile: string[]; // specific tags of leverage
+  recruitmentSource: MotivationChannel;
+  
+  lastContactTick: number;
+  lastMissionTick: number;
+  
+  state: OperativeState;
+  
+  compromiseHistory: { tick: number; reason: string }[];
+  missionHistory: OperationalHistoryEntry[];
+  
+  operationalValue: number; // 0-100
+  reliability: number; // 0-100
+  volatility: number; // 0-100
+  
+  currentAssignment: string | null;
+}
+
+export interface Handler {
+  id: string;
+  name: string;
+  codeName: string;
+  trustLevel: number; // 0-100
+  operationalStyle: 'CAUTIOUS' | 'AGGRESSIVE' | 'METHODICAL' | 'ERRATIC';
+  riskTolerance: number; // 0-100
+  disciplineScore: number; // 0-100
+  state: 'ACTIVE' | 'COMPROMISED' | 'BURNED';
+}
+
+export interface Cell {
+  id: string;
+  name: string; // E.g. "Orion Group"
+  regionScope: string;
+  missionScope: string;
+  handlerId: string;
+  exposureBoundary: number; // 0-100 resistance to cascade failure
+  crossContactRules: 'STRICT' | 'PERMISSIVE' | 'ISOLATED';
+  fallbackProtocol: string;
+}
+
+export interface CompartmentalizationGraph {
+  nodes: string[]; // operative IDs
+  links: { source: string; target: string; type: 'KNOWS' | 'CONTACT' | 'FUNDS' }[];
+}
+
+
+// FROM regimePressure.ts
+export type PressureActionType = 'PROTEST' | 'COUP' | 'ELECTION_INTERFERENCE' | 'OPPOSITION_FUNDING' | 'TARGETED_REMOVAL';
+export type EliteFactionAlignment = 'PRO_REGIME' | 'MODERATE' | 'OPPOSITION' | 'MILITARY';
+
+export interface NationRegimePressureState {
+  // Target regime stats
+  legitimacy: number;           // 0-100
+  eliteCohesion: number;        // 0-100
+  oppositionStrength: number;   // 0-100
+  protestTemperature: number;     // 0-100
+  securityForceLoyalty: number; // 0-100
+  mediaControl: number; // 0-100
+  blowbackSensitivity: number;  // 0-100
+
+  // Campaigns & Factions
+  activeCampaigns: PressureCampaign[];
+  blowbackHistory: BlowbackMemory[];
+  eliteFactions: Record<string, EliteFaction[]>;
+}
+
+export interface PressureCampaign {
+  id: string;
+  type: PressureActionType;
+  initiatorId: string;
+  targetCountryId: string;
+  phase: number;
+  maxPhases: number;
+  progress: number; // 0-100 progress inside current phase
+  exposure: number; // 0-100
+  risk: number; // 0-100 (probability of failure/blowback tick-by-tick)
+  investment: number; // Money/resources committed
+  assignedOperatives: string[]; // IDs of assigned agents
+  state: 'PREPARING' | 'EXECUTING' | 'COMPLETED' | 'FAILED' | 'EXPOSED';
+  consequences: any; // specific data based on type
+  tickStarted: number;
+  lastUpdatedTick: number;
+}
+
+export interface NationEliteFaction {
+  id: string;
+  name: string;
+  alignment: EliteFactionAlignment;
+  power: number; // 0-100
+  loyalty: number; // 0-100
+  grievance: number; // 0-100
+}
+
+export interface BlowbackMemory {
+  id: string;
+  type: string;
+  initiatorId: string;
+  magnitude: number; // 1-100
+  tickOccurred: number;
+  decayRate: number; // per tick
+}
+
+
+// FROM sanctions.ts
+export type SanctionsTierType = 'TIER_1_TARGETED' | 'TIER_2_SECTORAL' | 'TIER_3_FINANCIAL_TRADE' | 'TIER_4_TOTAL_EXCLUSION';
+
+export type CoalitionMemberRole = 'LEAD_SPONSOR' | 'FULL_PARTICIPANT' | 'RELUCTANT_PARTICIPANT' | 'PARTIAL_COMPLIANT' | 'SPOILER_BLOCKER' | 'SILENT_ENABLER';
+
+export type SanctionsCampaignStatus = 'PROPOSED' | 'ASSEMBLING' | 'ACTIVE' | 'ESCALATING' | 'DEGRADING' | 'SUSPENDED' | 'COLLAPSED';
+
+export interface SanctionsMeasure {
+  id: string;
+  name: string;
+  tier: SanctionsTierType;
+  description: string;
+  coerciveImpact: number; // 0-100 baseline target pressure
+  blowbackCost: number;   // 0-100 baseline cost to initiator/coalition
+  riskOfRetaliation: number; // 0-150 scaling risk
+  isActive: boolean;
+}
+
+export interface CoalitionMemberCommitment {
+  countryId: string;
+  role: CoalitionMemberRole;
+  alignmentAffinity: number;     // 0-100 affinity with initiator
+  economicExposureToTarget: number; // 0-100 trade/energy dependency
+  domesticSatisfactionImpact: number; // blowback from active sanctions
+  allyFatigueLevel: number;      // 0-100 dynamic fatigue
+  participationWillingness: number; // 0-100 calculated probability of signing
+  isParticipating: boolean;
+}
+
+export interface EvasionChannel {
+  id: string;
+  name: string;
+  type: 'GRAY_MARKET' | 'PAYMENT_WORKAROUND' | 'PARTNER_REORIENTATION';
+  partnerCountryId: string;      // intermediary country
+  capacityMtoeOrValueB: number;  // maximum volume leaked through this channel
+  enforcementLeakagePct: number; // 0-100 efficiency of workaround
+  activeSinceTick: number;
+  isShutDown: boolean;
+}
+
+export interface SanctionTargetProfile {
+  countryId: string;
+  baseResilience: number;        // 0-100
+  unrestTriggerLevel: number;    // 0-100popular unrest before regime stress flares
+  primaryEvasionIncentive: number; // 0-100
+  foreignCurrencyWorkaroundActive: boolean;
+  grayMarketsCount: number;
+}
+
+export interface SanctionsCampaign {
+  id: string;
+  name: string;
+  initiatorCountryId: string;
+  targetCountryIds: string[];
+  status: SanctionsCampaignStatus;
+  campaignTier: SanctionsTierType;
+  activeMeasures: string[]; // measure IDs
+  coalitionSupportScore: number; // 0-100 average consensus
+  legitimacyPosture: 'HUMANITARIAN' | 'DEFENSIVE' | 'ALLIANCE_SOLIDARITY' | 'LAW_ENFORCEMENT' | 'UNILATERAL_PRESSURE';
+  
+  // Real-time tracking meters
+  targetPressureScore: number;    // 0-100 net pressure on target
+  sanctionerBlowbackScore: number; // 0-100 self-harm index
+  allyFatigueScore: number;       // 0-100 dynamic coalition strain
+  complianceStrength: number;     // 0-100 (deterrent to evasion, high is better)
+  evasionIntensity: number;       // 0-100 (leakage bypass strength)
+
+  startTick: number;
+  lastUpdatedTick: number;
+  publicJustification: string;
+
+  // Coalition matrix
+  members: Record<string, CoalitionMemberCommitment>;
+  // Evasion channels unlocked
+  evasionChannels: EvasionChannel[];
+}
+
+export interface SanctionsPreview {
+  tier: SanctionsTierType;
+  expectedCoalitionSupport: number; // 0-100
+  complianceStrengthAssumption: number; // 0-100
+  likelyTargetPressure: number; // 0-100
+  expectedEvasionLeakage: number; // 0-100
+  sanctionerBlowback: number; // 0-100
+  allyFatigueRisk: number; // 0-100
+  gdpImpactOnTargetPct: number;
+  inflationImpactOnInitiatorPct: number;
+}
+
+export interface SanctionsIncident {
+  id: string;
+  tick: number;
+  type: 
+    | 'SANCTIONS_CAMPAIGN_INITIATED'
+    | 'SANCTIONS_TIER_ESCALATED'
+    | 'COALITION_SUPPORT_RISING'
+    | 'COALITION_SUPPORT_FALTERING'
+    | 'GRAY_MARKET_EVASION_DETECTED'
+    | 'ALTERNATIVE_PAYMENT_ROUTE_EXPANDING'
+    | 'PARTNER_REORIENTATION_ACCELERATING'
+    | 'SANCTIONER_BLOWBACK_RISING'
+    | 'ALLY_FATIGUE_THRESHOLD_CROSSED'
+    | 'COALITION_LEVEL_EXCLUSION_ACTIVE'
+    | 'SANCTIONS_MITIGATED_OR_SUSPENDED';
+  campaignId: string;
+  actorId: string;
+  targetId?: string;
+  summary: string;
+  severity: 'INFO' | 'WARNING' | 'CRITICAL';
+}
+
+
+// FROM softPower.ts
+export type SoftPowerVectorType = 
+  | 'HUMANITARIAN_LEGITIMACY' 
+  | 'ASPIRATIONAL_MODERNITY' 
+  | 'EDUCATIONAL_PRESTIGE' 
+  | 'ENTERTAINMENT_ATTRACTION' 
+  | 'CIVILIZATIONAL_PRESTIGE' 
+  | 'MORAL_AUTHORITY' 
+  | 'DEVELOPMENT_COMPETENCE' 
+  | 'ANTI_IMPERIAL_CREDIBILITY' 
+  | 'INNOVATION_PRESTIGE' 
+  | 'SPORTS_PRESTIGE' 
+  | 'NARRATIVE_REACH';
+
+export type AidProgramType = 
+  | 'HUMANITARIAN_RELIEF' 
+  | 'PUBLIC_HEALTH_SUPPORT' 
+  | 'FOOD_AID' 
+  | 'REFUGEE_SUPPORT' 
+  | 'TECHNICAL_ASSISTANCE' 
+  | 'RECONSTRUCTION_SUPPORT' 
+  | 'CONCESSIONAL_LOAN' 
+  | 'PURE_GRANT' 
+  | 'INFRASTRUCTURE_FINANCING' 
+  | 'CLIMATE_RESILIENCE' 
+  | 'EDUCATION_SECTOR';
+
+export type InvestmentDiplomacyType = 
+  | 'STRATEGIC_INFRASTRUCTURE' 
+  | 'INDUSTRIAL_PARK' 
+  | 'DIGITAL_INFRASTRUCTURE' 
+  | 'ENERGY_INFRASTRUCTURE' 
+  | 'PORT_RAIL_LOGISTICS' 
+  | 'EDUCATION_CAMPUS' 
+  | 'MEDIA_CULTURAL_CENTER' 
+  | 'PRESTIGE_ARCHITECTURE';
+
+export type PrestigeEventType = 
+  | 'OLYMPICS_MEGA' 
+  | 'REGIONAL_GAMES' 
+  | 'WORLD_EXPO' 
+  | 'GLOBAL_SUMMIT_HOSTING' 
+  | 'DONOR_CONFERENCE_HOSTING' 
+  | 'CLIMATE_SUMMIT_HOSTING' 
+  | 'CULTURAL_PRESTIGE_FESTIVAL';
+
+export type BoycottStyle = 
+  | 'NONE' 
+  | 'SYMBOLIC_DIPLOMATIC_BOYCOTT' 
+  | 'FULL_BOYCOTT' 
+  | 'PARTIAL_TEAM' 
+  | 'SPONSOR_WITHDRAWAL' 
+  | 'MEDIA_COUNTER_CAMPAIGN';
+
+export type DiasporaActivationMode = 
+  | 'LOBBYING_HOST_GOVERNMENT' 
+  | 'REMITTANCE_MOBILIZATION' 
+  | 'BUSINESS_CORRIDOR' 
+  | 'NARRATIVE_AMPLIFICATION' 
+  | 'PROTEST_SOLIDARITY' 
+  | 'SANCTIONS_EVASION_BRIDGE';
+
+export type AudienceSegmentId = 
+  | 'MASS_PUBLIC' 
+  | 'URBAN_YOUTH' 
+  | 'RURAL_CONSERVATIVES' 
+  | 'ELITE_TECHNOCRATS' 
+  | 'MILITARY_ESTABLISHMENT' 
+  | 'CIVIL_SOCIETY' 
+  | 'DIASPORA_COMMUNITIES' 
+  | 'BUSINESS_ELITES' 
+  | 'UNIVERSITY_POPULATIONS' 
+  | 'REGIME_LOYALISTS';
+
+export interface SoftPowerVector {
+  type: SoftPowerVectorType;
+  score: number; // 0-100
+  recentDelta: number;
+}
+
+export interface CulturalReachChannel {
+  id: string;
+  name: string;
+  medium: 'BROADCASTER' | 'DIGITAL_PLATFORM' | 'NEWS_SYNDICATE' | 'STREAMING_ENTERTAINMENT' | 'LANGUAGE_INSTITUTE';
+  targetCountryId: string;
+  penetrationRate: number; // 0-100%
+  censored: boolean;
+}
+
+export interface MediaReachNetwork {
+  channels: CulturalReachChannel[];
+  globalBroadcasterReach: number; // 0-100
+  digitalFootprintScore: number; // 0-100
+}
+
+export interface AudienceSegmentProfile {
+  id: AudienceSegmentId;
+  name: string;
+  trustFactor: number; // 0-100
+  receptivity: number; // 0-100
+  dissidentSymphaty: number; // 0-100
+}
+
+export interface NarrativeResonanceState {
+  countryId: string;
+  segments: Record<AudienceSegmentId, AudienceSegmentProfile>;
+  priorTrust: number; // 0-100
+  fatigueWithForeignInfluence: number; // 0-100
+}
+
+export interface CulturalInfluenceIndex {
+  languageReach: number; // 0-100
+  mediaPenetration: number; // 0-100
+  educationAttractiveness: number; // 0-100
+  culturalBrandRecognition: number; // 0-100
+  entertainmentExportStrength: number; // 0-100
+  eliteFamiliarity: number; // 0-100
+  symbolicPrestige: number; // 0-100
+  trustLegitimacyResonance: number; // 0-100
+  diasporaAmplification: number; // 0-100
+  globalCompositeScore: number; // 0-100
+}
+
+export interface CulturalInfluenceProfile {
+  countryId: string;
+  index: CulturalInfluenceIndex;
+  regionalReachMultiplier: Record<string, number>; // targetCountryId -> multiplier (e.g. 0.5 to 1.5)
+  vectors: Record<SoftPowerVectorType, SoftPowerVector>;
+}
+
+export interface AidProgramRecord {
+  id: string;
+  sourceCountryId: string;
+  targetCountryId: string;
+  type: AidProgramType;
+  fundingAmountB: number;
+  unresolvedTicks: number;
+  tiedProcurement: boolean;
+  politicallyConditional: boolean;
+  corruptionLeakage: number; // percentage 0-100
+  repaymentResentment: number; // 0-100 scaling or index
+  goodwillRemaining: number; // 0-100
+}
+
+export interface InvestmentDiplomacyRecord {
+  id: string;
+  sourceCountryId: string;
+  targetCountryId: string;
+  type: InvestmentDiplomacyType;
+  fundingB: number;
+  deliveryProgress: number; // 0-100
+  eliteGratitude: number; // 0-100
+  dependencyIndex: number; // 0-100
+  corruptionRisk: number; // 0-100
+  futureSovereignLeverage: number; // 0-100
+}
+
+export interface PrestigeEventRecord {
+  id: string;
+  title: string;
+  type: PrestigeEventType;
+  hostCountryId: string;
+  tickScheduled: number;
+  boycottingNations: Record<string, BoycottStyle>; // countryId -> style
+  scandalOccurred: boolean;
+  narrativeControlIndex: number; // 0-100
+  tourismCapitalInflowB: number;
+  overallPrestigeYield: number; // 0-100
+}
+
+export interface EliteFormationPipeline {
+  countryId: string;
+  alumniInCabinet: number; // counter of alumni in host or foreign cabinets
+  technocratAffinitiesCount: number;
+  militaryCollegeExchangesCount: number;
+}
+
+export interface ExchangeProgramRecord {
+  id: string;
+  sourceCountryId: string;
+  targetCountryId: string;
+  activeTicks: number; // accumulated duration (e.g. 10–20 ticks requirement)
+  scholarshipsAllocatedCount: number;
+  durableInfluenceScore: number; // 0-100
+  brainDrainMultiplier: number; // 0.1 to 2.0
+  pipeline: EliteFormationPipeline;
+}
+
+export interface DiasporaNetworkProfile {
+  hostCountryId: string;
+  sizeMillions: number;
+  wealthRemittanceCapacity: number; // 0-100 scale
+  politicalMobilizationScore: number; // 0-100
+  assimilationScore: number; // 0-100
+  homelandLoyaltyScore: number; // 0-100
+  vulnerabilityToIntimidation: number; // 0-100
+}
+
+export interface DiasporaActivationRecord {
+  id: string;
+  sponsorCountryId: string;
+  hostCountryId: string;
+  activationMode: DiasporaActivationMode;
+  successIndex: number; // 0-100
+  backlashSeverity: number; // 0-100
+  hostCountrySuspicionDelta: number; // 0-100 increase
+  active: boolean;
+}
+
+export interface LegitimacyBonusRecord {
+  countryId: string;
+  humanitarianLegitimacy: number; // 0-100
+  moralAuthority: number; // 0-100
+  developmentalCredibility: number; // 0-100
+  culturalPrestige: number; // 0-100
+  eliteTrust: number; // 0-100
+  antiImperialCredibility: number; // 0-100
+}
+
+export interface SymbolicPressureEvent {
+  id: string;
+  awardTitle: string; // e.g. "Global Human Rights Prize"
+  recipientDissidentId: string;
+  adversaryCountryId: string;
+  moralPrestigeTransferred: number; // 0-100
+  regimeEmbarrassmentIndex: number; // 0-100
+  crackdownBacklashSeverity: number; // 0-100
+  expiryTick: number;
+}
+
+export interface InfluenceAccumulationRecord {
+  countryId: string;
+  cumulativeTractionPoints: number;
+  ticksActive: number;
+}
+
+export interface InfluenceDecayRecord {
+  vectorType: SoftPowerVectorType;
+  lastActiveTick: number;
+  decayRateFactor: number; // e.g. 0.95 per tick
+}
+
+export interface PublicPrestigeMemory {
+  id: string;
+  countryId: string;
+  description: string;
+  tickRegistered: number;
+  prestigeYieldPoints: number; // can be negative for scandals
+  hypocrisyPenaltyActive: boolean;
+}
+
+export interface SoftPowerActionPreview {
+  targetedAudiences: AudienceSegmentId[];
+  shortTermInfluenceGain: number; // 0-100
+  longTermInfluenceGain: number; // 0-100
+  legitimacyBonusPotential: number; // 0-50
+  backlashRiskIndex: number; // 0-100
+  corruptionLeakageRisk: number; // 0-100
+  boycottProbability: number; // 0-100
+  fiscalCostB: number;
+}
+
+export interface InfluenceConversionRecord {
+  id: string;
+  countryId: string;
+  targetCountryId: string;
+  convertedAsso: 'TREATY_FORMATION' | 'SANCTIONS_ASSEMBLY' | 'CRISIS_NARRATIVE' | 'BLOC_LEAD_CLAIM';
+  efficiencyRate: number; // 0-100
+}
+
+export interface SoftPowerBacklashRecord {
+  id: string;
+  offendingCountryId: string;
+  targetCountryId: string;
+  reason: 
+    | 'AID_COERCIVE_TIE' 
+    | 'PRESTIGE_CORRUPTION_SCANDAL' 
+    | 'DIASPORA_OVER_MOBILIZATION' 
+    | 'EDUCATION_POLITICIZATION' 
+    | 'DOUBLE_STANDARD_HYPOCRISY' 
+    | 'MEDIA_CREDIBILITY_COLLAPSE';
+  severity: number; // 0-100
+}
+
+
+// FROM sovereign.ts
+// Sovereign Agent Core Types (Module 4.1)
+
+export interface IdeologyProfile {
+  liberalInstitutionalist: number;     // 0-100, rules-based, global governance
+  nationalistSovereigntist: number;    // 0-100, nation-first, autonomy
+  revolutionaryRevisionist: number;    // 0-100, break current order
+  pragmaticTransactional: number;      // 0-100, deal-making, no deep loyalty
+  authoritarianPluralistic: number;    // 0-100, centralized ruling vs open polity
+  religiousSecularGovernance: number;   // 0-100, religious vs secular laws
+  civilizationalPosture: number;       // 0-100, civilizational defense/exceptionalism
+  universalistVsParticularist: number;  // 0-100, export values vs respect local styles
+  description: string;
+}
+
+export type EconomicDevelopmentModelTendency =
+  | 'EXPORT_MANUFACTURING'
+  | 'RENTIER_COMMODITY'
+  | 'FINANCIALIZED_SERVICES'
+  | 'DEVELOPMENTAL_INDUSTRIAL_POLICY'
+  | 'TECHNOLOGY_INNOVATION'
+  | 'AID_REMITTANCE_DEPENDENT'
+  | 'SANCTIONS_EVASION_ADAPTIVE'
+  | 'MILITARIZED_COMMAND'
+  | 'MIXED_MARKET_DEVELOPMENTALISM';
+
+export interface EconomicDevelopmentModelProfile {
+  tendency: EconomicDevelopmentModelTendency;
+  exportDependencyPct: number;    // 0-100
+  rentierConcentrationPct: number; // 0-100
+  sanctionsResilience: number;    // 0-100
+  stateControlPct: number;        // 0-100
+  description: string;
+}
+
+export type SecurityDoctrineTendency =
+  | 'FORWARD_DEFENSE'
+  | 'DETERRENCE_HEAVY'
+  | 'STRATEGIC_AMBIGUITY'
+  | 'FORTRESS_DEFENSE'
+  | 'EXPEDITIONARY_INTERVENTIONISM'
+  | 'PROXY_COMPETITION'
+  | 'ESCALATION_DOMINANCE'
+  | 'LIMITED_WAR_RESTRAINT'
+  | 'NUCLEAR_SHADOW_CAUTION'
+  | 'MARITIME_CHOKEPOINT'
+  | 'INTERNAL_SECURITY_FIRST';
+
+export interface SecurityDoctrineProfile {
+  tendency: SecurityDoctrineTendency;
+  forcePostureOffensive: number; // 0-100
+  escalationThreshold: number;   // 0-100
+  allianceCommitment: number;    // 0-100
+  covertPropensity: number;      // 0-100
+  description: string;
+}
+
+export type RegionalAmbitionTendency =
+  | 'STATUS_QUO_BALANCER'
+  | 'LOCAL_HEGEMON_ASPIRANT'
+  | 'REVISIONIST_CHALLENGER'
+  | 'PROTECTOR_PATRON'
+  | 'AUTONOMY_MIDDLE_POWER'
+  | 'SHELTERED_SMALL_STATE'
+  | 'BRIDGE_MEDIATOR'
+  | 'OFFSHORE_BALANCER';
+
+export interface RegionalAmbitionProfile {
+  tendency: RegionalAmbitionTendency;
+  expansionistDesire: number; // 0-100
+  blocLeadershipInterest: number; // 0-100
+  mediationDisposition: number;   // 0-100
+  description: string;
+}
+
+export type LeadershipVolatilityTendency =
+  | 'INSTITUTIONAL_CONTINUITY'
+  | 'FACTIONAL_INSTABILITY'
+  | 'POPULIST_IMPROVISATION'
+  | 'COUP_SUSCEPTIBILITY'
+  | 'SUCCESSION_INSTABILITY'
+  | 'PURGING_TENDENCY'
+  | 'CABINET_FRAGMENTATION'
+  | 'CRISIS_OVERREACTION';
+
+export interface LeadershipVolatilityProfile {
+  tendency: LeadershipVolatilityTendency;
+  swingRate: number;              // 0-100 speed of priority pivot under stress
+  unpredictabilityIndex: number;  // 0-100
+  regimeSustenanceUrgency: number;// 0-100 focus on self-preservation
+  description: string;
+}
+
+export interface NationalIdentityVector {
+  countryId: string;
+  ideology: IdeologyProfile;
+  economy: EconomicDevelopmentModelProfile;
+  security: SecurityDoctrineProfile;
+  regional: RegionalAmbitionProfile;
+  volatility: LeadershipVolatilityProfile;
+}
+
+export type StrategicGoalClass =
+  | 'SURVIVAL'
+  | 'DETERRENCE'
+  | 'PRESTIGE'
+  | 'ECONOMIC_RECOVERY'
+  | 'ALLIANCE_PRESERVATION'
+  | 'ADVERSARY_WEAKENING'
+  | 'REGIONAL_DOMINANCE'
+  | 'TERRITORIAL_DEFENSE'
+  | 'SANCTIONS_RELIEF'
+  | 'INSTITUTIONAL_LEGITIMACY'
+  | 'REGIME_STABILIZATION'
+  | 'MILITARY_BUILDUP'
+  | 'TECHNOLOGICAL_CATCH_UP'
+  | 'SOFT_POWER_ACCUMULATION'
+  | 'COVERT_PREPARATION';
+
+export interface StrategicGoal {
+  id: string;
+  countryId: string;
+  goalClass: StrategicGoalClass;
+  title: string;
+  priorityScore: number; // 0-100
+  targetCountryId?: string;
+  ticksActive: number;
+  successCondition: string;
+}
+
+export interface GoalPriorityRecord {
+  goalId: string;
+  basePriority: number;
+  threatMultiplier: number;
+  opportunityBonus: number;
+  identityFitWeight: number;
+  finalScore: number;
+}
+
+export interface GoalStack {
+  countryId: string;
+  activeGoals: StrategicGoal[];
+  priorityRecords: GoalPriorityRecord[];
+}
+
+export type PlanStepAction =
+  | 'BUILD_ECONOMIC_LEVERAGE'
+  | 'CULTIVATE_ALLIANCE'
+  | 'SHIFT_MILITARY_POSTURE'
+  | 'TEST_RED_LINES'
+  | 'PREPARE_SANCTIONS'
+  | 'DIPLOMATIC_PRESSURE'
+  | 'MOBILIZE_COVERT_ASSETS'
+  | 'DISINFORMATION_INTELLIGENCE'
+  | 'ACCUMULATE_LEGAL_CASE'
+  | 'EXPLOIT_MARKET_DEPENDENCY'
+  | 'SIGNAL_CONCILIATION'
+  | 'DEESCALATE_BUY_TIME';
+
+export interface PlanStep {
+  stepIndex: number;
+  actionType: PlanStepAction;
+  targetCountryId?: string;
+  description: string;
+  durationTicks: number;
+  executionProgressTicks: number;
+  completed: boolean;
+}
+
+export interface PlanCommitmentState {
+  planningThreshold: number; // 0-100 cost to start
+  confidenceScore: number;   // 0-100 estimated confidence in success
+  sunkCostWeight: number;    // cumulative ticks and capital invested
+  backedDownPenalties: number;// loss of prestige if aborted
+}
+
+export interface PlanExecutionState {
+  currentStepIndex: number;
+  totalSteps: number;
+  remainingTicks: number;
+  isActive: boolean;
+  status: 'PLANNING' | 'EXECUTING' | 'INTERRUPTED' | 'FALLBACK_TRIGGERED' | 'FINISHED' | 'ABORTED';
+}
+
+export interface StrategicPlan {
+  id: string;
+  countryId: string;
+  parentGoalIds: string[];
+  title: string;
+  planningHorizonTicks: number; // 5-15 ticks
+  desiredEndState: string;
+  steps: PlanStep[];
+  prerequisites: string[];
+  resourceCostB: number;
+  escalationRisk: number; // 0-100
+  secrecyScore: number;   // 0-100 (high = invisible in dossiers without deep intel)
+  abortConditions: string[];
+  successCriteria: string;
+  fallbackPathSteps: PlanStep[];
+}
+
+export type ReplanningType = 'SOFT_UPDATE' | 'MEDIUM_INTERRUPTION' | 'HARD_INTERRUPTION' | 'EMERGENCY_OVERRIDE';
+
+export interface PlanInterruptionRecord {
+  id: string;
+  tick: number;
+  triggerEvent: string;
+  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'EMERGENCY';
+  actionTaken: ReplanningType;
+  description: string;
+}
+
+export type ReplanningTriggerType =
+  | 'WAR_OUTBREAK'
+  | 'MILITARY_MOBILIZATION'
+  | 'LEADERSHIP_CHANGE'
+  | 'TREATY_VIOLATION'
+  | 'SANCTIONS_SHOCK'
+  | 'MARKET_COLLAPSE'
+  | 'ALLIANCE_FRACTURE'
+  | 'UNSC_VOTE_VETO'
+  | 'CO_OP_EXPOSURE'
+  | 'BLOC_ACCESSION'
+  | 'DOMESTIC_FISCAL_CRISIS'
+  | 'CYBER_ATTACK_ATTRIBUTION'
+  | 'PLAYER_ACTION_CROSS_THRESHOLD';
+
+export interface ReplanningTrigger {
+  id: string;
+  triggerType: ReplanningTriggerType;
+  primaryActorCountryId?: string;
+  linkedSector: string; // 'military' | 'finance' | 'bloc' | 'treaty' | 'un' | 'cyber'
+  detectionThresholdPercent: number;
+}
+
+export type ThreatCategory =
+  | 'EXISTENTIAL'
+  | 'BORDER_SECURITY'
+  | 'REGIME_SURVIVAL'
+  | 'ECONOMIC_STRANGULATION'
+  | 'COVERT_SUBVERSION'
+  | 'INSTITUTIONAL_ISOLATION'
+  | 'IDEOLOGICAL_CONTAMINATION'
+  | 'PRESTIGE_HUMILIATION'
+  | 'UNPREDICTABILITY'
+  | 'OPPORTUNISM';
+
+export interface ThreatMemoryRecord {
+  id: string;
+  targetCountryId: string;
+  category: ThreatCategory;
+  severityScore: number; // 0-100
+  description: string;
+  launchTick: number;
+  lastReinforcedTick: number;
+  decayRateIndex: number; // 0.05-0.2
+}
+
+export type TrustCategory =
+  | 'PUBLIC_LEGITIMACY'
+  | 'ELITE_OPERATIONAL'
+  | 'STRATEGIC_RELIABILITY'
+  | 'INSTITUTIONAL'
+  | 'LEADER_PERSONAL';
+
+export interface TrustMemoryRecord {
+  id: string;
+  targetCountryId: string;
+  category: TrustCategory;
+  trustScore: number; // 0-100 (high is cooperative, low is betrayer)
+  description: string;
+  establishedTick: number;
+  lastVerifiedTick: number;
+  promiseKeptCounter: number;
+  promiseBrokenCounter: number;
+}
+
+export interface StrategicPerceptionState {
+  countryId: string;
+  adversaries: { [countryId: string]: boolean };
+  reliableAllies: { [countryId: string]: boolean };
+  distractionTargets: { [countryId: string]: string }; // descriptions of other states' focus
+  perceivedRegionalTensions: number; // 0-100
+  apparentDeceptionPostures: { [countryId: string]: 'TRANSPARENT' | 'DECEPTIVE' | 'UNCERTAIN' };
+}
+
+export interface OpportunityAssessment {
+  targetCountryId: string;
+  type: string;
+  description: string;
+  score: number; // 0-100
+  militaryVulnerability: number; // 0-100
+  diplomaticIsolation: number; // 0-100
+  economicSanctionsFatigue: number; // 0-100
+  allianceCohesionRank: number; // 0-100
+}
+
+export interface ConstraintAssessment {
+  unrestRisk: number; // 0-100
+  treasuryStress: number; // 0-100
+  readinessDeficit: number; // 0-100
+  treatyObligationsCount: number;
+  sanctionsPainPercent: number; // 0-100
+  recreationalSecurityBuffer: number; // defensive buffer
+}
+
+export interface AdversaryModel {
+  countryId: string;
+  estimatedMilitaryPower: number;
+  estimatedNuclearOptionPercent: number;
+  escalationRateRating: 'CAUTIOUS' | 'BALANCED' | 'AGGRESSIVE';
+  sanctionConfidencePercent: number;
+  bluffFrequency: number; // 0-100
+}
+
+export interface AllyModel {
+  countryId: string;
+  loyaltyPercent: number;
+  jointResourceBudgetB: number;
+  militaryInterventionProbability: number;
+}
+
+export interface StrategicLearningRecord {
+  tick: number;
+  learnedConcept: string;
+  affectedThreatWeight: number;
+  actionAdjusted: string;
+}
+
+export interface AgentIntentSnapshot {
+  targetCountryId?: string;
+  primaryActiveGoalClass: StrategicGoalClass;
+  actionPreviewLabel: string;
+  planningHorizonText: string;
+  secrecyLevel: 'OPEN' | 'INFERRED' | 'VEILED' | 'CLASSIFIED';
+  confidenceRatingPct: number;
+}
+
+export interface AgentActionPreview {
+  countryId: string;
+  actionName: string;
+  targetCountryId?: string;
+  expectedLaunchTickDelta: number;
+}
+
+export interface SovereignAgentState {
+  countryId: string;
+  identity: NationalIdentityVector;
+  goalStack: GoalStack;
+  activePlan: StrategicPlan | null;
+  planExecution: PlanExecutionState;
+  planCommitment: PlanCommitmentState;
+  interruptionHistory: PlanInterruptionRecord[];
+  threatMemory: ThreatMemoryRecord[];
+  trustMemory: TrustMemoryRecord[];
+  perception: StrategicPerceptionState;
+  opportunities: OpportunityAssessment[];
+  constraints: ConstraintAssessment;
+  adversaryModels: { [countryId: string]: AdversaryModel };
+  allyModels: { [countryId: string]: AllyModel };
+  learningLog: StrategicLearningRecord[];
+  intentSnapshot: AgentIntentSnapshot;
+  actionPreview: AgentActionPreview | null;
+  lastReplannedTick: number;
+}
+
+
+// FROM trade.ts
+export type StrategicTradeCategory = 
+  | 'energy'
+  | 'food'
+  | 'minerals'
+  | 'inputs'
+  | 'consumer'
+  | 'tech'
+  | 'defense'
+  | 'pharma'
+  | 'services';
+
+export interface TradeLocation {
+  x: number; // 0-100 grid mapping
+  y: number; // 0-100 grid mapping
+}
+
+export type TradeRouteType = 'port' | 'pipeline' | 'corridor' | 'sealane';
+
+export interface RouteNode {
+  id: string;
+  name: string;
+  type: TradeRouteType;
+  coordinates: TradeLocation;
+  capacityIndex: number; // Scale 0-100 of max capacity flow
+  currentUsage: number; // 0 - 100 actual percentage utilization
+  vulnerabilityScore: number; // 0-100 chokepoint / static risk
+  operationalStatus: 'OPERATIONAL' | 'STRESSED' | 'DISRUPTED' | 'BLOCKED';
+  controllingCountryIds: string[];
+  description: string;
+}
+
+export interface RouteSegment {
+  id: string;
+  name: string;
+  type: TradeRouteType;
+  originNodeId: string;
+  destNodeId: string;
+  capacityIndex: number;
+  status: 'OPERATIONAL' | 'STRESSED' | 'DISRUPTED' | 'BLOCKED';
+  chokepointRisk: number; // 0-100
+  controlCountryId?: string;
+  description: string;
+  geoPoints?: TradeLocation[]; // Midpoint offsets for map routing curved lines
+}
+
+export interface RoutePath {
+  id: string;
+  name: string;
+  routeType: TradeRouteType;
+  segments: RouteSegment[];
+  totalVulnerabilityScore: number; // Calculated combo
+  isBlocked: boolean;
+  reroutingCostMultiplier: number; // e.g. 1.35 if alternate is forced
+}
+
+export type RestrictionLevel = 'NONE' | 'TARIFFS' | 'SECTORAL' | 'TOTAL_RUPTURE';
+
+export interface TradeRestriction {
+  level: RestrictionLevel;
+  tariffRate: number; // Percentage e.g. 25 for 25% tariff
+  restrictedCategories: StrategicTradeCategory[];
+  enforcedByActorCountryId: string;
+}
+
+export interface TradeLink {
+  categoryId: StrategicTradeCategory;
+  direction: 'IMPORT' | 'EXPORT';
+  weightShare: number; // 0-100 percentage of category in bilateral mix
+  valueIndexB: number; // Absolute annual value in $B
+  strategicImportance: number; // 1-10 priority classification
+  substitutability: number; // 1-10 difficulty to find alternative (closer to 10 is harder)
+  routeDependence: number; // 1-10 vulnerability to route disruption
+  disruptionSensitivity: number; // 0-100 multiplier of how fast it impacts GDP / Inflation
+  policyExposure: number; // 0-100 susceptibility to coercion
+}
+
+export interface BilateralTradeProfile {
+  exporterCountryId: string;
+  importerCountryId: string;
+  totalTradeWeight: number; // Overall weight
+  totalTradeValueB: number; // Cumulative value in $B
+  categoryBreakdown: TradeLink[];
+  importDependenceScore: number; // calculated 0-100 exposure index for importer
+  exportDependenceScore: number; // calculated 0-100 exposure index for exporter
+  substitutionDifficulty: number; // blended weighted rating
+  strategicSensitivity: number; // blended weighted rating
+  routeIds: string[]; // Active route segment or node path IDs carrying this flow
+  currentRestrictionLevel: RestrictionLevel;
+  currentTariffPressure: number; // ACTIVE tariff rate imposed %
+  restrictedCategories: StrategicTradeCategory[];
+  bilateralTradeTrend: 'EXPANDING' | 'STABLE' | 'DECLINING' | 'COLLAPSED';
+  lastUpdatedTick: number;
+}
+
+export interface TradeWarCampaign {
+  id: string;
+  actorCountryId: string;
+  targetCountryId: string;
+  escalationStage: number; // 0 = negotiations, 1 = tariffs, 2 = sectoral restriction, 3 = total rupture
+  activeTariffRate: number;
+  restrictedCategories: StrategicTradeCategory[];
+  provocationScore: number; // 0-100 conflict intensity index
+  intelligenceSummary: string;
+  retaliationLikelihood: number; // 0-100
+  history: { tick: number; actionSummary: string }[];
+}
+
+export interface RouteDisruptionRecord {
+  routeId: string;
+  severity: number; // 0-100
+  disruptedByCategory: StrategicTradeCategory[];
+  isRerouted: boolean;
+  activeReroutePathId?: string;
+  reroutingDelayTicks: number;
+  costSurchargeB: number;
+  summary: string;
+}
+
+export interface TradeDependencySummary {
+  countryId: string;
+  topImportPartners: { partnerCountryId: string; valueB: number; dependenceScore: number }[];
+  topExportPartners: { partnerCountryId: string; valueB: number; dependenceScore: number }[];
+  routeVulnerabilityIndex: number; // 0-100 index of route-dependent exposure
+  tradeConcentrationRatio: number; // Herfindahl index style concentration 0-100
+  coerciveLeverageScore: number; // Overall export asymmetrical dependency leverage
+}
+
+export interface TradeExposureScore {
+  gdpImpactAtRiskB: number;
+  criticalShortageRiskScore: number; // 0-100
+  inflationExposureScore: number; // 0-100
+  primaryVulnerabilityCategory: StrategicTradeCategory;
+}
+
+export interface RerouteOption {
+  originalRouteId: string;
+  alternateRouteId: string;
+  capacityAvailableIndex: number;
+  additionalCostFactor: number; // e.g. 1.25 (+25% shipping delay/fees)
+  feasibilityIndex: number; // 0-100 approval/geopolitics score
+}
+
+export interface TradeIncident {
+  id: string;
+  tick: number;
+  type: 'TARIFF_ALERT' | 'SECTORAL_EMBARGO' | 'ROUTE_DISRUPTION' | 'COERCIVE_LEVERAGE_PRESSURE' | 'REROUTE_INCIDENT';
+  actorCountryId: string;
+  targetCountryId?: string;
+  routeId?: string;
+  summary: string;
+  economicImpactRating: 'MINIMAL' | 'STRESSED' | 'SEVERE';
+}
+
+
+// FROM treaty.ts
+
+export interface TreatyObligation {
+  id: string;
+  category: 'MILITARY' | 'ECONOMIC' | 'INTELLIGENCE' | 'SANCTIONS' | 'CYBER' | 'POSTURE' | 'BASE_ACCESS';
+  description: string;
+  scope: string; // e.g. "Mutual defense on sovereign breach", "Tariff flat rate of 5%"
+  triggerCondition: string;
+  observability: 'PUBLIC' | 'CONFIDENTIAL' | 'SECRET';
+  complianceScore: number; // 0-100
+  violationSeverityWeight: number; // 0-100
+  attachedPenalties: string[]; // Penalty ID references
+}
+
+export interface TreatyDurationProfile {
+  startTick: number;
+  durationTicks: number | null; // null for indefinite
+  probationaryTicksEndTime: number | null;
+  renewalWindowStartTicksDelta: number; // Ticks before expiration where negotiation/renewal is active
+  sunsetClauseDescription: string | null;
+  reviewIntervalTicks: number | null;
+  lastReviewTick: number | null;
+  withdrawalNoticeTicks: number; // Ticks of notice required to exit honorably
+}
+
+export interface TreatyPenaltyProfile {
+  id: string;
+  type: 'CREDIBILITY_DEGRADATION' | 'TARIFF_SNAPBACK' | 'COLLAPSE' | 'MILITARY_MOBILIZATION' | 'SANCTIONS_ALIGNMENT' | 'FINANCIAL_RESTRAINT';
+  severity: 'SOFT' | 'MODERATE' | 'SEVERE' | 'CRITICAL';
+  description: string;
+  automaticTriggerTickCount: number;
+}
+
+export interface TreatyHiddenProtocol {
+  id: string;
+  title: string;
+  clauseSummaryPublic: string; // What the public thinks this section says
+  clauseSummaryPrivate: string; // The real hidden commitment/exemption
+  signatoriesAllowed: string[]; // Countries privy to this protocol
+  leverageOffset: number; // Leverage value added to negotiations
+  exposed: boolean;
+  exposureImpactScore: number; // Credibility penalty multiplier if secret is leaked
+}
+
+export interface TreatyInspectionRule {
+  id: string;
+  agencyType: 'UN_INSPECTORS' | 'JOINT_MILITARY' | 'SATELLITE_SURVEILLANCE' | 'COVERT_INTELLIGENCE';
+  frequencyTicks: number;
+  lastInspectionTick: number | null;
+  evasionDifficulty: number; // 0-100
+  effectivenessIndex: number; // 0-100
+}
+
+export interface TreatyViolationRecord {
+  tick: number;
+  treatyId: string;
+  treatyName: string;
+  violatorId: string;
+  clauseId: string;
+  severity: 'SOFT' | 'MODERATE' | 'SEVERE' | 'CRITICAL';
+  breachType: 'TECHNICAL_NON_COMPLIANCE' | 'DELAYED_COMPLIANCE' | 'AMBIGUOUS_INTERPRETATION' | 'CONCEALED_VIOLATION' | 'INTENTIONAL_BREACH' | 'COERCED_BREACH';
+  resolved: boolean;
+  notes: string;
+}
+
+export interface TreatyCredibilityMemory {
+  countryId: string;
+  overallScore: number; // 0-100
+  categoryScores: {
+    military: number;
+    trade: number;
+    inspection: number;
+    intelligence: number;
+    sanctions: number;
+  };
+  violationCount: number;
+  goodFaithFulfilmentStreak: number;
+  history: {
+    tick: number;
+    treatyId: string;
+    treatyName: string;
+    actionType: 'FULFILLED' | 'SUSPECTED_BREACH' | 'CONFIRMED_BREACH' | 'CONCEALED_BREACH' | 'OPPORTUNISTIC_EXIT' | 'HONORABLE_EXIT';
+    credibilityDelta: number;
+    description: string;
+  }[];
+}
+
+// Complete rich treaty extension of current TreatyState
+export interface RichTreatyState extends TreatyState {
+  detailedObligations: TreatyObligation[];
+  durationProfile: TreatyDurationProfile;
+  penalties: TreatyPenaltyProfile[];
+  hiddenProtocols: TreatyHiddenProtocol[];
+  inspectionRules: TreatyInspectionRule[];
+  credibilityImpactToDate: Record<string, number>;
+  publicText: string;
+  privateText: string;
+  isMultilateral: boolean;
+  fatigueCostPerTick: number; // How much domestic tension is added per tick for keeping this active
+  legacyEffects: string[]; // Past repercussions that stay active after treaty expires or collapses
+}
+
+// Negotiation structures
+export interface TreatyConcessionItem {
+  id: string;
+  type: 'TARIFF_REDUCTION' | 'TERRITORIAL_ACCESS' | 'INTELLIGENCE_SHARING' | 'WEAPONS_LIMIT_AGREEMENT' | 'COVERT_FINANCING' | 'SANCTIONS_ALIGNMENT' | 'MUTUAL_DEFENSE_UPGRADE';
+  description: string;
+  offeredBy: string;
+  recipientId: string;
+  concessionValue: number; // Relative utility score
+  leverageOffset: number;
+  politicalCost: number; // 0-100 cost to domestic political capital
+}
+
+export interface TreatyOfferPackage {
+  title: string;
+  type: 'ALLIANCE' | 'NON_AGGRESSION' | 'TRADE' | 'DENUCLEARIZATION' | 'CEASE_FIRE' | 'INTEL_SHARING' | 'BASE_ACCESS';
+  proposerId: string;
+  recipientId: string;
+  publicTextSummary: string;
+  privateTextSummary: string;
+  durationTicks: number;
+  detailedObligations: TreatyObligation[];
+  hiddenProtocols: TreatyHiddenProtocol[];
+  offeredConcessions: TreatyConcessionItem[];
+  demandedConcessions: TreatyConcessionItem[];
+  isMultilateral: boolean;
+  secrecyLevel: number; // 0-100
+  enforcementStrength: number; // 0-100
+}
+
+export interface TreatyCounteroffer {
+  id: string;
+  roundIndex: number;
+  timestampTick: number;
+  offeredBy: string;
+  package: TreatyOfferPackage;
+  justificationText: string;
+}
+
+export interface TreatyRedLineProfile {
+  id: string;
+  category: 'TERRITORY' | 'MILITARY_EXPANSION' | 'SECRECY_LEAK' | 'TARIFFS' | 'INSPECTIONS' | 'INTELLIGENCE_VIOLATION' | 'COVERT_AGREED_LIMITS';
+  description: string;
+  associatedCountryId: string;
+  severity: number; // Trigger threshold
+  currentTriggerScore: number;
+  breachEventDescription: string;
+}
+
+export interface TreatyBargainingLeverageState {
+  militaryBalanceRatio: number; // Relative balance
+  sanctionsPressureIndex: number; // 0-100
+  tradeDependencePct: number; // 0-100
+  energyDependencePct: number; // 0-100
+  financialStressIndex: number; // 0-100
+  allianceSupportRating: number; // 0-100
+  urgencyAsymmetryFactor: number; // Positive = player urgent, negative = adversary urgent
+  intelligenceAdvantageScore: number; // 0-100 based on Sigint/Humint
+  currentCredibilityRating: number; // 0-100
+  domesticStabilityBuffer: number; // 0-100
+  treatyFatigueIndex: number; // 0-100
+}
+
+export interface TreatyNegotiationLog {
+  tick: number;
+  roundIndex: number;
+  actorId: string;
+  action: 'PROPOSAL' | 'COUNTEROFFER' | 'RED_LINE_SIGNALED' | 'CONCESSION_TRADED' | 'ACCEPTED' | 'WALKED_AWAY';
+  description: string;
+}
+
+export interface TreatyNegotiationSession {
+  id: string;
+  title: string;
+  playerId: string;
+  adversaryId: string;
+  stage: 'INITIAL_PROPOSAL' | 'CONCESSION_TRADING' | 'RED_LINE_ALERT' | 'DRAFT_FINAL' | 'COMPLETE' | 'FAILED_LIMIT' | 'WALKED_AWAY';
+  currentOfferPackage: TreatyOfferPackage;
+  negotiationHistory: TreatyCounteroffer[];
+  negotiationLogs: TreatyNegotiationLog[];
+  adversaryRedLines: TreatyRedLineProfile[];
+  playerAssessedLeverage: TreatyBargainingLeverageState;
+  zoneOfPossibleAgreementEstimated: {
+    overlapExisted: boolean;
+    confidenceLevel: number;
+    frictionPoints: string[];
+    partnerPriorities: string[];
+    feasibilityRating: number; // 0-100
+  };
+  roundsRemaining: number;
+  deadlineTicks: number; // Crisis duration / timer pressure count
+  provisionalAccepted: boolean;
+}
+
+export interface TreatyLegacyEffect {
+  id: string;
+  sourceTreatyId: string;
+  originalName: string;
+  type: 'SCARRED_TRUST' | 'INSTITUTIONAL_PRECEDENT' | 'TERRITORIAL_PRECEDENT' | 'MILITARY_DOCTRINE_RESTRICTION' | 'TRADE_SKEW_LEGACY';
+  durationTicksRemaining: number;
+  description: string;
+  opinionModValue: number;
+  economicTractionFactor: number;
+}
+
+
+// FROM un.ts
+export interface ResolutionClause {
+  id: string;
+  category: 'CONDEMN' | 'DEMAND_CEASEFIRE' | 'PEACEKEEPING' | 'NO_FLY_ZONE' | 'ARMS_EMBARGO' | 'ECONOMIC_SANCTIONS' | 'INVESTIGATION_MANDATE' | 'REFER_LEGAL' | 'COMPLIANCE_REPORT';
+  description: string;
+  targetCountryId: string;
+  severityWeight: number; // 0-100 influence on resistance
+  reputationalRiskWeight: number; // 0-100 hazard for draft sponsors
+}
+
+export type UNSCResolutionStatus = 
+  | 'DRAFT'
+  | 'SPONSORSHIP_STAGE'
+  | 'LOBBYING_STAGE'
+  | 'ACTIVE_VOTE'
+  | 'PASSED'
+  | 'FAILED'
+  | 'VETOED'
+  | 'SUPERSEDED'
+  | 'EXPIRED';
+
+export interface UNSCResolution {
+  id: string;
+  title: string;
+  preambularRationale: string;
+  creatorId: string;
+  sponsors: string[]; // country IDs
+  coSponsors: string[];
+  quietBackers: string[];
+  clauses: ResolutionClause[];
+  status: UNSCResolutionStatus;
+  targetCountryId: string;
+  roundIntroduced: number;
+  tickIntroduced: number;
+  tickResolved?: number;
+  voteRecord?: UNSCVoteRecord;
+  vetoRecord?: VetoRecord;
+  enforcementStrength: number; // 0-100
+  reviewWindowTicks: number; // Ticks before expiration / reporting
+  legalBasisStyle: 'CHARTER_CHAP_VI' | 'CHARTER_CHAP_VII' | 'NORMATIVE_DECLARATION' | 'CUSTOMARY_INTERNATIONAL_LAW';
+}
+
+export interface UNSCVoteRecord {
+  resolutionId: string;
+  votesFor: string[];
+  votesAgainst: string[];
+  votesAbstain: string[];
+  passed: boolean;
+  vetoed: boolean;
+  vetoingP5s: string[];
+  tickHeld: number;
+}
+
+export interface VetoRecord {
+  resolutionId: string;
+  vetoingCountryId: string;
+  motive: 'ALLIANCE_PROTECTION' | 'SPHERE_OF_INFLUENCE' | 'ANTI_PRECEDENT' | 'LEGAL_OBJECTION' | 'SOVEREIGNTY_DEFENSE' | 'ANTI_INTERVENTION' | 'TRANSACTIONAL_RETALIATION' | 'STRATEGIC_OBSTRUCTION';
+  diplomaticCostIncurred: number; // dynamic capital/influence cost
+}
+
+export interface ResolutionLobbyState {
+  resolutionId: string;
+  lobbyProgressByCountry: Record<string, {
+    intention: 'FOR' | 'AGAINST' | 'ABSTAIN';
+    leverageApplied: number;
+    inducementsPromised: string[];
+    reputationLeverageUsed: boolean;
+    blocPressureStrength: number;
+    argumentStyleUsed: 'HUMANITARIAN' | 'LEGAL' | 'SECURITY' | 'REALPOLITIK';
+  }>;
+}
+
+export interface DiplomaticDebtEntry {
+  id: string;
+  debtorId: string; // country that owes the favor
+  creditorId: string; // country to whom the favor is owed
+  linkedResolutionId?: string;
+  dealType: 'VOTE_SUPPORT' | 'VOTE_ABSTAIN' | 'CO_SPONSORSHIP' | 'LEGAL_WITHDRAWAL' | 'SANCTION_LAXITY';
+  description: string;
+  magnitude: number; // 1-5 scale (1: minor vote, 5: critical veto trade)
+  tickIncurred: number;
+  horizonTicks: number; // Ticks within which it must be repaid
+  isPublic: boolean;
+  isHardObligation: boolean;
+  status: 'ACTIVE' | 'CALLED_IN' | 'HONORED' | 'DEFAULTED';
+  repayTick?: number;
+}
+
+export interface EmergencySpecialSessionRecord {
+  id: string;
+  deadlockedResolutionId: string;
+  conveningSponsors: string[];
+  votesFor: string[];
+  votesAgainst: string[];
+  votesAbstain: string[];
+  outcomeSummary: string;
+  tickConvened: number;
+  softPowerShiftMagnitude: number;
+}
+
+export interface LegalEvidenceBundle {
+  id: string;
+  claimType: 'TERRITORY' | 'WAR_CRIMES' | 'SOVEREIGNTY_VIOLATION' | 'TREATY_BREACH' | 'ILLEGAL_FORCE' | 'CYBER_ATTACK';
+  targetCountryId: string;
+  factualAllegations: string[];
+  sourceProvenance: 'SIGINT' | 'IMINT' | 'HUMINT' | 'PUBLIC_NGO' | 'WHISTLEBLOWER' | 'FABRICATED';
+  intelligenceConfidence: 'LOW' | 'MEDIUM' | 'HIGH';
+  admissibilityScore: number; // 0-100 admissibility proxy
+  corroborationState: 'NONE' | 'PARTIAL' | 'SUBSTANTIAL';
+  politicalContaminationRisk: number; // 0-100 (high risk means dismissible as propaganda)
+  publicityLevel: 'CONFIDENTIAL' | 'CLASSIFIED' | 'PUBLIC_LEGITIMIZED';
+}
+
+export interface ICJCaseRecord {
+  id: string;
+  applicantId: string;
+  respondentId: string;
+  claimType: 'TERRITORY' | 'WAR_CRIMES' | 'SOVEREIGNTY_VIOLATION' | 'TREATY_BREACH' | 'ILLEGAL_FORCE';
+  evidenceBundle: LegalEvidenceBundle;
+  proceduralStage: 'FILED' | 'ADMISSIBILITY_REVIEW' | 'HEARINGS' | 'INTERIM_MEASURES' | 'JUDGMENT_PENDING' | 'DECIDED' | 'DISMISSED';
+  proceduralTicksElapsed: number;
+  ticksToNextStage: number;
+  interimMeasuresDecreed?: string;
+  finalFinding?: 'RESPONDENT_GUILTY' | 'RESPONDENT_EXONERATED' | 'DISMISSED_JURISDICTION' | 'SETTLEMENT';
+  complianceAftermath?: 'FULL' | 'SELECTIVE' | 'DEFIANT_NON_COMPLIANCE';
+  tickFiled: number;
+}
+
+export type ReputationDimension = 
+  | 'legality'
+  | 'proceduralReliability'
+  | 'humanitarianCredibility'
+  | 'interventionLegitimacy'
+  | 'sovereigntyRespect'
+  | 'institutionalSeriousness'
+  | 'obstructionism'
+  | 'doubleStandards'
+  | 'defaultPropensity';
+
+export interface ReputationShiftRecord {
+  id: string;
+  countryId: string;
+  dimension: ReputationDimension;
+  delta: number;
+  reason: string;
+  tickIncurred: number;
+}
+
+export interface InstitutionalMemoryRecord {
+  id: string;
+  countryId: string;
+  habitualVetoCount: number;
+  opportunisticAbstentions: number;
+  goodFaithDebtRatio: number; // 0-1 ratio
+  frivolousReferralCount: number;
+  democraticNormEntrepreneurship: number; // score
+  sabotageActsCount: number;
+}
+
+export interface TribunalEscalationRecord {
+  id: string;
+  associatedCaseId?: string;
+  targetCountryId: string;
+  escalationLevel: 'COMMISSION_OF_INQUIRY' | 'INVESTIGATIVE_PANEL' | 'EVIDENTIARY_DOSSIER' | 'ARREST_WARRANT_ISSUED' | 'SANCTIONS_LINKED_TRIBUNAL' | 'FORMAL_CONDEMNATION';
+  namedResponsibilitySubject: string; // e.g. "General Staff" or "Sovereign Executive"
+  evidenceCorroborated: boolean;
+  internationalConsequencesRating: number; // 1-10 severity scale
+  linkedEventLogs: string[];
+  status: 'ACTIVE' | 'RESOLVED_COMPLIANCE' | 'DEFIED';
+  tickInitiated: number;
+}
+
+export interface InstitutionalActionPreview {
+  likelyVoteMap: Record<string, 'FOR' | 'AGAINST' | 'ABSTAIN'>;
+  vetoRiskPercentage: number;
+  potentialVetoingCountries: string[];
+  expectedSponsorLegitimacyGain: number;
+  financialAndDiplomaticCost: number;
+  reprisalsRiskRating: number; // 0-100
+}
+

@@ -10,7 +10,7 @@ import {
   EnergyIncident,
   EnergyDependencyGraphNode,
   EnergyDependencyGraphEdge
-} from '../types/energy';
+} from '../types';
 import { useWorldStore } from './worldStore';
 import { useArachneStore } from './arachneStore';
 

@@ -351,8 +351,8 @@ export const useConventionalOpsStore = create<ConventionalOpsState & Conventiona
   campaignPlans: [],
   sustainment: INITIAL_SUSTAINMENT,
   supplyRoutes: [
-    { id: 'ROUTE-US-TW', name: 'US-Taiwan Sea Lane', fromRegionId: 'US', toRegionId: 'TW', type: 'SEA', capacityTons: 15000, currentThroughput: 8000, contestedLevel: 0.1, isActive: true, weatherDegradation: 0.05, terrainDegradation: 0.0, ewDegradation: 0.02, lastInterruptedTick: null },
-    { id: 'ROUTE-CN-TW', name: 'Strait Landing Pipeline', fromRegionId: 'CN', toRegionId: 'TW', type: 'PIPELINE', capacityTons: 12000, currentThroughput: 4000, contestedLevel: 0.3, isActive: true, weatherDegradation: 0.0, terrainDegradation: 0.05, ewDegradation: 0.0, lastInterruptedTick: null }
+    { id: 'ROUTE-US-TW', name: 'US-Taiwan Sea Lane', fromRegionId: 'US', toRegionId: 'TW', type: 'sealane', capacityTons: 15000, currentThroughput: 8000, contestedLevel: 0.1, isActive: true, weatherDegradation: 0.05, terrainDegradation: 0.0, ewDegradation: 0.02, lastInterruptedTick: null },
+    { id: 'ROUTE-CN-TW', name: 'Strait Landing Pipeline', fromRegionId: 'CN', toRegionId: 'TW', type: 'pipeline', capacityTons: 12000, currentThroughput: 4000, contestedLevel: 0.3, isActive: true, weatherDegradation: 0.0, terrainDegradation: 0.05, ewDegradation: 0.0, lastInterruptedTick: null }
   ],
   logisticsNodes: [
     { id: 'NODE-TW-PORT', regionId: 'TW', type: 'PORT', capacityTons: 8000, currentLoad: 4100, isContested: false, isDestroyed: false, repairProgress: 1.0 },
@@ -706,7 +706,7 @@ export const useConventionalOpsStore = create<ConventionalOpsState & Conventiona
       if (unit.currentStatus === 'DESTROYED') return;
 
       // SIGINT Overlays checks
-      const activeCampaignsList = Object.values(sigintStore.activeCollectionCampaigns || {});
+      const activeCampaignsList = Object.values(sigintStore.campaigns || {});
       const hasSigintOverlay = activeCampaignsList.some(c => c.targetId === unit.currentRegion && c.status === 'ACTIVE');
       if (hasSigintOverlay) {
         unit.sigintExposure = Math.min(1.0, unit.sigintExposure + 0.15);
@@ -936,8 +936,8 @@ export const useConventionalOpsStore = create<ConventionalOpsState & Conventiona
     campaignPlans: [],
     sustainment: INITIAL_SUSTAINMENT,
     supplyRoutes: [
-      { id: 'ROUTE-US-TW', name: 'US-Taiwan Sea Lane', fromRegionId: 'US', toRegionId: 'TW', type: 'SEA', capacityTons: 15000, currentThroughput: 8000, contestedLevel: 0.1, isActive: true, weatherDegradation: 0.05, terrainDegradation: 0.0, ewDegradation: 0.02, lastInterruptedTick: null },
-      { id: 'ROUTE-CN-TW', name: 'Strait Landing Pipeline', fromRegionId: 'CN', toRegionId: 'TW', type: 'PIPELINE', capacityTons: 12000, currentThroughput: 4000, contestedLevel: 0.3, isActive: true, weatherDegradation: 0.0, terrainDegradation: 0.05, ewDegradation: 0.0, lastInterruptedTick: null }
+      { id: 'ROUTE-US-TW', name: 'US-Taiwan Sea Lane', fromRegionId: 'US', toRegionId: 'TW', type: 'sealane', capacityTons: 15000, currentThroughput: 8000, contestedLevel: 0.1, isActive: true, weatherDegradation: 0.05, terrainDegradation: 0.0, ewDegradation: 0.02, lastInterruptedTick: null },
+      { id: 'ROUTE-CN-TW', name: 'Strait Landing Pipeline', fromRegionId: 'CN', toRegionId: 'TW', type: 'pipeline', capacityTons: 12000, currentThroughput: 4000, contestedLevel: 0.3, isActive: true, weatherDegradation: 0.0, terrainDegradation: 0.05, ewDegradation: 0.0, lastInterruptedTick: null }
     ],
     logisticsNodes: [
       { id: 'NODE-TW-PORT', regionId: 'TW', type: 'PORT', capacityTons: 8000, currentLoad: 4100, isContested: false, isDestroyed: false, repairProgress: 1.0 },

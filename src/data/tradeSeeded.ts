@@ -1,4 +1,4 @@
-import { RouteNode, RouteSegment, BilateralTradeProfile, TradeIncident, StrategicTradeCategory } from '../types/trade';
+import { RouteNode, RouteSegment, BilateralTradeProfile, TradeIncident, StrategicTradeCategory } from '../types';
 
 export const INITIAL_ROUTE_NODES: RouteNode[] = [
   {

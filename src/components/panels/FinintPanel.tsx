@@ -8,7 +8,7 @@ import {
   FinancialActor, 
   JurisdictionProfile, 
   ShellEntity 
-} from '../../types/finint';
+} from '../../types';
 import { 
   DollarSign, 
   ShieldAlert, 

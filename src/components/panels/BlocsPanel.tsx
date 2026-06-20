@@ -5,7 +5,7 @@ import { motion } from 'motion/react';
 import { useBlocStore } from '../../store/blocStore';
 import { useWorldStore } from '../../store/worldStore';
 import { usePlayerStore } from '../../store/playerStore';
-import { BlocType, RegionalOrganization, BlocMemberState, BlocAgendaItem, SwingStateProfile, HedgingPostureState, CrossBlocChannel } from '../../types/bloc';
+import { BlocType, RegionalOrganization, BlocMemberState, BlocAgendaItem, SwingStateProfile, HedgingPostureState, CrossBlocChannel } from '../../types';
 
 export default function BlocsPanel() {
   const { 

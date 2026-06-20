@@ -27,7 +27,7 @@ import {
   Compass,
   DollarSign
 } from 'lucide-react';
-import { ResolutionClause } from '../../types/un';
+import { ResolutionClause } from '../../types';
 
 export default function UNPanel() {
   const currentTick = useWorldStore((s) => s.currentTick);

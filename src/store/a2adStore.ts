@@ -1426,7 +1426,7 @@ export const useA2ADStore = create<A2ADStore>((set, get) => ({
     });
 
     // 7. COMPUTE SIGINT PLAYER VISIBILITY OVERRIDES
-    const activeCampaignsList = Object.values(useSigintStore.getState().activeCollectionCampaigns || {});
+    const activeCampaignsList = Object.values(useSigintStore.getState().campaigns || {});
     set((state) => {
       const nextSystems = { ...state.a2adSystems };
       let changed = false;

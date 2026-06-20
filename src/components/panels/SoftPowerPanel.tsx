@@ -29,7 +29,7 @@ import {
   PrestigeEventType, 
   BoycottStyle, 
   DiasporaActivationMode 
-} from '../../types/softPower';
+} from '../../types';
 
 export default function SoftPowerPanel() {
   const playerCountryId = usePlayerStore((s) => s.countryId) || 'US';

@@ -32,7 +32,7 @@ import {
   ThreatCategory,
   TrustCategory,
   ReplanningType
-} from '../types/sovereign';
+} from '../types';
 import { WorldState, Country } from '../types';
 import { INITIAL_COUNTRIES } from '../data/countries';
 import { ConsequenceEngine } from '../sim/consequenceEngine';

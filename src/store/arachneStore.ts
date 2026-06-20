@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { produce } from 'immer';
-import { ArachneIntelItem, ArachneFilterState, ArachneTheme, ArachneSourceClass, ArachneUrgency, ArachneConfidence, ArachneFreshness, ArachnePriority, ArachneBriefGroup } from '../types/arachne';
+import { ArachneIntelItem, ArachneFilterState, ArachneTheme, ArachneSourceClass, ArachneUrgency, ArachneConfidence, ArachneFreshness, ArachnePriority, ArachneBriefGroup } from '../types';
 import { ScenarioId, WorldState, CountryState, WorldEvent } from '../types';
 import { SCENARIO_SEEDS, GLOBAL_BASELINES, generateDynamicWhyItMatters } from '../data/arachneSeeded';
 import { useWorldStore } from './worldStore';

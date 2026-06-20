@@ -12,7 +12,7 @@ import {
   TradeExposureScore, 
   RestrictionLevel,
   TradeLink
-} from '../types/trade';
+} from '../types';
 import { 
   INITIAL_ROUTE_NODES, 
   INITIAL_ROUTE_SEGMENTS, 

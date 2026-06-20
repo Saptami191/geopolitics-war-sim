@@ -6,7 +6,7 @@ import { usePropagandaStore } from './propagandaStore';
 import { useIntelligenceStore } from './intelligenceStore';
 import {
   PropagandaCampaign,
-  DeceptionCampaign,
+  AdversarialDeceptionCampaign,
   PlantedIntelligencePacket,
   CounterintelligenceResponseModel,
   AssumptionProfile,
@@ -23,7 +23,7 @@ import {
   IntelligencePoisoningRecord,
   InfluenceOutcomeTrace,
   AdversarialInfluenceState
-} from '../types/influence';
+} from '../types';
 
 interface InfluenceStoreActions {
   tickInfluenceSystem: (currentTick: number) => void;

@@ -132,7 +132,7 @@ import FlashPrecedenceBanner from './components/hud/FlashPrecedenceBanner';
 import WhiteFlashOverlay from './components/hud/WhiteFlashOverlay';
 import { useDefconStore, applyDefconPalette } from './store/defconStore';
 import { PANEL_REGISTRY, getAvailablePanels, getAvailablePersonas, PERSONAS } from './config/defconRegistry';
-import { PersonaId } from './types/defconPersona';
+import { PersonaId } from './types';
 import { GEO_COORDS } from './data/geoCoords';
 import { getTickIncrement } from './sim/militaryEngine';
 import { useEconomyStore } from './store/economyStore';

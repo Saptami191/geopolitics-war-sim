@@ -24,7 +24,7 @@ import {
   ForecastConfidenceBand,
   ForecastBranch,
   EconomicForecastSnapshot,
-} from '../types/economicForecast';
+} from '../types';
 
 interface EconomicForecastStoreState {
   selection: EconomicUISelectionState;

@@ -37,6 +37,7 @@ interface ConsequenceStoreActions {
   removeScar: (id: string) => void;
   resetScars: () => void;
   registerScandalConsequence: (scandalId: string, tier: string, pools: any) => void;
+  triggerBlowback: (countryId: string, intensity: number, reason: string) => void;
 }
 
 export const useConsequenceStore = create<{ scars: WorldScar[] } & ConsequenceStoreActions>((set) => ({
@@ -45,6 +46,11 @@ export const useConsequenceStore = create<{ scars: WorldScar[] } & ConsequenceSt
   registerScandalConsequence: (scandalId, tier, pools) => {
     // Upstream triggers this, but blowback logic can be routed to the ConsequenceEngine here if needed.
     // For now, this placeholder accepts the pipeline from Module 5.5 to prevent compilation errors and provide integration hook.
+  },
+
+  triggerBlowback: (countryId, intensity, reason) => {
+    console.warn(`[BLOWBACK] Country: ${countryId} | Intensity: ${intensity} | Reason: ${reason}`);
+    // Future expansion: actually spawn a scar or unrest
   },
 
   addScar: (scar) => set(produce((draft: { scars: WorldScar[] }) => {

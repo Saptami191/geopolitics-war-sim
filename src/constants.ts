@@ -64,7 +64,7 @@ export const RESEARCH_TREES: ResearchMetadata[] = [
   { id: 'EMP_SHIELD', name: 'Hardened Power Matrices', costB: 20, ticks: 16, desc: 'Protects critical infrastructure, dampens EMP blackout outcomes completely', deps: [] },
 ];
 
-export const COMMODITY_BASELINES: Record<CommodityType, { base: number; volatility: number; name: string }> = {
+export const COMMODITY_BASELINES: Partial<Record<CommodityType, { base: number; volatility: number; name: string }>> = {
   OIL: { base: 75.0, volatility: 25, name: 'Crude Brent Oil Oil (per bl)' },
   NATURAL_GAS: { base: 3.5, volatility: 35, name: 'Natural Gas (per MMBtu)' },
   WHEAT: { base: 6.2, volatility: 15, name: 'Wheat Staple Grains (per bushel)' },

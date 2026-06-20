@@ -1,6 +1,10 @@
 import { create } from 'zustand';
 
 export type CinematicSceneType =
+  | 'SIGINT_BREAKTHROUGH'
+  | 'DECEPTION_EXPOSED'
+  | 'COLLECTION_COMPROMISED'
+  | 'PATTERN_OF_LIFE_SHIFT'
   | 'SCENARIO_BOOT'           // Cold boot intro on first load
   | 'SCENARIO_START'        // When player starts a new scenario
   | 'PRESIDENTIAL_DAILY_BRIEF' // Session start / daily overview

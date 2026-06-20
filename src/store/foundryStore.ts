@@ -10,7 +10,7 @@ import {
   SupplyDependencyRecord, 
   DisruptionSignal, 
   ImpactPreview 
-} from '../types/foundry';
+} from '../types';
 import { useWorldStore } from './worldStore';
 import { usePlayerStore } from './playerStore';
 import { useArachneStore } from './arachneStore';

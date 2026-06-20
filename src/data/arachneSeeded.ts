@@ -1,4 +1,4 @@
-import { ArachneIntelItem, ArachneTheme, ArachneSourceClass, ArachneUrgency, ArachneConfidence, ArachneFreshness, ArachnePriority, ArachneBriefGroup } from '../types/arachne';
+import { ArachneIntelItem, ArachneTheme, ArachneSourceClass, ArachneUrgency, ArachneConfidence, ArachneFreshness, ArachnePriority, ArachneBriefGroup } from '../types';
 import { ScenarioId, WorldState } from '../types';
 
 export interface SeedTemplate {

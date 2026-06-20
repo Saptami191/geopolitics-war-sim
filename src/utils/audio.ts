@@ -1386,9 +1386,51 @@ class AudioEngine {
           setTimeout(() => this.sfxSuccessConfirmation(), 1000);
         }
         break;
+      case 'SIGINT_BREAKTHROUGH':
+        if (phase === 0) {
+          this.sfxRadarPing();
+          this.startAmbientDrone();
+        }
+        break;
+      case 'DECEPTION_EXPOSED':
+        if (phase === 0) {
+          this.sfxStaticBurst();
+          this.setTensionState('CRISIS_EMERGING', 500);
+        }
+        break;
+      case 'COLLECTION_COMPROMISED':
+        if (phase === 0) {
+          this.sfxSystemFailure();
+          this.setTensionState('DIPLOMATIC_FRICTION', 500);
+        }
+        break;
+      case 'PATTERN_OF_LIFE_SHIFT':
+        if (phase === 0) this.sfxRadioIntercept();
+        break;
       default:
         break;
     }
+  }
+
+  sfxSystemFailure() {
+    if (!this.ctx) return;
+    this.resume();
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(120, now);
+    osc.frequency.exponentialRampToValueAtTime(40, now + 0.6);
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0.2, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+    osc.connect(gain);
+    gain.connect(this.sfxGain || this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.65);
+  }
+
+  sfxStaticBurst() {
+    this.sfxCoupStaticBurst();
   }
 
   sfxTensionPulse(intensity: number) {

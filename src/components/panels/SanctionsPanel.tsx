@@ -26,7 +26,7 @@ import {
 import { useSanctionsStore, ALL_MEASURES } from '../../store/sanctionsStore';
 import { useWorldStore } from '../../store/worldStore';
 import { usePlayerStore } from '../../store/playerStore';
-import { SanctionsTierType, CoalitionMemberRole, EvasionChannel } from '../../types/sanctions';
+import { SanctionsTierType, CoalitionMemberRole, EvasionChannel } from '../../types';
 
 export default function SanctionsPanel() {
   const { 

@@ -24,7 +24,7 @@ import {
   CountermeasureHistory,
   DeceptionExposureState,
   MirrorWarningLevel
-} from '../types/mirror';
+} from '../types';
 
 const DEFAULT_TEMPLATES: CounterStrategyTemplate[] = [
   {

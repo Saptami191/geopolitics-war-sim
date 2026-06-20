@@ -9,7 +9,7 @@ import {
   SanctionTargetProfile, 
   SanctionsPreview, 
   SanctionsIncident 
-} from '../types/sanctions';
+} from '../types';
 import { useWorldStore } from './worldStore';
 import { useArachneStore } from './arachneStore';
 import { usePlayerStore } from './playerStore';

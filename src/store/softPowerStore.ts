@@ -31,7 +31,7 @@ import {
   SoftPowerActionPreview,
   InfluenceConversionRecord,
   SoftPowerBacklashRecord
-} from '../types/softPower';
+} from '../types';
 
 interface SoftPowerState {
   initialized: boolean;

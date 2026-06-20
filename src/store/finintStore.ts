@@ -8,7 +8,7 @@ import {
   FinancialActionPreview, 
   FinancialIncident, 
   FinancialCoercionType
-} from '../types/finint';
+} from '../types';
 import { useWorldStore } from './worldStore';
 import { usePlayerStore } from './playerStore';
 import { useArachneStore } from './arachneStore';
@@ -57,6 +57,7 @@ interface FinintActions {
   toggleShellStatus: (shellId: string) => void;
   updateJurisdictionCooperation: (jurisdictionId: string, value: number) => void;
   tickFinint: (currentTick: number) => void;
+  improveTraceCorrelation: (countryId: string, boost: number) => void;
 }
 
 // Seeded Strategic Geopolitical Financial Scenarios
@@ -248,6 +249,14 @@ export const useFinintStore = create<FinintState & FinintActions>((set, get) => 
   paymentFragmentationRisk: 18,
   dollarDominanceErosion: 10,
   globalAggregatedBlowback: 14,
+  improveTraceCorrelation: (countryId: string, boost: number) => {
+    set(produce((draft) => {
+      const jurisdictionsInCountry = draft.jurisdictions.filter((j: any) => j.id === countryId);
+      jurisdictionsInCountry.forEach((j: any) => {
+        j.currentCooperationMultiplier = Math.min(100, j.currentCooperationMultiplier + boost);
+      });
+    }));
+  },
 
   selectedActorId: null,
   selectedJurisdictionId: null,

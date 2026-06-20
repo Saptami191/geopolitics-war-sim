@@ -19,7 +19,7 @@ import {
   TribunalEscalationRecord, 
   InstitutionalActionPreview,
   ReputationDimension
-} from '../types/un';
+} from '../types';
 
 interface UNStoreState {
   resolutions: Record<string, UNSCResolution>;

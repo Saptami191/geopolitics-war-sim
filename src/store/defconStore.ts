@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { audio } from '../utils/audio';
-import { PersonaId, DefconTransitionLog } from '../types/defconPersona';
+import { PersonaId, DefconTransitionLog } from '../types';
 import { getDefaultPersona } from '../config/defconRegistry';
 import { useFxStore } from './fxStore';
 

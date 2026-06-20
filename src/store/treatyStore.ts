@@ -21,7 +21,7 @@ import {
   TreatyNegotiationLog,
   TreatyNegotiationSession,
   TreatyLegacyEffect
-} from '../types/treaty';
+} from '../types';
 import { TreatyState, WorldEvent } from '../types';
 
 interface TreatyStoreState {
