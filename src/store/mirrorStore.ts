@@ -122,6 +122,7 @@ interface MirrorActions {
   tickMirrorState: (currentTick: number) => void;
   injectBait: (bait: HoneypotOpportunity) => void;
   registerInfluenceOp: (campaignId: string) => void;
+  registerCIAPatterns: (mostTargetedNation: string, mostUsedOpType: string, avgHeat: number) => void;
 }
 
 const initialProfile = (): PlayerProfileVector => ({
@@ -596,6 +597,20 @@ export const useMirrorStore = create<MirrorAdaptationState & MirrorActions>()(
          set(produce((draft: MirrorAdaptationState) => {
             // Build counter-profiling or awareness of player's narrative strategy
             // e.g. increase difficulty or counter-measures
+         }));
+      },
+
+      registerCIAPatterns: (mostTargetedNation: string, mostUsedOpType: string, avgHeat: number) => {
+         set(produce((draft: MirrorAdaptationState) => {
+            draft.habits.push({
+               habitId: `cia_pattern_${Date.now()}`,
+               description: `CIA Doctrine: Focuses operations on ${mostTargetedNation}. Strategy leans toward ${mostUsedOpType}. Average heat tolerance: ${avgHeat.toFixed(1)}.`,
+               recognitionConfidence: Math.min(100, avgHeat + 20),
+               exploitationWindowTicks: 100,
+               discoveredTick: 0
+            });
+            // Keep habits capped
+            if (draft.habits.length > 20) draft.habits.shift();
          }));
       }
     }),

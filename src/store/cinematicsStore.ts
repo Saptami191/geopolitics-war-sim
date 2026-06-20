@@ -43,6 +43,13 @@ export type CinematicSceneType =
   | 'MIRROR_AI_CONFRONTATION' // AI confronts player
   | 'COUP_EXECUTED'         // 4 phases: conspiracy revealed, troops moving, palace seized, new leader address to nation
   | 'COUP_FAILED'           // 3 phases: plotters arrested, target leader appears on state TV triumphant, mass purge begins
+  | 'CIA_FIRST_OPERATION_LAUNCHED'
+  | 'CIA_COUP_SUCCEEDED'
+  | 'CIA_OPERATION_BLOWN'
+  | 'CIA_ASSET_DOUBLED'
+  | 'CIA_CATASTROPHIC_BLOWBACK'
+  | 'CIA_OVERSIGHT_CRISIS'
+  | 'CIA_OPERATIVE_KIA'
   | 'ELECTION_STOLEN'       // 3 phases: vote count manipulation, results announced, international condemnation
   | 'TARGETED_REMOVAL'      // 3 phases: covert op briefing, execution moment, aftermath and cover
   | 'BLOWBACK_CRISIS'       // 3 phases: media bombshell, diplomatic response, player must choose response type

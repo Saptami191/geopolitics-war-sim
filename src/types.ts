@@ -7489,3 +7489,395 @@ export interface SigintPatternBaseline {
   baselineScore: number;      // rolling average activity score
   lastUpdatedTick: number;
 }
+
+// ─── ARACHNE OSINT SOURCES & NETWORK LAYER ─────────────────────────────────
+
+export type ArachneSourceType =
+  | 'CORPORATE_REGISTRY'      // company registrations, directors, ownership
+  | 'SHIPPING_MANIFEST'       // cargo declarations, port records, vessel AIS
+  | 'PROCUREMENT_DATABASE'    // government contracts, tender records
+  | 'SOCIAL_NETWORK'          // public social media, influence mapping
+  | 'NEWS_AGGREGATOR'         // media monitoring, narrative tracking
+  | 'SATELLITE_METADATA'      // commercial imagery metadata, activity inference
+  | 'ACADEMIC_REGISTRY'       // researcher affiliations, conference appearances
+  | 'FINANCIAL_FILING'        // public financial disclosures, regulatory filings
+  | 'DIPLOMATIC_REGISTRY';    // accredited diplomat lists, visa records
+
+export type ArachneNodeType =
+  | 'PERSON'                  // individual — official, oligarch, operative
+  | 'ORGANISATION'            // company, NGO, think tank, front entity
+  | 'FACILITY'                // physical location — lab, warehouse, port
+  | 'FINANCIAL_ENTITY'        // bank, fund, exchange, wallet
+  | 'VESSEL'                  // ship, aircraft — tracked by AIS / flight data
+  | 'STATE_ENTITY'            // ministry, agency, military unit
+  | 'PROXY_GROUP';            // non-state armed group, influence network
+
+export type ArachneExposureLevel =
+  | 'UNKNOWN'       // node not yet surfaced
+  | 'SUSPECTED'     // pattern-inferred existence
+  | 'IDENTIFIED'    // OSINT-confirmed identity
+  | 'MAPPED'        // full network position charted
+  | 'BURNED';       // entity aware of collection — behaviour changed
+
+export type ArachneLinkType =
+  | 'OWNERSHIP'               // entity A owns entity B
+  | 'CONTROL'                 // entity A controls entity B without ownership
+  | 'EMPLOYMENT'              // person works for organisation
+  | 'FINANCIAL_FLOW'          // money moves from A to B
+  | 'PROCUREMENT'             // A supplies B with goods or services
+  | 'COMMUNICATION'           // A and B communicate (from SIGINT)
+  | 'CO_LOCATION'             // A and B observed at same place
+  | 'FAMILY'                  // kinship relationship
+  | 'PROXY';                  // A acts as proxy for B
+
+export interface ArachneNode {
+  id: string;
+  label: string;
+  type: ArachneNodeType;
+  nationId: string;
+  exposureLevel: ArachneExposureLevel;
+  riskScore: number;                   // 0–100, Arachne-computed
+  sanctionedFlag: boolean;
+  proliferationFlag: boolean;
+  corruptionFlag: boolean;
+  linkedEntityIds: string[];           // IDs of connected nodes
+  sourceTypes: ArachneSourceType[];    // how this node was surfaced
+  firstObservedTick: number;
+  lastActiveObservationTick: number;
+  notes: string;                       // analyst notes / intelligence summary
+  isBurned: boolean;
+  burnedAtTick: number | null;
+}
+
+export interface ArachneLink {
+  id: string;
+  sourceNodeId: string;
+  targetNodeId: string;
+  linkType: ArachneLinkType;
+  confidence: number;                  // 0–100
+  firstObservedTick: number;
+  lastConfirmedTick: number;
+  financialValue: number | null;       // USD equivalent if financial flow
+  notes: string;
+}
+
+export interface ArachneFeed {
+  id: string;
+  sourceType: ArachneSourceType;
+  targetNationId: string;
+  isActive: boolean;
+  dailyCost: number;
+  coverageDepth: number;               // 0–100, affects node discovery rate
+  nodesDiscoveredTotal: number;
+  lastYieldTick: number;
+  deployedAtTick: number;
+}
+
+export interface ArachneIntelFusion {
+  id: string;
+  producedAtTick: number;
+  involvedNodeIds: string[];
+  involvedNationIds: string[];
+  fusionType:
+    | 'NETWORK_MAP'
+    | 'PROCUREMENT_CHAIN'
+    | 'INFLUENCE_WEB'
+    | 'FINANCIAL_FLOW_MAP'
+    | 'FRONT_COMPANY_CHAIN';
+  summary: string;
+  confidence: number;                  // 0–100
+  actionableFlag: boolean;
+  linkedSignalIds: string[];           // from sigintStore — cross-referenced
+  linkedFinintFlags: string[];         // from FININT layer
+}
+
+// ─── FININT FINANCIAL INTELLIGENCE LAYER ───────────────────────────────────
+
+export type FinintFlowType =
+  | 'SANCTIONS_EVASION'         // routed through intermediaries to avoid blocks
+  | 'ILLICIT_PROCUREMENT'       // payment for restricted goods
+  | 'COVERT_FINANCE'            // intelligence operation funding
+  | 'OLIGARCH_MOVEMENT'         // high-net-worth politically exposed persons
+  | 'RESERVE_ANOMALY'           // central bank reserve movements
+  | 'COMMODITY_MANIPULATION'    // oil, metals, grain — geopolitical leverage
+  | 'CRYPTO_OBFUSCATION'        // blockchain-based money laundering
+  | 'HAWALA_TRANSFER';          // informal value transfer system
+
+export type FinintFlagSeverity =
+  | 'LOW'         // anomalous but explainable
+  | 'MEDIUM'      // suspicious, warrants collection tasking
+  | 'HIGH'        // strong indicator of illicit activity
+  | 'CRITICAL';   // near-certain illicit — actionable immediately
+
+export type FinintEntityType =
+  | 'BANK'
+  | 'SHELL_COMPANY'
+  | 'CRYPTOCURRENCY_WALLET'
+  | 'STATE_FUND'
+  | 'OLIGARCH_VEHICLE'
+  | 'COMMODITY_TRADER'
+  | 'HAWALA_NETWORK'
+  | 'FRONT_COMPANY';
+
+export interface FinintFlag {
+  id: string;
+  flowType: FinintFlowType;
+  severity: FinintFlagSeverity;
+  sourceEntityId: string;              // Arachne node ID if mapped
+  destinationEntityId: string;         // Arachne node ID if mapped
+  sourceNationId: string;
+  destinationNationId: string;
+  estimatedValueUSD: number;
+  detectedAtTick: number;
+  expiresAtTick: number;               // flags expire after 20 ticks
+  confidenceScore: number;             // 0–100
+  isCorroborated: boolean;             // true if also in sigintStore
+  isActedUpon: boolean;
+  narrativeSummary: string;            // analyst-style description
+  linkedArachneNodeIds: string[];      // entities involved from network graph
+  sanctionEvasionRoute: string[];      // chain of intermediary entity IDs
+}
+
+export interface FinintShellCompanyProfile {
+  id: string;
+  registeredName: string;
+  registeredJurisdiction: string;      // BVI, Cayman, Delaware, etc.
+  ultimateBeneficialOwner: string | null; // Arachne node ID if identified
+  controlledByNationId: string | null;
+  estimatedAssetsUSD: number;
+  linkedFlagIds: string[];
+  unmaskConfidence: number;            // 0–100
+  unmaskSource: ArachneSourceType[];
+  firstFlaggedTick: number;
+  isFullyUnmasked: boolean;
+}
+
+export interface FinintOligarchProfile {
+  id: string;
+  linkedArachneNodeId: string;         // the person node in Arachne graph
+  nationId: string;
+  estimatedNetWorthUSD: number;
+  knownVehicles: FinintShellCompanyProfile[];
+  politicalLeverageScore: number;      // 0–100, how much leverage over their govt
+  sanctionedFlag: boolean;
+  assetFreezeRisk: number;             // 0–100
+  lastActiveMovementTick: number;
+}
+
+export interface FinintBudget {
+  totalAllocated: number;
+  spent: number;
+  remaining: number;
+}
+
+// --- CIA Types ---
+
+export type CIACoverType =
+  | 'NOC'               // Non-Official Cover — deepest, most vulnerable
+  | 'OFFICIAL'          // Diplomatic cover — immune but constrained
+  | 'ALIAS'             // Partial legend — domestic or third-country
+  | 'DEEP_COVER';       // Long-term embedded — years of preparation
+
+export type CIAOperativeStatus =
+  | 'ACTIVE'            // deployed and operational
+  | 'STANDBY'           // available, not deployed
+  | 'COMPROMISED'       // under adversary suspicion
+  | 'DOUBLED'           // turned — now feeding disinformation
+  | 'EXTRACTED'         // safely pulled from the field
+  | 'DETAINED'          // held by adversary service
+  | 'KIA'               // killed in the field
+  | 'RETIRED';          // honourably stood down
+
+export type CIAAssetMotivation =
+  | 'MONEY'             // financial incentive — most common, most fragile
+  | 'IDEOLOGY'          // genuine belief alignment — most reliable
+  | 'COMPROMISE'        // coercion via blackmail or leverage — most dangerous
+  | 'EGO';              // vanity, recognition, grievance — volatile
+
+export type CIAAssetStatus =
+  | 'PROSPECTIVE'       // identified, not yet pitched
+  | 'RECRUITED'         // active asset providing intelligence
+  | 'DORMANT'           // standing down temporarily
+  | 'BURNED'            // identity exposed to adversary service
+  | 'DOUBLED'           // feeding false intelligence
+  | 'EXFILTRATED'       // safely removed from country
+  | 'IMPRISONED'        // caught and detained
+  | 'EXECUTED';         // killed by adversary
+
+export type CIAOperationType =
+  | 'INTELLIGENCE_COLLECTION'     // standard HUMINT reporting
+  | 'ASSET_RECRUITMENT'           // pitch and land a new asset
+  | 'REGIME_DESTABILISATION'      // political operations against government
+  | 'COUP_SUPPORT'                // backing a military or political takeover
+  | 'ASSASSINATION'               // targeted killing — highest risk/consequence
+  | 'PROPAGANDA_OPERATION'        // PSYOP / influence / narrative operation
+  | 'COUNTER_PROLIFERATION'       // disrupting WMD programmes
+  | 'EXFILTRATION'                // extracting an asset or person from country
+  | 'SABOTAGE'                    // physical infrastructure disruption
+  | 'RENDITION'                   // detention and transfer of a target
+  | 'COVERT_FINANCE'              // funding a proxy, faction, or operation
+  | 'COUNTER_INTELLIGENCE';       // identifying adversary assets in own network
+
+export type CIAOperationStatus =
+  | 'PLANNING'          // being configured, not yet launched
+  | 'ACTIVE'            // underway — tick-by-tick execution
+  | 'SUCCEEDED'         // completed successfully
+  | 'PARTIALLY_SUCCEEDED' // achieved some objectives, not all
+  | 'FAILED'            // objective not achieved
+  | 'BLOWN'             // operation exposed — blowback incoming
+  | 'ABORTED';          // player or system cancelled before completion
+
+export type CIABlowbackSeverity =
+  | 'CONTAINED'         // internal only — no external exposure
+  | 'LEAKED'            // partial media exposure — deniable
+  | 'EXPOSED'           // full public attribution — diplomatic damage
+  | 'CATASTROPHIC';     // regime-level incident — alliance damage
+
+export type CIAOversightStatus =
+  | 'CLEAR'             // no active oversight concern
+  | 'MONITORING'        // oversight body has flagged activity
+  | 'INQUIRY'           // formal inquiry underway
+  | 'RESTRICTED'        // specific operation types restricted
+  | 'SUSPENDED';        // all covert action temporarily halted
+
+export type CIASpecialisation =
+  | 'TECHNICAL_INTELLIGENCE'    // TECHINT, device ops, cyber tools
+  | 'PARAMILITARY'              // direct action, combat, weapons
+  | 'INFLUENCE_OPERATIONS'      // PSYOP, media, political operations
+  | 'FINANCIAL_OPERATIONS'      // covert finance, sanctions evasion
+  | 'COUNTER_INTELLIGENCE'      // detecting doubled assets, adversary CI
+  | 'SIGNALS_SUPPORT'           // SIGINT integration, comms ops
+  | 'MEDICAL_SUPPORT'           // field medicine, poison — and antidote
+  | 'DOCUMENT_FABRICATION'      // legend building, false identity
+  | 'SURVEILLANCE';             // physical and technical surveillance
+
+export interface CIAOperative {
+  id: string;
+  codename: string;                    // e.g. CARDINAL, NIGHTHAWK, BASILISK
+  realName: string | null;             // null if NOC — legend only
+  coverType: CIACoverType;
+  coverLegend: string;                 // their cover story / identity
+  status: CIAOperativeStatus;
+  nationId: string;                    // current deployed nation
+  stationId: string;                   // CIA station they report to
+  specialisations: CIASpecialisation[];
+  languageProficiency: string[];       // languages they operate in
+  accessLevel: number;                 // 0–100, what tier of target they can reach
+  heatLevel: number;                   // 0–100, adversary CI suspicion level
+  loyaltyScore: number;                // 0–100, reliability under pressure
+  yearsInField: number;                // experience modifier
+  activeOperationId: string | null;    // currently assigned operation
+  assetIds: string[];                  // assets they handle
+  deployedAtTick: number;
+  lastOperationTick: number;
+  totalOperationsCompleted: number;
+  coverIntegrity: number;              // 0–100, how intact their legend is
+  extractionReadiness: number;         // 0–100, how quickly they can be pulled
+  arachneNodeId: string | null;        // linked node in Arachne network graph
+}
+
+export interface CIAAsset {
+  id: string;
+  codename: string;
+  nationId: string;
+  position: string;                    // their role (e.g. "Deputy Foreign Minister")
+  accessTier: number;                  // 1–5, what secrets they can reach
+  motivation: CIAAssetMotivation;
+  motivationStrength: number;          // 0–100, how strong the MICE hook is
+  status: CIAAssetStatus;
+  handlerId: string;                   // operative ID managing this asset
+  meetingFrequency: number;            // ticks between contacts
+  lastContactTick: number;
+  productionRate: number;              // 0–100, how much intelligence they produce
+  reliabilityScore: number;            // 0–100, how accurate their reporting is
+  doubledRisk: number;                 // 0–100, probability they've been turned
+  compromiseRisk: number;              // 0–100, probability of exposure
+  recruitedAtTick: number;
+  totalIntelProduced: number;
+  motivationDecayRate: number;         // how fast motivation degrades without reinforcement
+  personalDetails: string;             // flavour — family, habits, vulnerabilities
+  linkedArachneNodeId: string | null;
+}
+
+export interface CIAObjective {
+  id: string;
+  description: string;
+  type: 'PRIMARY' | 'SECONDARY' | 'STRETCH';
+  isAchieved: boolean;
+  achievedAtTick: number | null;
+  requiredAccessTier: number;          // minimum asset access needed
+  probabilityContribution: number;     // how much achieving this adds to success%
+}
+
+export interface CIAOperation {
+  id: string;
+  codename: string;
+  type: CIAOperationType;
+  status: CIAOperationStatus;
+  targetNationId: string;
+  targetEntityId: string | null;       // specific person/org being targeted
+  assignedOperativeIds: string[];
+  supportingAssetIds: string[];
+  startTick: number;
+  estimatedDurationTicks: number;
+  completedAtTick: number | null;
+  successProbability: number;          // 0–100, computed each tick
+  detectionRisk: number;               // 0–100, chance of exposure per tick
+  blowbackSeverity: CIABlowbackSeverity | null;
+  objectives: CIAObjective[];
+  resourceCost: number;                // USD equivalent from covert budget
+  authorizationLevel: number;          // 1–5, how sensitive the finding required
+  oversightNotified: boolean;          // was congressional oversight informed?
+  outcomeSummary: string | null;       // filled when operation concludes
+  sigintSupport: boolean;              // is SIGINT collection supporting this op?
+  arachneSupport: boolean;             // is Arachne network mapping supporting?
+  finintSupport: boolean;              // is FININT tracking supporting?
+}
+
+export interface CIABlowbackEvent {
+  id: string;
+  operationId: string;
+  severity: CIABlowbackSeverity;
+  nationId: string;
+  description: string;                 // full narrative of what went wrong
+  triggeredAtTick: number;
+  diplomaticDamage: number;            // 0–100, relationship penalty
+  allianceDamage: number;              // 0–100, penalty to allied trust
+  oversightEscalation: boolean;        // did this trigger an inquiry?
+  mediaExposure: boolean;              // was this in the news?
+  operativesCompromised: string[];     // operative IDs affected
+  assetsCompromised: string[];         // asset IDs affected
+  isResolved: boolean;
+  resolutionTick: number | null;
+}
+
+export interface CIAStation {
+  id: string;
+  nationId: string;
+  stationChief: string;                // operative ID or NPC name
+  coverOrganisation: string;           // embassy, NGO, business — the front
+  capacity: number;                    // max operatives that can be stationed
+  currentOperativeCount: number;
+  detectionRisk: number;               // 0–100, adversary CI awareness
+  isCompromised: boolean;
+  establishedAtTick: number;
+  communicationsIntegrity: number;     // 0–100, secure comms health
+}
+
+export interface CIAOversightRecord {
+  id: string;
+  status: CIAOversightStatus;
+  activeInquiryOperationIds: string[];
+  restrictedOperationTypes: CIAOperationType[];
+  lastReviewTick: number;
+  hearingScheduledTick: number | null;
+  clearanceGrantedForTypes: CIAOperationType[];
+  legalCounselNotes: string;
+}
+
+export interface CIACovertBudget {
+  totalAllocated: number;
+  spent: number;
+  remaining: number;
+  blackBudgetUntracked: number;        // funds outside formal accounting
+}

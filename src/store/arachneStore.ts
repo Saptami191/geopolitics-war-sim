@@ -1,10 +1,76 @@
 import { create } from 'zustand';
 import { produce } from 'immer';
-import { ArachneIntelItem, ArachneFilterState, ArachneTheme, ArachneSourceClass, ArachneUrgency, ArachneConfidence, ArachneFreshness, ArachnePriority, ArachneBriefGroup } from '../types';
+import { 
+  ArachneIntelItem, ArachneFilterState, ArachneTheme, ArachneSourceClass, 
+  ArachneUrgency, ArachneConfidence, ArachneFreshness, ArachnePriority, ArachneBriefGroup,
+  ArachneFeed, ArachneNode, ArachneLink, ArachneIntelFusion, ArachneExposureLevel, ArachneNodeType, ArachneSourceType
+} from '../types';
 import { ScenarioId, WorldState, CountryState, WorldEvent } from '../types';
 import { SCENARIO_SEEDS, GLOBAL_BASELINES, generateDynamicWhyItMatters } from '../data/arachneSeeded';
 import { useWorldStore } from './worldStore';
 import { usePlayerStore } from './playerStore';
+import { useSigintStore as sigintStore } from './sigintStore';
+import { useFinintStore as finintStore } from './finintStore';
+import { useDefconStore as defconStore } from './defconStore';
+import { useGothamStore as gothamStore } from './gothamStore';
+
+function arachne_generateNodeLabel(
+  type: ArachneNodeType,
+  nationId: string,
+  index: number
+): string {
+  const seed = (index * 73) % 100;
+  if (type === 'PERSON') return `Person of Interest ${nationId}-${seed}`;
+  if (type === 'ORGANISATION') return `Commercial Entity ${nationId}-${seed}`;
+  if (type === 'FINANCIAL_ENTITY') return `Financial Node ${nationId}-${seed}`;
+  if (type === 'VESSEL') return `Vessel Callsign ${nationId}-${seed}`;
+  if (type === 'STATE_ENTITY') return `State Agency ${nationId}-${seed}`;
+  if (type === 'FACILITY') return `Facility ${nationId}-${seed}`;
+  if (type === 'PROXY_GROUP') return `Proxy Group ${nationId}-${seed}`;
+  return `Unknown Entity ${nationId}-${seed}`;
+}
+
+function arachne_computeRiskScore(
+  node: ArachneNode,
+  activeFlags: any[],
+  confirmedSignals: any[]
+): number {
+  let score = 30;
+  if (node.sanctionedFlag) score += 20;
+  if (node.proliferationFlag) score += 15;
+  score += activeFlags.length * 10;
+  score += confirmedSignals.length * 10;
+  return Math.min(100, score);
+}
+
+function arachne_determineJurisdiction(tick: number, index: number): string {
+  const pool = ['BVI', 'Cayman Islands', 'UAE', 'Panama', 'Singapore', 'Liechtenstein', 'Cyprus', 'Seychelles', 'Belize', 'Marshall Islands'];
+  return pool[(tick + index) % pool.length];
+}
+
+function generateArachneFusionSummary(
+  nodes: ArachneNode[],
+  fusionType: ArachneIntelFusion['fusionType'],
+  nationId: string,
+  tick: number
+): string {
+  if (fusionType === 'NETWORK_MAP') {
+    return `ARACHNE NETWORK PRODUCT // ${nationId} — ${nodes.length} entities mapped. Assessment confidence: HIGH.`;
+  }
+  if (fusionType === 'PROCUREMENT_CHAIN') {
+    return `ARACHNE PROCUREMENT INTELLIGENCE // ${nationId} — Acquisition network identified. Active acquisition programme — CRITICAL priority.`;
+  }
+  if (fusionType === 'INFLUENCE_WEB') {
+    return `ARACHNE INFLUENCE MAPPING // ${nationId} — Political influence network charted. Assessment: coordinated influence operation — ongoing.`;
+  }
+  if (fusionType === 'FINANCIAL_FLOW_MAP') {
+    return `ARACHNE × FININT FUSION // ${nationId} — Financial network visualised. Assessment: systematic sanctions evasion infrastructure.`;
+  }
+  if (fusionType === 'FRONT_COMPANY_CHAIN') {
+    return `ARACHNE CORPORATE INTELLIGENCE // ${nationId} — Shell company chain identified. Assessment: structured concealment — unmask initiated.`;
+  }
+  return `ARACHNE INTELLIGENCE PRODUCT // ${nationId}`;
+}
 
 interface ArachneState {
   feed: ArachneIntelItem[];
@@ -13,6 +79,17 @@ interface ArachneState {
   pdbActive: boolean;
   selectedItemId: string | null;
   unreadAlertCount: number;
+
+  arachne_feeds: ArachneFeed[];
+  arachne_nodes: ArachneNode[];
+  arachne_links: ArachneLink[];
+  arachne_fusionProducts: ArachneIntelFusion[];
+  arachne_budget: { totalAllocated: number; spent: number; remaining: number };
+  arachne_lastProcessedTick: number;
+  arachne_totalNodesDiscovered: number;
+  arachne_totalLinksDiscovered: number;
+  arachne_burnedNodes: string[];
+  arachne_activeTab: 'MAP' | 'FEEDS' | 'FUSION' | 'FININT' | 'SHELLS';
 }
 
 interface ArachneActions {
@@ -24,6 +101,21 @@ interface ArachneActions {
   resetFilters: () => void;
   addLiveIntelItem: (item: Partial<ArachneIntelItem>) => void;
   tickArachne: (currentTick: number) => void;
+
+  arachne_deployFeed: (feed: Omit<ArachneFeed, 'id' | 'deployedAtTick' | 'nodesDiscoveredTotal' | 'lastYieldTick'>, currentTick: number) => void;
+  arachne_retractFeed: (feedId: string) => void;
+  arachne_allocateBudget: (amount: number) => void;
+  arachne_addNode: (node: Omit<ArachneNode, 'id' | 'firstObservedTick'>) => string;
+  arachne_addLink: (link: Omit<ArachneLink, 'id' | 'firstObservedTick'>) => string;
+  arachne_updateNodeExposure: (nodeId: string, level: ArachneExposureLevel) => void;
+  arachne_burnNode: (nodeId: string, currentTick: number) => void;
+  arachne_setActiveTab: (tab: 'MAP' | 'FEEDS' | 'FUSION' | 'FININT' | 'SHELLS') => void;
+  arachne_processTick: (currentTick: number) => void;
+  arachne_getNodesByNation: (nationId: string) => ArachneNode[];
+  arachne_getHighRiskNodes: () => ArachneNode[];
+  arachne_getMappedNodes: () => ArachneNode[];
+  arachne_getActionableFusions: () => ArachneIntelFusion[];
+  arachne_getLinksForNode: (nodeId: string) => ArachneLink[];
 }
 
 const initialFilters: ArachneFilterState = {
@@ -44,6 +136,19 @@ export const useArachneStore = create<ArachneState & ArachneActions>((set, get) 
   pdbActive: false,
   selectedItemId: null,
   unreadAlertCount: 0,
+  
+  arachne_feeds: [],
+  arachne_nodes: [],
+  arachne_links: [],
+  arachne_fusionProducts: [],
+  arachne_budget: { totalAllocated: 600, spent: 0, remaining: 600 },
+  arachne_lastProcessedTick: -1,
+  arachne_totalNodesDiscovered: 0,
+  arachne_totalLinksDiscovered: 0,
+  arachne_burnedNodes: [],
+  arachne_activeTab: 'MAP',
+  
+  arachne_setActiveTab: (tab) => set({ arachne_activeTab: tab }),
 
   initArachneForScenario: (scenarioId: ScenarioId) => {
     const worldState = useWorldStore.getState();
@@ -349,5 +454,292 @@ export const useArachneStore = create<ArachneState & ArachneActions>((set, get) 
 
     // 3. Keep sorted
     draft.feed.sort((a, b) => b.alertScore - a.alertScore);
-  }))
+  })),
+
+  arachne_getNodesByNation: (nationId) => get().arachne_nodes.filter(n => n.nationId === nationId),
+  arachne_getHighRiskNodes: () => get().arachne_nodes.filter(n => n.riskScore >= 75),
+  arachne_getMappedNodes: () => get().arachne_nodes.filter(n => n.exposureLevel === 'MAPPED'),
+  arachne_getActionableFusions: () => get().arachne_fusionProducts.filter(f => f.actionableFlag),
+  arachne_getLinksForNode: (nodeId) => get().arachne_links.filter(l => l.sourceNodeId === nodeId || l.targetNodeId === nodeId),
+
+  arachne_deployFeed: (feed, currentTick) => set(produce((draft: ArachneState) => {
+    draft.arachne_feeds.push({
+      ...feed,
+      id: `arc_feed_${currentTick}_${Math.random().toString(36).slice(2,7)}`,
+      deployedAtTick: currentTick,
+      nodesDiscoveredTotal: 0,
+      lastYieldTick: currentTick
+    });
+  })),
+
+  arachne_retractFeed: (feedId) => set(produce((draft: ArachneState) => {
+    const idx = draft.arachne_feeds.findIndex(f => f.id === feedId);
+    if (idx !== -1) draft.arachne_feeds[idx].isActive = false;
+  })),
+
+  arachne_allocateBudget: (amount) => set(produce((draft: ArachneState) => {
+    draft.arachne_budget.totalAllocated += amount;
+    draft.arachne_budget.remaining += amount;
+  })),
+
+  arachne_addNode: (node) => {
+    const id = `arc_node_${Math.random().toString(36).slice(2,9)}`;
+    set(produce((draft: ArachneState) => {
+      draft.arachne_nodes.push({ ...node, id, firstObservedTick: useWorldStore.getState().currentTick });
+      draft.arachne_totalNodesDiscovered++;
+    }));
+    return id;
+  },
+
+  arachne_addLink: (link) => {
+    const id = `arc_link_${Math.random().toString(36).slice(2,9)}`;
+    set(produce((draft: ArachneState) => {
+      draft.arachne_links.push({ ...link, id, firstObservedTick: useWorldStore.getState().currentTick });
+      draft.arachne_totalLinksDiscovered++;
+    }));
+    return id;
+  },
+
+  arachne_updateNodeExposure: (nodeId, level) => set(produce((draft: ArachneState) => {
+    const node = draft.arachne_nodes.find(n => n.id === nodeId);
+    if (node && node.exposureLevel !== 'BURNED') {
+      node.exposureLevel = level;
+    }
+  })),
+
+  arachne_burnNode: (nodeId, currentTick) => set(produce((draft: ArachneState) => {
+    const node = draft.arachne_nodes.find(n => n.id === nodeId);
+    if (node && !node.isBurned) {
+      node.isBurned = true;
+      node.burnedAtTick = currentTick;
+      node.exposureLevel = 'BURNED';
+      if (!draft.arachne_burnedNodes.includes(nodeId)) {
+        draft.arachne_burnedNodes.push(nodeId);
+      }
+    }
+  })),
+
+  arachne_processTick: (currentTick: number) => {
+    const state = get();
+    if (state.arachne_lastProcessedTick === currentTick) return;
+
+    const sigintState = sigintStore.getState();
+    const confirmedSignals = sigintState.u8200GetConfirmedSignals ? sigintState.u8200GetConfirmedSignals() : [];
+    
+    // finintStore might not be fully implemented yet, but we will mock its shape
+    const finintState = finintStore.getState() as any;
+    const criticalFlags = (finintState.finint_flags || []).filter((f: any) => f.severity === 'HIGH' || f.severity === 'CRITICAL');
+
+    const worldState = useWorldStore.getState();
+    const defcon = defconStore.getState().currentDefconLevel ?? 3;
+    const defconBoost = (6 - defcon) * 0.08;
+
+    let budgetSpent = state.arachne_budget.spent;
+    const activeFeeds = state.arachne_feeds.filter(f => f.isActive);
+    activeFeeds.forEach(feed => { budgetSpent += feed.dailyCost; });
+    const remaining = state.arachne_budget.totalAllocated - budgetSpent;
+
+    let feeds = [...state.arachne_feeds];
+    if (remaining <= 0) {
+      feeds = feeds.map(f => f.isActive ? { ...f, isActive: false } : f);
+    }
+
+    let nodes = [...state.arachne_nodes];
+    let links = [...state.arachne_links];
+    let fusions = [...state.arachne_fusionProducts];
+    let burnedNodeIds = [...state.arachne_burnedNodes];
+    let nodesDiscovered = 0;
+    let linksDiscovered = 0;
+
+    // Discovery
+    feeds.forEach(feed => {
+      if (!feed.isActive) return;
+      const discoveryProb = (feed.coverageDepth / 100) * (1 + defconBoost);
+      if (Math.random() < discoveryProb) {
+        let nodeType: ArachneNodeType = 'PERSON';
+        const typeRoll = Math.random();
+        if (feed.sourceType === 'CORPORATE_REGISTRY') {
+          nodeType = typeRoll < 0.5 ? 'ORGANISATION' : typeRoll < 0.8 ? 'FINANCIAL_ENTITY' : 'PERSON';
+        } else if (feed.sourceType === 'SHIPPING_MANIFEST') {
+          nodeType = typeRoll < 0.5 ? 'VESSEL' : typeRoll < 0.8 ? 'FACILITY' : 'ORGANISATION';
+        } else if (feed.sourceType === 'PROCUREMENT_DATABASE') {
+          nodeType = typeRoll < 0.5 ? 'ORGANISATION' : typeRoll < 0.8 ? 'STATE_ENTITY' : 'FACILITY';
+        } else if (feed.sourceType === 'SOCIAL_NETWORK') {
+          nodeType = typeRoll < 0.7 ? 'PERSON' : 'PROXY_GROUP';
+        } else if (feed.sourceType === 'NEWS_AGGREGATOR') {
+          nodeType = typeRoll < 0.4 ? 'PERSON' : typeRoll < 0.8 ? 'ORGANISATION' : 'STATE_ENTITY';
+        } else if (feed.sourceType === 'SATELLITE_METADATA') {
+          nodeType = typeRoll < 0.5 ? 'FACILITY' : 'VESSEL';
+        } else if (feed.sourceType === 'FINANCIAL_FILING') {
+          nodeType = typeRoll < 0.4 ? 'FINANCIAL_ENTITY' : typeRoll < 0.8 ? 'PERSON' : 'ORGANISATION';
+        } else if (feed.sourceType === 'DIPLOMATIC_REGISTRY') {
+          nodeType = typeRoll < 0.6 ? 'PERSON' : 'STATE_ENTITY';
+        }
+        
+        const existingNodeIdx = nodes.findIndex(n => n.nationId === feed.targetNationId && n.exposureLevel === 'SUSPECTED');
+        if (existingNodeIdx >= 0) {
+           nodes[existingNodeIdx] = { ...nodes[existingNodeIdx], exposureLevel: 'IDENTIFIED', lastActiveObservationTick: currentTick };
+        } else {
+           const isSanctioned = false; // Add logic if needed
+           const baseRisk = 30 + (isSanctioned ? 20 : 0) + ((6-defcon)*5);
+           const newNode: ArachneNode = {
+             id: `arc_node_${currentTick}_${Math.random().toString(36).slice(2,7)}`,
+             label: arachne_generateNodeLabel(nodeType, feed.targetNationId, nodes.length),
+             type: nodeType,
+             nationId: feed.targetNationId,
+             exposureLevel: 'SUSPECTED',
+             riskScore: Math.min(100, baseRisk),
+             sanctionedFlag: isSanctioned,
+             proliferationFlag: false,
+             corruptionFlag: false,
+             linkedEntityIds: [],
+             sourceTypes: [feed.sourceType],
+             firstObservedTick: currentTick,
+             lastActiveObservationTick: currentTick,
+             notes: '',
+             isBurned: false,
+             burnedAtTick: null
+           };
+           nodes.push(newNode);
+           nodesDiscovered++;
+        }
+        
+        const nationNodes = nodes.filter(n => n.nationId === feed.targetNationId && !n.isBurned);
+        if (nationNodes.length >= 2 && Math.random() < 0.4) {
+          const n1 = nationNodes[Math.floor(Math.random() * nationNodes.length)];
+          const n2 = nationNodes[Math.floor(Math.random() * nationNodes.length)];
+          if (n1.id !== n2.id && !links.find(l => (l.sourceNodeId === n1.id && l.targetNodeId === n2.id) || (l.sourceNodeId === n2.id && l.targetNodeId === n1.id))) {
+            const newLink: ArachneLink = {
+              id: `arc_link_${currentTick}_${Math.random().toString(36).slice(2,7)}`,
+              sourceNodeId: n1.id,
+              targetNodeId: n2.id,
+              linkType: 'CO_LOCATION', // Simplification
+              confidence: 50,
+              firstObservedTick: currentTick,
+              lastConfirmedTick: currentTick,
+              financialValue: null,
+              notes: ''
+            };
+            links.push(newLink);
+            linksDiscovered++;
+            
+            const n1Idx = nodes.findIndex(n => n.id === n1.id);
+            const n2Idx = nodes.findIndex(n => n.id === n2.id);
+            nodes[n1Idx] = { ...nodes[n1Idx], linkedEntityIds: [...nodes[n1Idx].linkedEntityIds, n2.id] };
+            nodes[n2Idx] = { ...nodes[n2Idx], linkedEntityIds: [...nodes[n2Idx].linkedEntityIds, n1.id] };
+          }
+        }
+        
+        const feedIdx = feeds.findIndex(f => f.id === feed.id);
+        if (feedIdx !== -1) {
+           feeds[feedIdx] = { ...feeds[feedIdx], nodesDiscoveredTotal: feeds[feedIdx].nodesDiscoveredTotal + 1, lastYieldTick: currentTick };
+        }
+      }
+    });
+
+    // SIGINT updates
+    confirmedSignals.forEach(signal => {
+      const signalNodes = nodes.filter(n => n.nationId === signal.sourceNationId && !n.isBurned);
+      signalNodes.forEach(node => {
+        if (node.linkedEntityIds.length > 0) { // Simplification
+          const idx = nodes.findIndex(n => n.id === node.id);
+          nodes[idx] = { ...nodes[idx], riskScore: Math.min(100, nodes[idx].riskScore + 10) };
+          if (nodes[idx].exposureLevel === 'SUSPECTED') nodes[idx].exposureLevel = 'IDENTIFIED';
+        }
+      });
+    });
+
+    // FININT updates
+    criticalFlags.forEach((flag: any) => {
+      if (flag.linkedArachneNodeIds?.length > 0) {
+        flag.linkedArachneNodeIds.forEach((id: string) => {
+           const idx = nodes.findIndex(n => n.id === id);
+           if (idx !== -1) {
+             nodes[idx] = { ...nodes[idx], riskScore: Math.min(100, nodes[idx].riskScore + 15) };
+             if (nodes[idx].exposureLevel === 'SUSPECTED') nodes[idx].exposureLevel = 'IDENTIFIED';
+           }
+        });
+      } else {
+        const newNode: ArachneNode = {
+           id: `arc_node_${currentTick}_${Math.random().toString(36).slice(2,7)}`,
+           label: arachne_generateNodeLabel('FINANCIAL_ENTITY', flag.sourceNationId, nodes.length),
+           type: 'FINANCIAL_ENTITY',
+           nationId: flag.sourceNationId,
+           exposureLevel: 'SUSPECTED',
+           riskScore: Math.min(100, 50 + ((6-defcon)*5)),
+           sanctionedFlag: false,
+           proliferationFlag: false,
+           corruptionFlag: false,
+           linkedEntityIds: [],
+           sourceTypes: ['FINANCIAL_FILING'],
+           firstObservedTick: currentTick,
+           lastActiveObservationTick: currentTick,
+           notes: '',
+           isBurned: false,
+           burnedAtTick: null
+        };
+        nodes.push(newNode);
+        nodesDiscovered++;
+      }
+    });
+
+    // Fusion products
+    const nations = [...new Set(nodes.map(n => n.nationId))];
+    nations.forEach(nationId => {
+      const mappedNodes = nodes.filter(n => n.nationId === nationId && n.exposureLevel === 'MAPPED');
+      if (mappedNodes.length >= 3) {
+         const exists = fusions.some(f => f.involvedNationIds.includes(nationId) && f.fusionType === 'NETWORK_MAP' && (currentTick - f.producedAtTick < 20));
+         if (!exists) {
+           fusions.push({
+             id: `arc_fusion_${currentTick}_${Math.random().toString(36).slice(2,7)}`,
+             producedAtTick: currentTick,
+             involvedNodeIds: mappedNodes.map(n => n.id),
+             involvedNationIds: [nationId],
+             fusionType: 'NETWORK_MAP',
+             summary: generateArachneFusionSummary(mappedNodes, 'NETWORK_MAP', nationId, currentTick),
+             confidence: 85,
+             actionableFlag: true,
+             linkedSignalIds: [],
+             linkedFinintFlags: []
+           });
+            useWorldStore.getState().addGlobalEvent(
+              `Arachne Fusion Product generated for ${nationId}.`,
+              'WARNING'
+            );
+         }
+      }
+    });
+
+    // Burn mechanics
+    nodes.filter(n => n.exposureLevel === 'MAPPED' && !n.isBurned).forEach(node => {
+      const activeDuration = currentTick - node.firstObservedTick;
+      const burnProb = 0.005 * (activeDuration / 10);
+      if (Math.random() < burnProb) {
+         const idx = nodes.findIndex(n => n.id === node.id);
+         nodes[idx] = { ...nodes[idx], isBurned: true, burnedAtTick: currentTick, exposureLevel: 'BURNED' };
+         burnedNodeIds.push(node.id);
+         useWorldStore.getState().addGlobalEvent(
+           `Arachne Node BURNED: ${node.label}`,
+           'CRITICAL'
+         );
+      }
+    });
+
+    // if (gothamStore.getState().ingestArachneNodes) {
+    //     gothamStore.getState().ingestArachneNodes(nodes, links);
+    // }
+
+    set({
+      arachne_feeds: feeds,
+      arachne_nodes: nodes,
+      arachne_links: links,
+      arachne_fusionProducts: fusions,
+      arachne_budget: { ...state.arachne_budget, spent: budgetSpent, remaining: Math.max(0, remaining) },
+      arachne_burnedNodes: burnedNodeIds,
+      arachne_lastProcessedTick: currentTick,
+      arachne_totalNodesDiscovered: state.arachne_totalNodesDiscovered + nodesDiscovered,
+      arachne_totalLinksDiscovered: state.arachne_totalLinksDiscovered + linksDiscovered
+    });
+  }
+
 }));

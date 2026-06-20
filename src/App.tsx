@@ -97,6 +97,10 @@ import { PostGameDebrief } from './components/debrief/PostGameDebrief';
 // Immersion upgrade: Comms
 import CommsPanel from './components/hud/CommsPanel';
 import CommsSyncController from './components/hud/CommsSyncController';
+import DarkMirrorWidget from './components/hud/DarkMirrorWidget';
+import CIAStatusWidget from './components/hud/CIAStatusWidget';
+import CIAPanel from './components/panels/CIAPanel';
+
 import { useCommsStore } from './store/commsStore';
 
 import CinematicsManager from './components/cinematics/CinematicsManager';
@@ -1497,6 +1501,8 @@ export default function App() {
               <div className="absolute top-2 right-2 z-40 pointer-events-none flex flex-col items-end gap-2">
                 <EWStatusWidget />
                 <DefenseIndustryWidget />
+                <DarkMirrorWidget />
+                <CIAStatusWidget />
               </div>
 
               {/* Optional dynamic Layer controller */}
@@ -1645,6 +1651,7 @@ export default function App() {
         {uiStore.activePanelId === 'sigint' && <SigintPanel onClose={() => uiStore.closeActivePanel()} />}
         {uiStore.activePanelId === 'targetedOps' && <TargetedOperationsPanel onClose={() => uiStore.closeActivePanel()} />}
         {uiStore.activePanelId === 'humint' && <HumintPenetrationSuite onClose={() => uiStore.closeActivePanel()} />}
+        {uiStore.activePanelId === 'cia' && <CIAPanel onClose={() => uiStore.closeActivePanel()} />}
         {uiStore.activePanelId === 'deception' && <DeceptionOperationsSuite onClose={() => uiStore.closeActivePanel()} />}
         {uiStore.activePanelId === 'counterProliferation' && <CounterProliferationSuite onClose={() => uiStore.closeActivePanel()} />}
         {uiStore.activePanelId === 'mirrorIntel' && <MirrorIntelPanel isOpen={true} onClose={() => uiStore.closeActivePanel()} />}

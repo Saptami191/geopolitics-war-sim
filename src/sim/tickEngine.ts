@@ -41,6 +41,7 @@ import { useTargetedOperationsStore } from '../store/targetedOperationsStore';
 import { useHumintStore } from '../store/humintStore';
 import { useDeceptionStore } from '../store/deceptionStore';
 import { useNuclearStore } from '../store/nuclearStore';
+import { useCiaStore } from '../store/ciaStore';
 import { useConventionalOpsStore } from '../store/conventionalOpsStore';
 import { useA2ADStore } from '../store/a2adStore';
 import { useEWStore } from '../store/ewStore';
@@ -147,6 +148,11 @@ export function executeSimulationStep() {
 
     // Unit 8200 SIGINT Platform
     useSigintStore.getState().u8200ProcessTick(draft.currentTick);
+
+    // Arachne OSINT & FININT Platforms
+    useArachneStore.getState().arachne_processTick(draft.currentTick);
+    useFinintStore.getState().finint_processTick(draft.currentTick);
+    useCiaStore.getState().cia_processTick(draft.currentTick);
 
     // 8. Process non-player autonomous decisions & hostile retorts
     processAllAI(draft, player.countryId);
