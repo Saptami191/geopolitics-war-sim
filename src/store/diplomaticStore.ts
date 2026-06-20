@@ -548,8 +548,8 @@ export const useDiplomaticStore = create<DiplomaticState & DiplomaticActions>()(
        });
 
        // PART 2 TICK PIPELINE PROCESSOR INTEGRATION
-       const playerAllies = Object.values(draft.diplo_treaties)
-         .filter(t => t.type === 'MUTUAL_DEFENCE' && t.status === 'RATIFIED' && (t as any).partyNationIds.includes('US'))
+       const playerAllies = Object.values(draft.diplo_treaties as any)
+         .filter(t => (t as any).type === 'MUTUAL_DEFENCE' && (t as any).status === 'RATIFIED' && (t as any).partyNationIds.includes('US'))
          .flatMap(t => (t as any).partyNationIds)
          .filter(id => id !== 'US');
 

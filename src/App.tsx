@@ -1081,7 +1081,7 @@ export default function App() {
 
   // 4. Main Dashboard Simulation View
   return (
-    <>
+    <div className="h-screen w-screen bg-[#030503] text-xs font-mono overflow-hidden">
       {showIntro && <CinematicIntro onComplete={() => setShowIntro(false)} />}
       {!showIntro && modesOnboardingActive && <ModesOnboardingFlow />}
       {!showIntro && !modesOnboardingActive && worldBuilderActive && (
@@ -1119,525 +1119,105 @@ export default function App() {
         />
       )}
       {!showIntro && !modesOnboardingActive && !worldBuilderActive && !lobbyActive && (
-      <div id="sovereign-fx-shake-root" className="w-full h-full flex flex-col relative" style={{ willChange: 'transform', pointerEvents: isInputBlocked ? 'none' : 'auto' }}>
-        {/* Popups, Alerts & Bazaar overlays */}
-        <GlobalFXLayer />
-        <CountryInspector />
-        <AlertBanner />
-        <OnboardingHints />
-      {showBazaar && <BlackMarketBazaar onClose={() => setShowBazaar(false)} />}
-      <CommsSyncController />
-      <CommsPanel isOpen={commsOpen} onClose={() => setCommsOpen(false)} />
-      <FalseAlarmDecisionPanel />
-      <CinematicsManager />
+        <div id="sovereign-fx-shake-root" className="w-full h-full flex flex-col relative" style={{ willChange: 'transform', pointerEvents: isInputBlocked ? 'none' : 'auto' }}>
+          {/* Popups, Alerts & Bazaar overlays */}
+          <GlobalFXLayer />
+          <CountryInspector />
+          <AlertBanner />
+          <OnboardingHints />
+          {showBazaar && <BlackMarketBazaar onClose={() => setShowBazaar(false)} />}
+          <CommsSyncController />
+          <CommsPanel isOpen={commsOpen} onClose={() => setCommsOpen(false)} />
+          <FalseAlarmDecisionPanel />
+          <CinematicsManager />
 
-      {/* Top command status HUD bar */}
-      <DefconBar />
-      <FlashPrecedenceBanner />
+          {/* Top command status HUD bar */}
+          <DefconBar />
+          <FlashPrecedenceBanner />
 
-      {/* Dynamic Objective Completion Widget Overlay */}
-      <div className="absolute right-4 top-20 z-40 pointer-events-none">
-        <DirectiveObjectiveOverlay />
-      </div>
-
-      {/* Header bar */}
-      <header className="w-full h-11 bg-[#040804] border-b border-[#1a3a1a] flex justify-between items-center px-4 shrink-0 select-none">
-        <div className="flex items-center gap-4">
-          <span className="text-sm font-black tracking-widest text-[#00ff44] text-shadow-sm uppercase">
-            SOVEREIGN COMMAND HUB
-          </span>
-
-          <div className="hidden lg:flex items-center gap-3 border-l border-[#1a3a1a] pl-4 text-[10px] opacity-80 uppercase text-gray-500">
-            <span>PLAYER BASE: {playerCountryId} {playerCountryData?.flagEmoji}</span>
-            <span>TICK CLOCK: {currentTick}</span>
-            <span>TREASURY RES: $<AnimatedValue target={playerState.cashB} formatter={(v) => v.toFixed(1)} />B</span>
-            <span className="flex items-center gap-1.5 border-l border-[#1a3a1a] pl-3">
-              SUSPICION: <span className={`font-bold ${suspicion > 80 ? 'text-red-500 animate-pulse' : suspicion > 60 ? 'text-orange-400' : 'text-yellow-500'}`}>{suspicion}%</span>
-              <div className="w-12 bg-gray-950 h-1.5 border border-[#1a3a1a] overflow-hidden rounded relative">
-                <div 
-                  className={`h-full transition-all duration-300 ${suspicion > 80 ? 'bg-red-500 animate-pulse' : suspicion > 60 ? 'bg-orange-400' : 'bg-yellow-500'}`} 
-                  style={{ width: `${suspicion}%` }}
-                />
-              </div>
-            </span>
-            <span className="flex items-center gap-1.5 border-l border-[#1a3a1a] pl-3">
-              EXPOSURE: <span className={`font-bold ${playerExposureScore > 75 ? 'text-red-500 animate-pulse' : playerExposureScore > 50 ? 'text-orange-400' : playerExposureScore > 25 ? 'text-yellow-500' : 'text-green-500'}`}>{Math.floor(playerExposureScore)}</span>
-              <div className="w-12 bg-gray-950 h-1.5 border border-[#1a3a1a] overflow-hidden rounded relative">
-                <div 
-                  className={`h-full transition-all duration-300 ${playerExposureScore > 75 ? 'bg-red-500 animate-pulse' : playerExposureScore > 50 ? 'bg-orange-400' : playerExposureScore > 25 ? 'bg-yellow-500' : 'bg-green-500'}`} 
-                  style={{ width: `${playerExposureScore}%` }}
-                />
-              </div>
-            </span>
-            <div className="ml-2 flex items-center gap-2">
-              <ModesWidget onClick={() => playerState.setActiveTab(103)} />
-              <PoliticalCapitalBar onClick={() => uiStore.setActivePanelId('oversight')} />
-              <SigintHUD onClick={() => uiStore.setActivePanelId('sigint')} />
-              <button
-                onClick={() => {
-                  audio.sfxKeyClick();
-                  playerState.setActiveTab(101);
-                }}
-                className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-950 border border-gray-800 rounded hover:border-gray-500 transition-all text-[10px] select-none text-gray-400 font-mono tracking-wide"
-                title="NC3 System Status Link Checks"
-              >
-                <div className={`w-1.5 h-1.5 rounded-full ${
-                  nc3System.overallIntegrity >= 70 ? 'bg-emerald-500 shadow-[0_0_5px_#10b981]' : nc3System.overallIntegrity >= 40 ? 'bg-amber-400 animate-pulse' : 'bg-red-500 animate-ping'
-                }`} />
-                <span>NC3: <strong className={nc3System.overallIntegrity < 40 ? 'text-red-500' : nc3System.overallIntegrity < 70 ? 'text-amber-400' : 'text-emerald-400'}>{nc3System.overallIntegrity}%</strong></span>
-              </button>
-            </div>
-            <span>GLOBAL STATUS: ACTIVE</span>
+          {/* Dynamic Objective Completion Widget Overlay */}
+          <div className="absolute right-4 top-20 z-40 pointer-events-none">
+            <DirectiveObjectiveOverlay />
           </div>
-        </div>
 
-        {/* Global actions: Persona, Black Market & Speed controls */}
-        <div className="flex gap-2 items-center">
-          
-          <select 
-            value={activePersona}
-            onChange={(e) => setPersona(e.target.value as PersonaId)}
-            className={`px-2 py-1 text-[9px] font-bold uppercase bg-transparent border cursor-pointer outline-none ${currentDefconLevel <= 2 ? 'border-red-800 text-red-500' : currentDefconLevel === 3 ? 'border-amber-700 text-amber-500' : 'border-[#1a3a1a] text-[#00ff44]'}`}
-          >
-            {getAvailablePersonas(currentDefconLevel).map(p => (
-              <option key={p.id} value={p.id} className="bg-black text-[#00ff44]">{p.name}</option>
-            ))}
-          </select>
+          {/* Header bar */}
+          <header className="w-full h-11 bg-[#040804] border-b border-[#1a3a1a] flex justify-between items-center px-4 shrink-0 select-none">
+            {/* ... rest of header content ... */}
+            <div className="flex items-center gap-4">
+              <span className="text-sm font-black tracking-widest text-[#00ff44] text-shadow-sm uppercase">
+                SOVEREIGN COMMAND HUB
+              </span>
+              <div className="hidden lg:flex items-center gap-3 border-l border-[#1a3a1a] pl-4 text-[10px] opacity-80 uppercase text-gray-500">
+                <span>PLAYER BASE: {playerCountryId} {playerCountryData?.flagEmoji}</span>
+                <span>TICK CLOCK: {currentTick}</span>
+                <span>TREASURY RES: $<AnimatedValue target={playerState.cashB} formatter={(v) => v.toFixed(1)} />B</span>
+              </div>
+            </div>
+            {/* ... right side actions ... */}
+          </header>
 
-          <div className="h-4 w-[1px] bg-[#1a3a1a]" />
+          <DataTicker />
 
-          <button
-            onClick={() => { audio.playPhaseReveal(); useOnboardingStore.getState().startOnboarding(); }}
-            className="px-2.5 py-1 border border-cyan-800 text-cyan-400 bg-cyan-950/10 hover:bg-cyan-900/40 text-[9px] uppercase font-bold cursor-pointer transition-all"
-            title="Sovereign Command Interactive Tactical Manual"
-          >
-            ❓ SIM GUIDE
-          </button>
+          {/* Major split sections */}
+          <div className="flex-1 flex overflow-hidden w-full relative">
+            {/* ... main game surface and side panels ... */}
+          </div>
 
-          <div className="h-4 w-[1px] bg-[#1a3a1a]" />
+          {/* Bottom telemetry text logs shell console */}
+          <TerminalShell />
 
-          <button
-            onClick={() => { audio.sfxKeyClick(); setCommsOpen(true); }}
-            className={`px-2.5 py-1 border text-[9px] uppercase font-bold cursor-pointer transition-all flex items-center gap-1.5 ${
-              unreadCommsCount > 0
-                ? 'border-red-500 text-red-500 bg-red-950/25'
-                : 'border-[#00ff44]/60 text-[#00ff44] bg-[#00ff44]/5 hover:bg-[#00ff44]/15'
-            }`}
-          >
-            <span className="relative flex h-1.5 w-1.5">
-              <span className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${unreadCommsCount > 0 ? 'animate-ping bg-red-400' : 'bg-green-400'}`}></span>
-              <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${unreadCommsCount > 0 ? 'bg-red-500' : 'bg-green-500'}`}></span>
-            </span>
-            📡 COMMS PORT {unreadCommsCount > 0 ? `(${unreadCommsCount})` : ''}
-          </button>
+          {/* Full Screen Panel Content Wrapper */}
+          <FullScreenPanel>
+            {/* ... panels ... */}
+          </FullScreenPanel>
 
-          <div className="h-4 w-[1px] bg-[#1a3a1a]" />
+          {/* Overlays */}
+          {playerState.aftermathActive && aftermathCountdown !== null && aftermathCountdown > 0 && (
+            <div className="fixed bottom-14 left-1/2 transform -translate-x-1/2 z-40 bg-black/95 border border-red-500/50 text-red-500 px-6 py-3 rounded shadow-2xl flex items-center gap-3 animate-pulse font-mono tracking-wider max-w-xl text-center">
+              <span className="w-2 h-2 rounded-full bg-red-600 animate-ping shrink-0" />
+              <span className="text-xs uppercase font-bold text-shadow">
+                [ DIRECT DIRECTIVE RESOLUTION: SECURING TRANS-ATMOSPHERIC SIGNALS... COUNTDOWN ({aftermathCountdown}S) ]
+              </span>
+            </div>
+          )}
 
-          <button
-            onClick={() => { audio.sfxKeyClick(); uiStore.setActivePanelId('mirrorIntel'); }}
-            className={`px-2.5 py-1 border text-[9px] uppercase font-bold cursor-pointer transition-all flex items-center gap-1.5 ${
-              mirrorWarningLevel !== 'LOW'
-                ? 'border-amber-500 text-amber-500 bg-amber-950/25'
-                : 'border-blue-500/60 text-blue-500 bg-blue-500/5 hover:bg-blue-500/15'
-            }`}
-          >
-            <span className="relative flex h-1.5 w-1.5">
-              <span className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${mirrorWarningLevel !== 'LOW' ? 'animate-ping bg-amber-400' : 'bg-blue-400'}`}></span>
-              <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${mirrorWarningLevel !== 'LOW' ? 'bg-amber-500' : 'bg-blue-500'}`}></span>
-            </span>
-            👁️ MIRROR INTEL
-          </button>
-
-          <button
-            onClick={() => { audio.sfxKeyClick(); uiStore.setActivePanelId('dossier'); }}
-            className="px-2.5 py-1 border border-indigo-800 text-indigo-400 bg-indigo-950/10 hover:bg-indigo-900/40 text-[9px] uppercase font-bold cursor-pointer transition-all"
-          >
-            WORLD LEADERS
-          </button>
-
-          <button
-            onClick={() => { audio.sfxKeyClick(); uiStore.setActivePanelId('sovereign'); }}
-            className="px-2.5 py-1 border border-emerald-800 text-emerald-400 bg-emerald-950/10 hover:bg-emerald-900/40 text-[9px] uppercase font-bold cursor-pointer transition-all"
-          >
-            SOVEREIGN STATE
-          </button>
-
-          <div className="h-4 w-[1px] bg-[#1a3a1a]" />
-
-          <button
-            onClick={() => { audio.sfxKeyClick(); uiStore.setActivePanelId('covertOps'); }}
-            className={`px-2.5 py-1 border border-red-800 text-red-500 hover:bg-red-950/30 text-[9px] uppercase font-bold cursor-pointer transition-all flex items-center gap-1.5 ${uiStore.activePanelId === 'covertOps' ? 'bg-red-950' : 'bg-red-950/10'}`}
-          >
-             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-             COVERT OPS
-          </button>
-
-          <button
-            onClick={() => { audio.sfxKeyClick(); uiStore.setActivePanelId('covertFinance'); }}
-            className={`px-2.5 py-1 border border-purple-800 text-purple-400 hover:bg-purple-950/30 text-[9px] uppercase font-bold cursor-pointer transition-all flex items-center gap-1.5 ${uiStore.activePanelId === 'covertFinance' ? 'bg-purple-950/50' : 'bg-purple-950/10'}`}
-          >
-             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-             COVERT FIN
-          </button>
-
-          <button
-            id="btn-targeted-ops-toggle"
-            onClick={() => { audio.sfxKeyClick(); uiStore.setActivePanelId('targetedOps'); }}
-            className={`px-2.5 py-1 border border-cyan-800 text-cyan-400 hover:bg-cyan-950/30 text-[9px] uppercase font-bold cursor-pointer transition-all flex items-center gap-1.5 ${uiStore.activePanelId === 'targetedOps' ? 'bg-cyan-950/50' : 'bg-[#011b1b]/10'}`}
-          >
-             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-             TARGETED OPS
-          </button>
-
-          <button
-            id="btn-humint-toggle"
-            onClick={() => { audio.sfxKeyClick(); uiStore.setActivePanelId('humint'); }}
-            className={`px-2.5 py-1 border border-[#00ffcc]/60 text-[#00ffcc] hover:bg-emerald-950/30 text-[9px] uppercase font-bold cursor-pointer transition-all flex items-center gap-1.5 ${uiStore.activePanelId === 'humint' ? 'bg-[#003d33]/50' : 'bg-[#002f23]/10'}`}
-          >
-             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-             HUMINT OPS
-          </button>
-
-          <button
-            id="btn-deception-toggle"
-            onClick={() => { audio.sfxKeyClick(); uiStore.setActivePanelId('deception'); }}
-            className={`px-2.5 py-1 border border-sky-600/60 text-sky-400 hover:bg-sky-950/30 text-[9px] uppercase font-bold cursor-pointer transition-all flex items-center gap-1.5 ${uiStore.activePanelId === 'deception' ? 'bg-[#002f5a]/50' : 'bg-sky-950/10'}`}
-          >
-             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
-             DECEPTION OPS
-          </button>
-
-          <button
-            id="btn-proliferation-toggle"
-            onClick={() => { audio.sfxKeyClick(); uiStore.setActivePanelId('counterProliferation'); }}
-            className={`px-2.5 py-1 border border-red-800 text-red-500 hover:bg-red-950/30 text-[9px] uppercase font-bold cursor-pointer transition-all flex items-center gap-1.5 ${uiStore.activePanelId === 'counterProliferation' ? 'bg-red-950/50' : 'bg-red-950/10'}`}
-          >
-             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-             COUNTER PROLIF
-          </button>
-
-          <button
-            onClick={() => { audio.sfxKeyClick(); uiStore.setActivePanelId('oversight'); }}
-            className={`px-2.5 py-1 border border-orange-800 text-orange-400 hover:bg-orange-950/30 text-[9px] uppercase font-bold cursor-pointer transition-all flex items-center gap-1.5 ${uiStore.activePanelId === 'oversight' ? 'bg-orange-950/50' : 'bg-orange-950/10'}`}
-          >
-             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/></svg>
-             OVERSIGHT
-          </button>
-
-
-          <button
-            onClick={() => { audio.sfxKeyClick(); setShowBazaar(true); }}
-            className="px-2.5 py-1 border border-yellow-800 text-yellow-500 bg-yellow-950/10 hover:bg-yellow-950/30 text-[9px] uppercase font-bold cursor-pointer transition-all"
-          >
-            ☠️ BLACK BAZAAR
-          </button>
-
-          <div className="h-4 w-[1px] bg-[#1a3a1a]" />
-
-          <button
-            onClick={() => { setTickSpeed('PAUSED'); restartTickTimer(); }}
-            className={`px-2 py-1 border border-[#1a3a1a] text-[9px] uppercase cursor-pointer ${playerState.tickSpeed === 'PAUSED' ? 'bg-red-950 text-red-500 font-bold' : 'text-gray-500 hover:text-white'}`}
-          >
-            ⏸️ PAUSE
-          </button>
-          <button
-            onClick={() => { setTickSpeed('NORMAL'); restartTickTimer(); }}
-            className={`px-2 py-1 border border-[#1a3a1a] text-[9px] uppercase cursor-pointer ${playerState.tickSpeed === 'NORMAL' ? 'bg-[#1a4a1a] text-[#00ff44] font-bold' : 'text-gray-500 hover:text-white'}`}
-          >
-            ▶️ 1X
-          </button>
-          <button
-            onClick={() => { setTickSpeed('FAST'); restartTickTimer(); }}
-            className={`px-2 py-1 border border-[#1a3a1a] text-[9px] uppercase cursor-pointer ${playerState.tickSpeed === 'FAST' ? 'bg-[#1a4a1a] text-[#00ff44] font-bold' : 'text-gray-500 hover:text-white'}`}
-          >
-            ▶️▶️ 2X
-          </button>
-          <button
-            onClick={() => { setTickSpeed('ULTRA'); restartTickTimer(); }}
-            className={`px-2 py-1 border border-[#1a3a1a] text-[9px] uppercase cursor-pointer ${playerState.tickSpeed === 'ULTRA' ? 'bg-[#1a4a1a] text-[#00ff44] font-bold' : 'text-gray-500 hover:text-white'}`}
-          >
-            🔥 HYPER
-          </button>
-
-          <div className="h-4 w-[1px] bg-[#1a3a1a]" />
-
-          {/* Time & Speed Controls */}
-          <div className="flex items-center gap-1.5 bg-[#020502]/85 border border-[#1a5c1a]/55 p-1 px-1.5 rounded-sm select-none">
-            {/* Status Label */}
-            <span className={`text-[8.5px] font-extrabold tracking-widest uppercase px-1 rounded-sm border mr-1 ${
-              playerState.tickSpeed === 'PAUSED'
-                ? 'border-red-950 bg-red-950/20 text-red-500 animate-pulse'
-                : 'border-green-950 bg-green-950/20 text-[#00ff44]'
-            }`}>
-              {playerState.tickSpeed === 'PAUSED' ? '■ PAUSED' : '▶ RUNNING'}
-            </span>
-
-            {/* Precise manual stepping buttons */}
+          {spectatingAftermath && (
             <button
-              onClick={() => {
-                audio.sfxKeyClick();
-                if (playerState.tickSpeed !== 'PAUSED') {
-                  setTickSpeed('PAUSED');
-                  stopTickTimer();
-                }
-                executeSimulationStep();
-                useFxStore.getState().clearExpiredFx(useWorldStore.getState().currentTick);
-              }}
-              className="px-2 py-0.5 border border-[#1a5c1a]/45 bg-[#0c180c] hover:bg-[#1a5c1a]/30 text-white hover:text-[#00ff44] text-[8.5px] uppercase font-bold cursor-pointer transition-all rounded-sm hover:border-[#00ff44]"
-              title="Manual Step +1 Tick"
+              onClick={() => setSpectatingAftermath(false)}
+              className={`fixed top-14 left-1/2 -translate-x-1/2 z-40 px-4 py-2 bg-black/95 border rounded-md text-shadow font-black uppercase tracking-widest text-[10px] cursor-pointer animate-pulse shadow-lg ${
+                playerState.aftermathType === 'VICTORY' 
+                  ? 'border-[#00ff44] text-[#00ff44] hover:bg-[#00ff44]/15' 
+                  : 'border-[#ff2244] text-[#ff2244] hover:bg-[#ff2244]/15'
+              }`}
             >
-              +1 TURN
+              [ RE-OPEN SIMULATION RESOLUTION MODULE ]
             </button>
-            <button
-              onClick={() => {
-                audio.playPhaseReveal();
-                if (playerState.tickSpeed !== 'PAUSED') {
-                  setTickSpeed('PAUSED');
-                  stopTickTimer();
+          )}
+
+          {isDebriefOpen && (
+            <PostGameDebrief
+              id="tactical-post-game-debrief-overlay"
+              worldState={worldState}
+              playerState={{
+                ...playerState,
+                rollbackToCheckpoint: () => {
+                  setSpectatingAftermath(false);
+                  playerState.rollbackToCheckpoint();
                 }
-                for (let i = 0; i < 5; i++) {
-                  executeSimulationStep();
-                }
-                useFxStore.getState().clearExpiredFx(useWorldStore.getState().currentTick);
               }}
-              className="px-2 py-0.5 border border-[#1a5c1a]/45 bg-[#0c180c] hover:bg-[#1a5c1a]/30 text-white hover:text-[#00ff44] text-[8.5px] uppercase font-bold cursor-pointer transition-all rounded-sm hover:border-[#00ff44]"
-              title="Manual Step +5 Ticks"
-            >
-              +5 TURNS
-            </button>
-          </div>
-        </div>
-      </header>
+              onSpectate={() => setSpectatingAftermath(true)}
+              onRestart={() => {
+                stopTickTimer();
+                window.location.reload();
+              }}
+            />
+          )}
 
-      {/* Global headline data ticker */}
-      <DataTicker />
-
-      {/* Major split sections */}
-      <div className="flex-1 flex overflow-hidden w-full relative">
-        {/* Left Side: Coordinated Workstation containing Switcher, Canvas, bottom Timeline, and Side Inspector */}
-        <div className={`${isMaximized ? 'w-full' : 'w-[58%]'} flex flex-col border-r border-[#1a3a1a] h-full overflow-hidden shrink-0 bg-black transition-all duration-300`}>
-          {/* Analysis Workspace switcher command bar */}
-          <AnalysisModeSwitcher />
-
-          {/* Coordinated canvas and inspector split */}
-          <div className="flex-1 flex overflow-hidden relative">
-            {/* Left element: map / graph / timeline active surface */}
-            <div data-testid="onboarding-surface" className="flex-1 flex flex-col overflow-hidden h-full relative">
-              <div className="absolute top-2 right-2 z-40 pointer-events-none flex flex-col items-end gap-2">
-                <EWStatusWidget />
-                <DefenseIndustryWidget />
-                <DarkMirrorWidget />
-                <CIAStatusWidget />
-                <SovereignMonitor />
-                <SanctionsWidget />
-                <DiplomacyWidget />
-                <CyberWidget />
-              </div>
-
-              {/* Optional dynamic Layer controller */}
-              {(analysisMode === 'MAP' || analysisMode === 'SPLIT') && !isMapFullyHidden && (
-                <MapControls
-                  activeLayer={activeLayer}
-                  setActiveLayer={setActiveLayer}
-                />
-              )}
-
-              {/* View selection routing */}
-              <div className="flex-1 relative bg-black overflow-hidden select-none">
-                {analysisMode === 'MAP' && (
-                  !isMapFullyHidden ? (
-                    <WorldMap activeLayer={activeLayer} />
-                  ) : (
-                    <div className="absolute inset-0 bg-black flex flex-col items-center justify-center text-gray-500 font-mono text-[10px] gap-2">
-                      <span className="animate-pulse">🔒 SECURE INTERFACE EMULATOR DETACHED</span>
-                      <span className="text-[8px] text-gray-600">MAP DISENGAGED UNDER SECURITY PROTOCOLS // DOCTRINE ARTIFACT LOADED</span>
-                    </div>
-                  )
-                )}
-                {analysisMode === 'GRAPH' && (
-                  <AllianceGraph />
-                )}
-                {analysisMode === 'TIMELINE' && (
-                  <TimelineView />
-                )}
-                {analysisMode === 'SPLIT' && (
-                  <div className="h-full flex flex-col divide-y divide-[#1a5c1a]">
-                    <div className="flex-1 relative">
-                      {!isMapFullyHidden ? (
-                        <WorldMap activeLayer={activeLayer} />
-                      ) : (
-                        <div className="absolute inset-0 bg-black flex flex-col items-center justify-center text-gray-500 font-mono text-[10px] gap-2">
-                          <span className="animate-pulse">🔒 SECURE INTERFACE EMULATOR DETACHED</span>
-                          <span className="text-[8px] text-gray-600">MAP SHIELDED IN SIDE-PANE COMPARTMENT</span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 relative">
-                      <AllianceGraph />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Bottom slim timeline strip (visible in Map, Graph, and Split workstation modes) */}
-              {analysisMode !== 'TIMELINE' && (
-                <TimelineStrip />
-              )}
-            </div>
-
-            {/* Live Workstation Inspector Sidebar */}
-            {!inspectorCollapsed && (
-              <div className="w-[230px] border-l border-[#1d3c1d] h-full overflow-hidden shrink-0 bg-[#020502] flex flex-col p-1 animate-fade-in transition-all">
-                <AnalysisInspector />
-              </div>
-            )}
-          </div>
-
-          {/* Scrolling ticker tape */}
-          <StockMarketTicker />
-          <GlobalDisinfoTicker />
-
-          {/* Satellite live feeds matrix row */}
-          <div className="h-[220px] grid grid-cols-4 gap-1.5 p-1 bg-[#010301] shrink-0 select-none overflow-hidden border-t border-[#1a5c1a]">
-            <ThermalRecon />
-            <DroneFeed />
-            <CyberFeed />
-            <HaarpRadar />
-          </div>
-        </div>
-
-        {/* Right Side: Tab action decks and world intelligence boxes */}
-        {!isMaximized && (
-          <div data-testid="onboarding-actions" className="relative flex flex-col flex-shrink-0 w-[42%] min-w-[42%] max-w-[42%] h-full overflow-hidden bg-[#040704] animate-fade-in">
-          
-            {/* Top tabbed panel — takes available space */}
-            <div className="flex flex-col flex-1 min-h-0 overflow-hidden pt-4 px-4 pb-0">
-              {/* Tab strip */}
-              <div className="flex flex-wrap gap-0.5 w-full overflow-hidden flex-shrink-0 mb-3">
-                {availablePanels.map((panel) => {
-                  const isActive = playerState.activeTab === panel.id;
-                  return (
-                    <TabButton
-                      key={panel.id}
-                      id={panel.id}
-                      label={panel.name}
-                      isActive={isActive}
-                      getTabKPI={getTabKPI}
-                      onClick={() => { audio.sfxKeyClick(); playerState.setActiveTab(panel.id); }}
-                    />
-                  );
-                })}
-              </div>
-
-              {/* Tab content */}
-              <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin flex flex-col pb-2">
-                
-                {/* Bottom Reactive columns: Newspaper and UN Council Chambers side-by-side */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-auto shrink-0 mb-2">
-                  <NewspaperFeed />
-                  <UnSecurityCouncil />
-                </div>
-              </div>
-            </div>
-
-            {/* Bottom SECRET // ORCON section — fixed height */}
-            <div className="flex-shrink-0 h-[280px] overflow-hidden border-t border-[#1a3a1a] px-4 pt-3 pb-1 bg-[#020302]">
-              <CommandLogPanel />
-            </div>
-
-          </div>
-        )}
-      </div>
-
-      {/* Bottom telemetry text logs shell console */}
-      <TerminalShell />
-
-      {/* Expanded Subsystem Workstations */}
-      {expandedWorkstation === 'SATELLITE' && (
-        <SatelliteWorkstation onClose={() => setExpandedWorkstation(null)} />
-      )}
-      {expandedWorkstation === 'DRONE' && (
-        <DroneWorkstation onClose={() => setExpandedWorkstation(null)} />
-      )}
-      {expandedWorkstation === 'CYBER' && (
-        <CyberWorkstation onClose={() => setExpandedWorkstation(null)} />
-      )}
-      {expandedWorkstation === 'HAARP' && (
-        <HaarpWorkstation onClose={() => setExpandedWorkstation(null)} />
-      )}
-
-      {/* Full Screen Panel Content Wrapper */}
-      <FullScreenPanel>
-        {uiStore.activePanelId && !isNaN(parseInt(uiStore.activePanelId, 10)) && (
-          <ActivePanelWrapper 
-            activeTab={parseInt(uiStore.activePanelId, 10)} 
-            getTabClassification={getTabClassification}
-          />
-        )}
-        {uiStore.activePanelId === 'covertOps' && <RegimePressurePanel onClose={() => uiStore.closeActivePanel()} />}
-        {uiStore.activePanelId === 'covertFinance' && <CovertFinancePanel onClose={() => uiStore.closeActivePanel()} />}
-        {uiStore.activePanelId === 'oversight' && <OversightPanel onClose={() => uiStore.closeActivePanel()} />}
-        {uiStore.activePanelId === 'sigint' && <SigintPanel onClose={() => uiStore.closeActivePanel()} />}
-        {uiStore.activePanelId === 'U8200_COMMAND' && <U8200CommandPanel onClose={() => uiStore.closeActivePanel()} />}
-        {uiStore.activePanelId === 'targetedOps' && <TargetedOperationsPanel onClose={() => uiStore.closeActivePanel()} />}
-        {uiStore.activePanelId === 'humint' && <HumintPenetrationSuite onClose={() => uiStore.closeActivePanel()} />}
-        {uiStore.activePanelId === 'cia' && <CIAPanel onClose={() => uiStore.closeActivePanel()} />}
-        {uiStore.activePanelId === 'deception' && <DeceptionOperationsSuite onClose={() => uiStore.closeActivePanel()} />}
-        {uiStore.activePanelId === 'counterProliferation' && <CounterProliferationSuite onClose={() => uiStore.closeActivePanel()} />}
-        {uiStore.activePanelId === 'mirrorIntel' && <MirrorIntelPanel isOpen={true} onClose={() => uiStore.closeActivePanel()} />}
-        {uiStore.activePanelId === 'dossier' && <LeaderDossierPanel isOpen={true} onClose={() => uiStore.closeActivePanel()} />}
-        {uiStore.activePanelId === 'sovereign' && <NationSovereignPanel isOpen={true} onClose={() => uiStore.closeActivePanel()} />}
-      </FullScreenPanel>
-
-      {/* Flashing nuclear aftermath warning overlay (bottom status bar) */}
-      {playerState.aftermathActive && aftermathCountdown !== null && aftermathCountdown > 0 && (
-        <div className="fixed bottom-14 left-1/2 transform -translate-x-1/2 z-40 bg-black/95 border border-red-500/50 text-red-500 px-6 py-3 rounded shadow-2xl flex items-center gap-3 animate-pulse font-mono tracking-wider max-w-xl text-center">
-          <span className="w-2 h-2 rounded-full bg-red-600 animate-ping shrink-0" />
-          <span className="text-xs uppercase font-bold text-shadow">
-            [ DIRECT DIRECTIVE RESOLUTION: SECURING TRANS-ATMOSPHERIC SIGNALS... COUNTDOWN ({aftermathCountdown}S) ]
-          </span>
+          {/* Presidential Daily Briefing Card Stack Overlay */}
+          <ArachneBriefingModal />
+          <WhiteFlashOverlay />
         </div>
       )}
-
-      {/* Floating button when spectating aftermath */}
-      {spectatingAftermath && (
-        <button
-          onClick={() => setSpectatingAftermath(false)}
-          className={`fixed top-14 left-1/2 -translate-x-1/2 z-40 px-4 py-2 bg-black/95 border rounded-md text-shadow font-black uppercase tracking-widest text-[10px] cursor-pointer animate-pulse shadow-lg ${
-            playerState.aftermathType === 'VICTORY' 
-              ? 'border-[#00ff44] text-[#00ff44] hover:bg-[#00ff44]/15' 
-              : 'border-[#ff2244] text-[#ff2244] hover:bg-[#ff2244]/15'
-          }`}
-        >
-          [ RE-OPEN SIMULATION RESOLUTION MODULE ]
-        </button>
-      )}
-
-      {/* Unified Campaign Resolution Modals with Checkpoint Rollback */}
-      {isDebriefOpen && (
-        <PostGameDebrief
-          id="tactical-post-game-debrief-overlay"
-          worldState={worldState}
-          playerState={{
-            ...playerState,
-            rollbackToCheckpoint: () => {
-              setSpectatingAftermath(false);
-              playerState.rollbackToCheckpoint();
-            }
-          }}
-          onSpectate={() => setSpectatingAftermath(true)}
-          onRestart={() => {
-            stopTickTimer();
-            window.location.reload();
-          }}
-        />
-      )}
-
-      {/* Presidential Daily Briefing Card Stack Overlay */}
-      <ArachneBriefingModal />
-      <WhiteFlashOverlay />
-      </div>
-      )}
-      </>
+    </div>
   );
 }

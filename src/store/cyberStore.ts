@@ -20,7 +20,8 @@ import {
   Cyber_IncidentResponse,
   Cyber_DefenceOperation,
   Cyber_Budget,
-  Cyber_ZeroDayMarket
+  Cyber_ZeroDayMarket,
+  Cyber2State
 } from '../types';
 
 import { useSigintStore } from './sigintStore';
@@ -224,6 +225,22 @@ export const useCyberStore = create<CyberState & CyberActions>()(
     cyber_totalIncidentsDetected: 0,
     cyber_totalZeroDaysDeployed: 0,
     cyber_directorLog: [],
+    cyber2: {
+      opsecProfiles: {},
+      coverStories: [],
+      supplyChainImplants: [],
+      cybintCollects: [],
+      cybintProducts: [],
+      activeCampaigns: [],
+      deterrenceRecords: [],
+      hackBackEvents: [],
+      hackBackAuthorityLevel: 'NO_AUTHORITY',
+      resilienceRecords: {},
+      aiCyberCampaigns: [],
+      cyberEventLog: [],
+      campaignEventLog: [],
+      deterrenceEventLog: []
+    },
 
     cyber_launchAPTOperation: (operation, currentTick) => {
        const id = `apt_op_${Date.now()}_${Math.floor(Math.random()*1000)}`;
