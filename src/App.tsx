@@ -196,17 +196,17 @@ function TabButton({ id, label, isActive, getTabKPI, onClick }: TabButtonProps) 
   return (
     <button
       onClick={onClick}
-      className={`btn-sovereign text-[8px] tracking-wider py-1.5 px-3.5 whitespace-nowrap flex flex-col justify-center items-center min-w-[110px] border rounded transition-all select-none cursor-pointer ${alertClass} ${
+      className={`btn-sovereign text-[0.65rem] tracking-wider py-1.5 px-1.5 flex flex-col justify-center items-center flex-shrink min-w-0 border rounded transition-all select-none cursor-pointer ${alertClass} ${
         isActive 
           ? 'border-[#00ff44] text-[#00ff44] bg-[#0c1f0d] shadow-[0_0_8px_rgba(0,255,68,0.15)] active' 
           : 'border-[#1a5c1a]/35 bg-[#020502] text-gray-400 hover:border-green-800 hover:text-white'
       }`}
     >
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1 w-full justify-center overflow-hidden">
         {isAlertActive && <BlinkingDot severity={severity} />}
-        <span className="font-bold tracking-widest">{label}</span>
+        <span className="font-bold tracking-widest truncate">{label}</span>
       </div>
-      <span className="text-[7.5px] text-[#00e5ff] font-medium mt-0.5 tracking-normal opacity-90 select-none">{getTabKPI(id)}</span>
+      <span className="text-[0.6rem] text-[#00e5ff] font-medium mt-0.5 tracking-normal opacity-90 select-none truncate w-full flex justify-center">{getTabKPI(id)}</span>
     </button>
   );
 }
@@ -1594,11 +1594,12 @@ export default function App() {
 
         {/* Right Side: Tab action decks and world intelligence boxes */}
         {!isMaximized && (
-          <div data-testid="onboarding-actions" className="flex-1 flex flex-col h-full overflow-y-auto p-4 bg-[#040704] justify-between animate-fade-in scrollbar-thin">
-          <div>
-            {/* Action command tabs button matrices (F1 - F8) */}
-            <div className="flex justify-between items-center mb-3">
-              <div className="flex gap-1 overflow-x-auto py-1 scrollbar-none w-full">
+          <div data-testid="onboarding-actions" className="relative flex flex-col flex-shrink-0 w-[42%] min-w-[42%] max-w-[42%] h-full overflow-hidden bg-[#040704] animate-fade-in">
+          
+            {/* Top tabbed panel — takes available space */}
+            <div className="flex flex-col flex-1 min-h-0 overflow-hidden pt-4 px-4 pb-0">
+              {/* Tab strip */}
+              <div className="flex flex-wrap gap-0.5 w-full overflow-hidden flex-shrink-0 mb-3">
                 {availablePanels.map((panel) => {
                   const isActive = playerState.activeTab === panel.id;
                   return (
@@ -1613,24 +1614,28 @@ export default function App() {
                   );
                 })}
               </div>
+
+              {/* Tab content */}
+              <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin flex flex-col pb-2">
+                <ActivePanelWrapper
+                  activeTab={playerState.activeTab}
+                  getTabClassification={getTabClassification}
+                />
+                
+                {/* Bottom Reactive columns: Newspaper and UN Council Chambers side-by-side */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-auto shrink-0 mb-2">
+                  <NewspaperFeed />
+                  <UnSecurityCouncil />
+                </div>
+              </div>
             </div>
 
-            {/* Active panel — customized with .gotham-panel and .gotham-panel--primary system */}
-            <ActivePanelWrapper
-              activeTab={playerState.activeTab}
-              getTabClassification={getTabClassification}
-            />
+            {/* Bottom SECRET // ORCON section — fixed height */}
+            <div className="flex-shrink-0 h-[280px] overflow-hidden border-t border-[#1a3a1a] px-4 pt-3 pb-1 bg-[#020302]">
+              <CommandLogPanel />
+            </div>
 
-            {/* PERSISTENT OPERATIONS LOG CHANNEL */}
-            <CommandLogPanel />
           </div>
-
-          {/* Bottom Reactive columns: Newspaper and UN Council Chambers side-by-side */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-auto shrink-0 mb-2">
-            <NewspaperFeed />
-            <UnSecurityCouncil />
-          </div>
-        </div>
         )}
       </div>
 
