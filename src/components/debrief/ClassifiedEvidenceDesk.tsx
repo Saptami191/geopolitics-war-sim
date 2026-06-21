@@ -386,7 +386,7 @@ export const ClassifiedEvidenceDesk: React.FC<ClassifiedEvidenceDeskProps> = ({
                             <text x="200" y="123" fill="#fff" fontSize="6.5" fontFamily="monospace" textAnchor="middle" fontWeight="black">X</text>
                           </g>
 
-                          <text x="200" y="145" fill="#ef4444" fontSize="6" fontFamily="monospace" textAnchor="middle" uppercase>TRADE ROUTE COLLAPSE (EMBARGO BLOCK)</text>
+                          <text x="200" y="145" fill="#ef4444" fontSize="6" fontFamily="monospace" textAnchor="middle" style={{textTransform: "uppercase"}}>TRADE ROUTE COLLAPSE (EMBARGO BLOCK)</text>
                         </svg>
                       )}
                     </div>

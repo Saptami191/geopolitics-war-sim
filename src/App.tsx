@@ -1249,10 +1249,10 @@ export default function App() {
               </div>
 
               {/* WORKSTATION OVERLAYS */}
-              {expandedWorkstation === 'SATELLITE' && <ThermalRecon onExpand={() => setExpandedWorkstation('SATELLITE')} onCollapse={() => setExpandedWorkstation(null)} />}
-              {expandedWorkstation === 'DRONE' && <DroneFeed onExpand={() => setExpandedWorkstation('DRONE')} onCollapse={() => setExpandedWorkstation(null)} />}
-              {expandedWorkstation === 'CYBER' && <CyberFeed onExpand={() => setExpandedWorkstation('CYBER')} onCollapse={() => setExpandedWorkstation(null)} />}
-              {expandedWorkstation === 'HAARP' && <HaarpRadar onExpand={() => setExpandedWorkstation('HAARP')} onCollapse={() => setExpandedWorkstation(null)} />}
+              {expandedWorkstation === 'SATELLITE' && <ThermalRecon />}
+              {expandedWorkstation === 'DRONE' && <DroneFeed />}
+              {expandedWorkstation === 'CYBER' && <CyberFeed />}
+              {expandedWorkstation === 'HAARP' && <HaarpRadar />}
             </div>
           </div>
 
@@ -1268,11 +1268,11 @@ export default function App() {
               {useUIStore.getState().activePanelId === 'DECEPTION_OPS' && <DeceptionOperationsSuite onClose={() => useUIStore.getState().setActivePanelId(null)} />}
               {useUIStore.getState().activePanelId === 'COUNTER_PROLIF' && <CounterProliferationSuite onClose={() => useUIStore.getState().setActivePanelId(null)} />}
               {useUIStore.getState().activePanelId === 'SIGINT' && <SigintPanel onClose={() => useUIStore.getState().setActivePanelId(null)} />}
-              {useUIStore.getState().activePanelId === 'COVERT_FINANCE' && <CovertFinancePanel onClose={() => useUIStore.getState().setActivePanelId(null)} />}
+              {useUIStore.getState().activePanelId === 'COVERT_FINANCE' && <CovertFinancePanel />}
               {useUIStore.getState().activePanelId === 'OVERSIGHT' && <OversightPanel onClose={() => useUIStore.getState().setActivePanelId(null)} />}
-              {useUIStore.getState().activePanelId === 'MIRROR_INTEL' && <MirrorIntelPanel /> /* NOTE: MirrorIntelPanel does not have onClose prop */}
-              {useUIStore.getState().activePanelId === 'LEADER_DOSSIER' && <LeaderDossierPanel />  /* NOTE: LeaderDossierPanel doesn't either */}
-              {useUIStore.getState().activePanelId === 'NATION_SOVEREIGN' && <NationSovereignPanel /> }
+              {useUIStore.getState().activePanelId === 'MIRROR_INTEL' && <MirrorIntelPanel isOpen={true} onClose={() => {}} /> }
+              {useUIStore.getState().activePanelId === 'LEADER_DOSSIER' && <LeaderDossierPanel isOpen={true} onClose={() => {}} />  }
+              {useUIStore.getState().activePanelId === 'NATION_SOVEREIGN' && <NationSovereignPanel isOpen={true} onClose={() => {}} /> }
               {useUIStore.getState().activePanelId === 'NUCLEAR_POSTURE' && <NuclearPosturePanel /> }
               {useUIStore.getState().activePanelId === 'NC3' && <NC3SystemPanel /> }
               {useUIStore.getState().activePanelId === 'FALSE_ALARM' && <FalseAlarmDecisionPanel /> }

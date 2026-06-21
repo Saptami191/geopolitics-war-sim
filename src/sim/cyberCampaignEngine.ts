@@ -4,7 +4,7 @@
 // STORE: useCyberStore, useWorldStore
 
 import { advanceKillChain, computeDiscoveryRisk, APTGroup, CyberOperation, KillChainPhase, APT_GROUPS } from './aptKillChainEngine';
-import { WorldState } from './core/worldStoreTypes'; // hypothetical import, standard for these engines
+import { WorldState } from '../types';
 import { CyberState } from './cyberTickProcessor2'; // resolving types
 
 /**

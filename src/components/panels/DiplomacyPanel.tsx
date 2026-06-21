@@ -48,15 +48,15 @@ export default function DiplomacyPanel() {
   const countries = useWorldStore(s => s.countries);
   const currentTick = useWorldStore(s => s.currentTick);
   
-  const [activeTab, setActiveTab] = useState<'RELATIONS' | 'TREATIES' | 'UNSC' | 'CRISES' | 'NEGOTIATIONS' | 'LEVERAGE' | 'CAMPAIGNS' | 'CORPS'>('RELATIONS');
+  const [activeTab, setActiveTab] = useState<'RELATIONS' | 'TREATIES' | 'UNSC' | 'CRISES' | 'NEGOTIATIONS' | 'LEVERAGE' | 'CAMPAIGNS' | 'CORPS' | 'BLOCS' | 'SOFT_POWER'>('RELATIONS');
   const [selectedNationId, setSelectedNationId] = useState<string | null>(null);
 
   // Form State for Starting Talk
-  const [negotiationTactic, setNegotiationTactic] = useState<'COMPROMISE' | 'SALAMI_SLICING' | 'BRINKMANSHIP' | 'LEVERAGE_PRESSURE' | 'GOOD_COP_BAD_COP'>('COMPROMISE');
+  const [negotiationTactic, setNegotiationTactic] = useState<'GOOD_FAITH_OVERTURE' | 'SALAMI_SLICING' | 'BRINKMANSHIP' | 'LINKAGE' | 'FAIT_ACCOMPLI'>('GOOD_FAITH_OVERTURE');
   const [isBackChannel, setIsBackChannel] = useState<boolean>(false);
 
   // Form State for Campaigns
-  const [campaignChannel, setCampaignChannel] = useState<'BROADCAST_PROPAGANDA' | 'ACADEMIC_EXCHANGE' | 'FOREIGN_AID_ANNOUNCEMENT' | 'INFLUENCER_BRIEFING'>('BROADCAST_PROPAGANDA');
+  const [campaignChannel, setCampaignChannel] = useState<'STATE_MEDIA_BROADCAST' | 'CULTURAL_EXCHANGE_PROGRAMME' | 'UN_GENERAL_ASSEMBLY_SPEECH' | 'INTERNATIONAL_PRESS_CONFERENCE'>('STATE_MEDIA_BROADCAST');
   const [campaignTheme, setCampaignTheme] = useState<'DEMOCRATIC_VALUES' | 'SECURITY_COOPERATION' | 'ECONOMIC_BENEFIT' | 'CIVIL_AID'>('SECURITY_COOPERATION');
   const [campaignBudget, setCampaignBudget] = useState<number>(10);
   const [campaignTargetId, setCampaignTargetId] = useState<string>('RU');
@@ -163,11 +163,11 @@ export default function DiplomacyPanel() {
                             onChange={(e) => setNegotiationTactic(e.target.value as any)}
                             className="bg-slate-950 text-slate-300 border border-slate-800 rounded p-1.5 text-xs w-full font-mono outline-none"
                          >
-                            <option value="COMPROMISE">COMPROMISE (Fair)</option>
+                            <option value="GOOD_FAITH_OVERTURE">GOOD FAITH (Fair)</option>
                             <option value="SALAMI_SLICING">SALAMI SLICING (Incremental)</option>
                             <option value="BRINKMANSHIP">BRINKMANSHIP (Urgent/ Risky)</option>
-                            <option value="LEVERAGE_PRESSURE">LEVERAGE PRESSURE (Resource-Backed)</option>
-                            <option value="GOOD_COP_BAD_COP">GOOD COP BAD COP</option>
+                            <option value="LINKAGE">LINKAGE (Resource-Backed)</option>
+                            <option value="FAIT_ACCOMPLI">FAIT ACCOMPLI</option>
                          </select>
                       </div>
                       <div className="flex items-center gap-2 bg-slate-950/50 border border-slate-800 rounded p-1.5 h-9">
@@ -401,7 +401,7 @@ export default function DiplomacyPanel() {
                             <div className="flex flex-col gap-2 mt-4 border-t border-slate-900 pt-3">
                                <label className="text-[8px] font-mono text-slate-500 uppercase">Apply Tactic round {neg.roundsCompleted + 1}:</label>
                                <div className="grid grid-cols-2 gap-1.5">
-                                  {['COMPROMISE', 'SALAMI_SLICING', 'BRINKMANSHIP', 'LEVERAGE_PRESSURE'].map((tac) => (
+                                  {['GOOD_FAITH_OVERTURE', 'SALAMI_SLICING', 'BRINKMANSHIP', 'LINKAGE'].map((tac) => (
                                      <button 
                                         key={tac}
                                         className="bg-slate-900 hover:bg-slate-800 border border-slate-800 p-1.5 text-[9px] font-mono uppercase text-slate-300 rounded text-left"
@@ -539,10 +539,10 @@ export default function DiplomacyPanel() {
                           onChange={(e) => setCampaignChannel(e.target.value as any)}
                           className="bg-slate-950 text-slate-300 border border-slate-800 rounded p-2 text-xs w-full font-mono outline-none"
                        >
-                          <option value="BROADCAST_PROPAGANDA">State Media Broadcast (Political cost)</option>
-                          <option value="ACADEMIC_EXCHANGE">Institutional Exchange (Political cost)</option>
-                          <option value="FOREIGN_AID_ANNOUNCEMENT">Foreign Aid Announcement (Economic cost)</option>
-                          <option value="INFLUENCER_BRIEFING">Influencer Briefings (Political cost)</option>
+                          <option value="STATE_MEDIA_BROADCAST">State Media Broadcast (Political cost)</option>
+                          <option value="CULTURAL_EXCHANGE_PROGRAMME">Institutional Exchange (Political cost)</option>
+                          <option value="UN_GENERAL_ASSEMBLY_SPEECH">Foreign Aid Announcement (Economic cost)</option>
+                          <option value="INTERNATIONAL_PRESS_CONFERENCE">Influencer Briefings (Political cost)</option>
                        </select>
                     </div>
 

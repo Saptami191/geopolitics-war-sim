@@ -26,39 +26,39 @@ export function applyRegimeChangeEffects(
         targetNationId,
         effectType: 'LEADER_CHANGE',
         magnitude: 100,
-        description: \`Democratically-aligned military junta or civil alliance establishes absolute transition control. Pro-US council takes the helm.\`
+        description: `Democratically-aligned military junta or civil alliance establishes absolute transition control. Pro-US council takes the helm.`
       });
       effects.push({
         targetNationId,
         effectType: 'MILITARY_DEFECTION',
         magnitude: 75,
-        description: \`Over 75% of active armor divisions defect and sworn allegiance to the transitional regime.\`
+        description: `Over 75% of active armor divisions defect and sworn allegiance to the transitional regime.`
       });
       effects.push({
         targetNationId,
         effectType: 'STABILITY_DAMAGE',
         magnitude: 50,
-        description: \`Administrative systems suffer high-magnitude structural damage during transition.\`
+        description: `Administrative systems suffer high-magnitude structural damage during transition.`
       });
     } else if (outcome === 'PARTIALLY_SUCCEEDED') {
       effects.push({
         targetNationId,
         effectType: 'FACTION_FRACTURE',
         magnitude: 60,
-        description: \`Dissident officers lock down provincial cities but the old regime holds major hubs. Deep national paralysis.\`
+        description: `Dissident officers lock down provincial cities but the old regime holds major hubs. Deep national paralysis.`
       });
       effects.push({
         targetNationId,
         effectType: 'POPULAR_UNREST',
         magnitude: 80,
-        description: \`Unplanned violent clashes between loyalist brigades and democratic forces disrupt regional commerce.\`
+        description: `Unplanned violent clashes between loyalist brigades and democratic forces disrupt regional commerce.`
       });
     } else { // FAILED
       effects.push({
         targetNationId,
         effectType: 'STABILITY_DAMAGE',
         magnitude: 40,
-        description: \`Failure of proxy forces increases target regime's totalitarian control. Blowback impairs the international standing of the Player nation.\`
+        description: `Failure of proxy forces increases target regime's totalitarian control. Blowback impairs the international standing of the Player nation.`
       });
     }
   } else if (operationType === 'REGIME_DESTABILISATION') {
@@ -67,27 +67,27 @@ export function applyRegimeChangeEffects(
         targetNationId,
         effectType: 'POPULAR_UNREST',
         magnitude: 85,
-        description: \`Widespread worker and logistics transport strikes lock down 80% of municipal transport corridors.\`
+        description: `Widespread worker and logistics transport strikes lock down 80% of municipal transport corridors.`
       });
       effects.push({
         targetNationId,
         effectType: 'FACTION_FRACTURE',
         magnitude: 50,
-        description: \`cabinet splits into fierce infighting following economic policy leaks.\`
+        description: `cabinet splits into fierce infighting following economic policy leaks.`
       });
     } else if (outcome === 'PARTIALLY_SUCCEEDED') {
       effects.push({
         targetNationId,
         effectType: 'POPULAR_UNREST',
         magnitude: 40,
-        description: \`Localized protests and student clashes reported, easily suppressed but contributing to high-frequency political friction.\`
+        description: `Localized protests and student clashes reported, easily suppressed but contributing to high-frequency political friction.`
       });
     } else { // FAILED
       effects.push({
         targetNationId,
         effectType: 'STABILITY_DAMAGE',
         magnitude: 15,
-        description: \`Failed operations unmasked by counter-espionage agencies, leaving target government political structures more unified.\`
+        description: `Failed operations unmasked by counter-espionage agencies, leaving target government political structures more unified.`
       });
     }
   }
@@ -104,7 +104,7 @@ export function applyRegimeChangeEffects(
             } else if (effect.effectType === 'POPULAR_UNREST') {
               country.political.popularUnrest = Math.min(100, (country.political.popularUnrest || 0) + effect.magnitude);
             } else if (effect.effectType === 'LEADER_CHANGE') {
-              country.political.leaderName = \`Transitional Council Chairman\`;
+              country.political.leaderName = `Transitional Council Chairman`;
               country.political.stabilityIndex = Math.max(30, (country.political.stabilityIndex || 50) - 20); // moderate stabilization attempt
             } else if (effect.effectType === 'FACTION_FRACTURE') {
               country.political.stabilityIndex = Math.max(10, (country.political.stabilityIndex || 50) - Math.round(effect.magnitude / 2));
@@ -114,7 +114,7 @@ export function applyRegimeChangeEffects(
         });
 
         worldStore.addGlobalEvent(
-          \`[CIA DIRECTIVE] \${effect.description} (\${targetNationId})\`,
+          `[CIA DIRECTIVE] \${effect.description} (\${targetNationId})`,
           outcome === 'SUCCEEDED' ? 'CRITICAL' : 'WARNING'
         );
       }
@@ -132,7 +132,7 @@ export function applyRegimeChangeEffects(
         'US', 
         targetNationId, 
         relationshipPenalty, 
-        \`CIA Operational Exposure: \${operationType} (\${outcome})\`, 
+        `CIA Operational Exposure: \${operationType} (\${outcome})`, 
         currentTick
       );
     }
@@ -275,7 +275,7 @@ export function runRegimeChangeCampaign(
 
   const target = worldState?.nations?.[targetNationId];
   if (!target) {
-     throw new Error(\`Target Nation \${targetNationId} not found in world state.\`);
+     throw new Error(`Target Nation \${targetNationId} not found in world state.`);
   }
 
   const stability = target.stability || 50;
@@ -320,18 +320,18 @@ export function runRegimeChangeCampaign(
 
   if (success) {
     stabilityDelta = -30 - (Math.random() * 20); // -30 to -50
-    consequences.push(\`[\${campaignType.toUpperCase()}] Government collapses. Temporary junta forms.\`);
-    consequences.push(\`Constitutional suspension verified globally.\`);
+    consequences.push(`[\${campaignType.toUpperCase()}] Government collapses. Temporary junta forms.`);
+    consequences.push(`Constitutional suspension verified globally.`);
     
     // An operation working perfectly still leaves traces, but an operation failing leaves bodies.
     attributionRisk = 0.3 + ((1 - probability) * 0.4);
-    newLeaderId = \`ldr_prox_\${Math.random().toString(36).substr(2, 6)}\`;
+    newLeaderId = `ldr_prox_\${Math.random().toString(36).substr(2, 6)}`;
 
   } else {
     // Failure
     attributionRisk = 0.5 + (Math.random() * 0.3);
-    blowbackEvents.push(\`Diplomatic channels frozen. Mass purges reported in \${targetNationId} capital.\`);
-    blowbackEvents.push(\`Player espionage personnel compromised and displayed on state television.\`);
+    blowbackEvents.push(`Diplomatic channels frozen. Mass purges reported in \${targetNationId} capital.`);
+    blowbackEvents.push(`Player espionage personnel compromised and displayed on state television.`);
     // Stability slightly hardens as the regime realizes the threat and cracks down
     stabilityDelta = +10; 
   }

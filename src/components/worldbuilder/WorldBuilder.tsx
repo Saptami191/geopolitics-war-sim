@@ -1367,7 +1367,7 @@ export default function WorldBuilder({ onLaunchSandbox, onBack }: WorldBuilderPr
                             
                             <div className="flex items-center gap-1">
                               {cConfig.nuclear && (
-                                <Atom className="w-3 h-3 text-yellow-500 animate-pulse" title="Nuclear Deterrent" />
+                                <Atom className="w-3 h-3 text-yellow-500 animate-pulse" />
                               )}
                               <ChevronRight className="w-3 h-3 text-gray-650" />
                             </div>

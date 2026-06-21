@@ -15,24 +15,27 @@ export default function SanctionsWidget() {
 
   if (!isOpen) {
     return (
-      <button
-        onClick={() => setIsOpen(true)}
-        className="w-full bg-slate-900 border border-slate-700 text-slate-300 px-3 py-2 text-xs font-mono uppercase hover:bg-slate-800 transition-colors shadow-lg flex items-center justify-between"
-      >
-        <span className="flex items-center gap-2">
-          <ShieldAlert className="w-4 h-4 text-slate-400" />
-          IRON LEDGER STATUS
-        </span>
-        <div className="flex gap-2">
-            <span className="text-red-400">{activeRegimesCount} ACTIVE</span>
-        </div>
-      </button>
+      <div style={{ minHeight: '80px', position: 'relative' }}>
+        <button
+          onClick={() => setIsOpen(true)}
+          className="w-full bg-slate-900 border border-slate-700 text-slate-300 px-3 py-2 text-xs font-mono uppercase hover:bg-slate-800 transition-colors shadow-lg flex items-center justify-between"
+        >
+          <span className="flex items-center gap-2">
+            <ShieldAlert className="w-4 h-4 text-slate-400" />
+            IRON LEDGER STATUS
+          </span>
+          <div className="flex gap-2">
+              <span className="text-red-400">{activeRegimesCount} ACTIVE</span>
+          </div>
+        </button>
+      </div>
     );
   }
 
   return (
-    <div className="w-full bg-slate-900/95 border border-slate-700 text-slate-300 shadow-2xl backdrop-blur font-mono text-xs flex flex-col">
-      <div className="bg-slate-800 p-2 flex justify-between items-center border-b border-slate-700">
+    <div style={{ minHeight: '80px', position: 'relative' }}>
+      <div className="w-full bg-slate-900/95 border border-slate-700 text-slate-300 shadow-2xl backdrop-blur font-mono text-xs flex flex-col">
+        <div className="bg-slate-800 p-2 flex justify-between items-center border-b border-slate-700">
         <div className="flex items-center gap-2 font-bold text-slate-300">
           <ShieldAlert className="w-4 h-4 text-emerald-400" />
           IRON LEDGER
@@ -59,6 +62,7 @@ export default function SanctionsWidget() {
             </div>
             <span className="text-red-400 font-bold">{activeEvasions}</span>
           </div>
+      </div>
       </div>
     </div>
   );

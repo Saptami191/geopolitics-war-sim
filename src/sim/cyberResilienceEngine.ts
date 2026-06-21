@@ -131,7 +131,7 @@ export function allocateCyberDefenseBudget(
     const reqAmount = Math.min(sector.costToFullyProtect * 0.20, remainingBudget / sectors.length);
     allocations[sector.id] = reqAmount;
     remainingBudget -= reqAmount;
-    rationale.push(\`Assigned baseline 20% fractional survival funding to \${sector.name}\`);
+    rationale.push(`Assigned baseline 20% fractional survival funding to \${sector.name}`);
   }
 
   // Step 2: Pour the rest into the highest risk sectors
@@ -140,7 +140,7 @@ export function allocateCyberDefenseBudget(
     const additional = Math.min(remainingBudget, sector.costToFullyProtect * 0.5); // Cap to prevent 100% dumping
     allocations[sector.id] += additional;
     remainingBudget -= additional;
-    rationale.push(\`Over-invested \${Math.round(additional)} surplus into \${sector.name} due to high attack surface.\`);
+    rationale.push(`Over-invested \${Math.round(additional)} surplus into \${sector.name} due to high attack surface.`);
   }
 
   // Step 3: Compute final achieved percentiles and residual risk
@@ -220,7 +220,7 @@ export function assessResiliencePosture(
   return {
     overallScore: weightedScore / totalWeight,
     weakestLink: weakest,
-    riskVector: \`Targeting \${weakest.name} circumvents \${(100 - weakest.currentProtectionLevel).toFixed(1)}% of national defensive coverage.\`
+    riskVector: `Targeting \${weakest.name} circumvents \${(100 - weakest.currentProtectionLevel).toFixed(1)}% of national defensive coverage.`
   };
 }
 

@@ -357,7 +357,7 @@ export const NuclearExchangeScene: React.FC<NuclearSceneProps> = ({ scene, onCom
               <div className="flex flex-col gap-6">
                 <div className="text-red-500 font-bold border-b border-zinc-800 pb-2">IMMEDIATE (0-72 HOURS)</div>
                 <div className="text-zinc-300 flex flex-col gap-3">
-                  <TypewriterText text="• Electromagnetic pulse disables civilian infrastructure" delay={0} />
+                  <TypewriterText text="• Electromagnetic pulse disables civilian infrastructure" speed={15} />
                   <TypewriterText text="• Fallout plume trajectory: EAST at 24 km/h" speed={15} />
                   <TypewriterText text="• Regional air traffic: SUSPENDED" speed={15} />
                   <TypewriterText text="• Grid failure cascading across borders" speed={15} />

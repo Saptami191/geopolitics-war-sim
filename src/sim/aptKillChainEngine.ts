@@ -229,7 +229,9 @@ const PHASE_DESCRIPTIONS: Record<KillChainPhase, string> = {
   EXPLOIT: 'Triggering execution of the malicious payload on target infrastructure.',
   INSTALL: 'Establishing persistence mechanisms (e.g. registry keys, trojanized services).',
   C2: 'Opening command & control channels for remote interactive manipulation.',
-  OBJECTIVES: 'Executing primary goals (data exfiltration, encryption, physical disruption).'
+  OBJECTIVES: 'Executing primary goals (data exfiltration, encryption, physical disruption).',
+  COMPLETE: 'Operation successfully completed and payload retired.',
+  BURNED: 'Operation detected and wiped by defenders.'
 };
 
 /**

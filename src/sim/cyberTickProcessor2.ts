@@ -12,7 +12,7 @@
  * infrastructure recovery, and AI adversary behaviors.
  */
 
-import { WorldState } from './core/worldStoreTypes'; // hypothetical import
+import { WorldState } from '../types';
 import { ActiveCyberCampaign, initCyberCampaign, advanceCyberCampaign } from './cyberCampaignEngine';
 import { ZeroDay, computeZeroDayValue } from './zeroDayMarketEngine';
 import { CYBINTReport, decayCYBINTReports } from './cybintEngine';

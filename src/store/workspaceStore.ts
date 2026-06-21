@@ -50,7 +50,7 @@ const initialPanelStates: Record<WorkspaceId, WorkspacePanelState[]> = {
   INTEL_ANALYSIS: [
     { slotId: 'PRIMARY', panelId: 'ARACHNE_PANEL', sizeMode: 'NORMAL', isVisible: true },
     { slotId: 'SECONDARY_A', panelId: 'GOTHAM_PANEL', sizeMode: 'NORMAL', isVisible: true },
-    { slotId: 'SECONDARY_B', panelId: 'FININT_PANEL', sizeMode: 'NORMAL', is: true },
+    { slotId: 'SECONDARY_B', panelId: 'FININT_PANEL', sizeMode: 'NORMAL', isVisible: true },
     { slotId: 'DETAIL', panelId: 'FOUNDRY_PANEL', sizeMode: 'MINIMIZED', isVisible: true },
   ],
   COVERT_OPS: [

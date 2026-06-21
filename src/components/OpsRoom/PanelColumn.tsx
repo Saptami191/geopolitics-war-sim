@@ -11,10 +11,7 @@ class PanelErrorBoundary extends React.Component<
   { panelId: string; children: React.ReactNode },
   { hasError: boolean; error: Error | null }
 > {
-  constructor(props: { panelId: string; children: React.ReactNode }) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
+  state = { hasError: false, error: null as Error | null };
 
   static getDerivedStateFromError(error: Error) {
     return { hasError: true, error };

@@ -397,7 +397,7 @@ function MarketCrashRenderer({ scene }: { scene: CinematicScene }) {
         <div className="bg-black py-1 border-y border-red-600 mb-12 flex overflow-hidden">
           <div className="whitespace-nowrap font-mono text-[14px] text-red-500 font-bold uppercase tracking-widest flex items-center shrink-0">
              <span className="inline-block mr-4 text-white bg-red-600 px-2 py-0.5 animate-pulse">CRITICAL ALERT</span>
-             <marquee scrollamount="20">DJIA -18.4% ▼ | S&P 500 -21.2% ▼ | NIKKEI -16.8% ▼ | FTSE -14.1% ▼ | SSE -24.7% ▼ | SOVEREIGN -31.2% ▼</marquee>
+             <div style={{ whiteSpace: 'nowrap', overflow: 'hidden' }}>DJIA -18.4% ▼ | S&P 500 -21.2% ▼ | NIKKEI -16.8% ▼ | FTSE -14.1% ▼ | SSE -24.7% ▼ | SOVEREIGN -31.2% ▼</div>
           </div>
         </div>
         <div className="text-center font-mono space-y-4">

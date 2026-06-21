@@ -4,6 +4,7 @@ import { useModesStore } from '../../store/modesStore';
 import { useWorldStore } from '../../store/worldStore';
 import { audio } from '../../utils/audio';
 import { Target, AlertTriangle, CheckCircle, Eye, EyeOff, ShieldAlert } from 'lucide-react';
+import { Scenario_ObjectiveStatus } from '../../types';
 
 export default function DirectiveObjectiveOverlay() {
   const activeSession = useModesStore(s => s.modes_activeSession);
@@ -17,7 +18,7 @@ export default function DirectiveObjectiveOverlay() {
   } | null>(null);
 
   // Track status of objectives to detect state transition
-  const previousStatusesRef = useRef<Record<string, 'ACTIVE' | 'ACHIEVED' | 'FAILED'>>({});
+  const previousStatusesRef = useRef<Record<string, Scenario_ObjectiveStatus>>({});
 
   if (!activeSession || !activeSession.isActive) return null;
 

@@ -87,7 +87,7 @@ export function gatherCYBINT(
       targetNationId: target.nationId,
       targetSector: target.sector,
       patchLevel: estimatedPatchLevel,
-      networkTopologyPartial: [\`Subnet A\`, \`Subnet B\`, \`DMZ-Proxy\`],
+      networkTopologyPartial: [`Subnet A`, `Subnet B`, `DMZ-Proxy`],
       activeVulnerabilities: detectedVulns,
       estimatedDefenseLevel: estimatedDefenseLevel,
       collectionQuality,

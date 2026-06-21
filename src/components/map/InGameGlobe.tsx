@@ -120,6 +120,7 @@ interface SatelliteSim {
   cone?: THREE.Mesh;
   orbitLine?: THREE.Line;
   angle: number;
+  footprint?: any;
 }
 
 export function InGameGlobe({ theme = 'dark', layers }: InGameGlobeProps) {

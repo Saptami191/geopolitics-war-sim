@@ -78,7 +78,7 @@ export const PREDEFINED_CAMPAIGNS: Campaign_Definition[] = [
       'berlin_blockade_revival': {
         id: 'berlin_blockade_revival',
         title: 'The Berlin Crisis',
-        briefingText: 'Russian forces have cut road and rail access to West Berlin. The city\\'s 2.5 million civilians face critical supply shortages within 14 days. NATO allies are watching. Your response will define the alliance for a generation.',
+        briefingText: 'Russian forces have cut road and rail access to West Berlin. The city\'s 2.5 million civilians face critical supply shortages within 14 days. NATO allies are watching. Your response will define the alliance for a generation.',
         choices: [
           { 
             id: 'airlift', 

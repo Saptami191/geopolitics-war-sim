@@ -70,14 +70,14 @@ export default function BlocsPanel() {
 
   // Module 4.4 states
   const [newObjName, setNewObjName] = useState('');
-  const [newObjCategory, setNewObjCategory] = useState<'MILITARY_CONTAINMENT' | 'REGIONAL_DETERRENCE' | 'TRADE_PROTECTION' | 'INTELLIGENCE_INTEGRATION' | 'SANCTIONS_SYNCHRONIZATION'>('TRADE_PROTECTION');
+  const [newObjCategory, setNewObjCategory] = useState<'MILITARY_CONTAINMENT' | 'REGIONAL_DETERRENCE' | 'TRADE_PROTECTION' | 'INTELLIGENCE_SHARING' | 'SANCTIONS_ENFORCEMENT'>('TRADE_PROTECTION');
   const [newObjPriority, setNewObjPriority] = useState(5);
   const [newObjCostFinance, setNewObjCostFinance] = useState(5.0);
   const [newObjAP, setNewObjAP] = useState(10);
   const [newObjConstraints, setNewObjConstraints] = useState('Friction of local legislative chambers.');
 
   const [newTaskAssignee, setNewTaskAssignee] = useState('DE');
-  const [newTaskType, setNewTaskType] = useState<'INTELLIGENCE_DRILL' | 'PATROL_ZONE' | 'ECONOMIC_COMPAK' | 'SYNCHRONIZE_SANCTION' | 'NUCLEAR_BACKSTOP'>('INTELLIGENCE_DRILL');
+  const [newTaskType, setNewTaskType] = useState<'SHARE_INTEL' | 'PATROL_ZONE' | 'SUPPLY_LOGISTICS' | 'ENFORCE_SANCTIONS' | 'PROVIDE_BASING'>('SHARE_INTEL');
 
   const [courtPivotId, setCourtPivotId] = useState('IN');
   const [courtActionType, setCourtActionType] = useState<'SECURITY_GUARANTEE' | 'ARMS_SALE' | 'TRADE_DEAL' | 'INFRASTRUCTURE' | 'COVERT_OPS'>('TRADE_DEAL');
@@ -761,8 +761,8 @@ export default function BlocsPanel() {
                       <option value="MILITARY_CONTAINMENT">Military Containment</option>
                       <option value="REGIONAL_DETERRENCE">Regional Deterrence</option>
                       <option value="TRADE_PROTECTION">Trade Protection</option>
-                      <option value="INTELLIGENCE_INTEGRATION">Intelligence Integration</option>
-                      <option value="SANCTIONS_SYNCHRONIZATION">Sanctions Sync</option>
+                      <option value="INTELLIGENCE_SHARING">Intelligence Sharing</option>
+                      <option value="SANCTIONS_ENFORCEMENT">Sanctions Enforcement</option>
                     </select>
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] text-gray-500 uppercase">Priority:</span>
@@ -916,10 +916,10 @@ export default function BlocsPanel() {
                       onChange={e => setNewTaskType(e.target.value as any)}
                       className="bg-black border border-[#113011] text-[#4af626] rounded px-2.5 py-1 text-xs"
                     >
-                      <option value="INTELLIGENCE_DRILL">Joint Cyber Intel Drill</option>
+                      <option value="SHARE_INTEL">Joint Cyber Intel Drill</option>
                       <option value="PATROL_ZONE">Defense patrol corridor</option>
-                      <option value="ECONOMIC_COMPAK">Economic aid allocation</option>
-                      <option value="SYNCHRONIZE_SANCTION">Synchronize trade embargo</option>
+                      <option value="SUPPLY_LOGISTICS">Economic aid allocation</option>
+                      <option value="ENFORCE_SANCTIONS">Synchronize trade embargo</option>
                     </select>
                   </div>
                   <button

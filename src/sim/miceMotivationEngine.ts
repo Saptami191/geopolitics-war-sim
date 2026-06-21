@@ -231,7 +231,7 @@ export function resolveOperativeFate(
   if (newStatus === 'active' && miceProfile.flipProbability > 0.5) {
     if (Math.random() < miceProfile.flipProbability) {
       newStatus = 'turned';
-      reason = \`Operative flipped due to \${miceProfile.dominantMotive}. Feeding us disinformation.\`;
+      reason = `Operative flipped due to \${miceProfile.dominantMotive}. Feeding us disinformation.`;
       consequences.push('Incoming CYBINT and HUMINT from this asset is now poisoned.');
     }
   }
@@ -301,25 +301,25 @@ export function processOperativeNetworkTick(
 // governs asset reliability. Consider an operative located in Moscow (Aurelius). 
 // With 12 years in place, his accessLevel evaluates to STRATEGIC. He can provide 
 // the player with advance warning of nuclear posture shifts. However, 12 years in 
-// a high-stress hostile environment radically inflates his \`coercionVulnerability\`. 
+// a high-stress hostile environment radically inflates his `coercionVulnerability`. 
 // He has likely married a local, has children attending local schools, and possesses 
 // deep societal roots. If the FSB (Russian Counter-Intelligence) identifies him and 
-// applies \`adversaryPressure\`, they will not need to torture him; they simply threaten 
+// applies `adversaryPressure`, they will not need to torture him; they simply threaten 
 // to ruin his family.
 // 
 // Conversely, a newly placed asset relying on Ideology (perhaps a defector disgusted 
 // by the host regime's actions) is extremely resistant to Coercion but highly volatile. 
 // If the player's nation undertakes actions that violate that ideology (e.g., executing 
-// a disastrous false-flag proxy war), the asset's \`ideologyMotivation\` shifts against 
+// a disastrous false-flag proxy war), the asset's `ideologyMotivation` shifts against 
 // the handler, leading to a defection or spontaneous reporting cessation.
 //
-// When \`resolveOperativeFate\` returns \`turned\`, the mechanical implications are severe. 
+// When `resolveOperativeFate` returns `turned`, the mechanical implications are severe. 
 // A 'turned' status does not remove the asset from the player's roster. The UI will still 
 // show the asset as 'active'. However, behind the scenes, the asset acts as a Double Agent. 
 // Intelligence Yields passed through this asset will automatically sabotage mission success 
 // probabilities for connected Cyber Campaigns, feeding player operations into honeypots. 
 // Finding and identifying double agents within the simulation requires investing heavily 
-// in \`playerCounterIntelligence\`, which lowers the flip probabilities globally and scans 
+// in `playerCounterIntelligence`, which lowers the flip probabilities globally and scans 
 // the roster for algorithmic anomalies indicating treason.
 // 
 // PADDING FILL CONTINUES TO SATISFY ENGINE LOAD CHECKS.

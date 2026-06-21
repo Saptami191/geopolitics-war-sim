@@ -85,7 +85,7 @@ export function computePowerGridDamage(
   }
 
   return {
-    attackId: \`atk_\${Math.random().toString(36).substr(2, 9)}\`,
+    attackId: `atk_\${Math.random().toString(36).substr(2, 9)}`,
     targetNationId,
     targetSector: 'power_grid',
     blackoutExtent,
@@ -135,7 +135,7 @@ export function computeFinancialSystemAttack(
   const liquidityCrisisDepth = Math.min(bankRunProbability * 100, 100);
 
   return {
-    attackId: \`atk_\${Math.random().toString(36).substr(2, 9)}\`,
+    attackId: `atk_\${Math.random().toString(36).substr(2, 9)}`,
     targetNationId: 'N/A', // Pulled from context upward
     vector: attackVector,
     bankRunProbability,
@@ -163,7 +163,7 @@ export function computeMilitaryC2Disruption(
   const cascadeToNuclearRisk = coordinationDegradation > 80;
 
   return {
-    attackId: \`atk_\${Math.random().toString(36).substr(2, 9)}\`,
+    attackId: `atk_\${Math.random().toString(36).substr(2, 9)}`,
     targetNationId: 'N/A',
     coordinationDegradation,
     responseTimePenaltyTicks,

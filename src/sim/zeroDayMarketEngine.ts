@@ -170,7 +170,7 @@ export function acquireZeroDay(
   if (Math.random() < acquisitionProbability) {
     return {
       ...template,
-      id: \`zd_\${Math.random().toString(36).substr(2, 9)}\`,
+      id: `zd_\${Math.random().toString(36).substr(2, 9)}`,
       discoveredTick: currentTick, // Minted right now for the acquiring team
       patchedTick: null,
       usedByGroupId: null,
@@ -212,7 +212,7 @@ export function deployZeroDay(
     targetNationId: target.nationId,
     success,
     burned,
-    damageVector: \`Exploited \${zd.targetSoftware} via \${zd.cveStyle}\`,
+    damageVector: `Exploited \${zd.targetSoftware} via \${zd.cveStyle}`,
     attributionRiskAdded,
     discoveryProbability
   };
