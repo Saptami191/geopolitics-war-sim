@@ -1154,14 +1154,92 @@ export default function App() {
                 <span>TREASURY RES: $<AnimatedValue target={playerState.cashB} formatter={(v) => v.toFixed(1)} />B</span>
               </div>
             </div>
-            {/* ... right side actions ... */}
+            <div className="flex items-center gap-2">
+              {['SLOW', 'NORMAL', 'FAST'].map(speed => (
+                <button key={speed} onClick={() => setTickSpeed(speed as any)} className="text-[0.6rem] border p-1 text-[#00ff44] hover:bg-[#1a3a1a]">
+                  {speed}
+                </button>
+              ))}
+              <button 
+                onClick={() => {
+                   const running = !useWorldStore.getState().isPaused;
+                   if (running) stopTickTimer(); else restartTickTimer();
+                }} 
+                className="text-[0.6rem] border p-1 text-[#00ff44] hover:bg-[#1a3a1a]"
+              >
+                PAUSE/RESUME
+              </button>
+              {getAvailablePersonas().map(id => (
+                <button key={id} onClick={() => setPersona(id)} className={activePersona === id ? 'text-[#00ff44] font-bold' : 'text-gray-500'}>
+                  {PERSONAS[id].name}
+                </button>
+              ))}
+              <button onClick={() => setShowBazaar(true)} className="text-[0.6rem] border p-1 text-[#00ff44]">BLACK MARKET</button>
+              <button onClick={() => setCommsOpen(true)} className="relative text-[0.6rem] border p-1 text-[#00ff44]">
+                COMMS
+                {unreadCommsCount > 0 && <span className="absolute -top-1 -right-1 bg-red-600 rounded-full text-xs px-1 text-white">{unreadCommsCount}</span>}
+              </button>
+              <div className="text-[0.6rem] text-gray-500">EXP: {playerExposureScore}</div>
+            </div>
           </header>
 
           <DataTicker />
 
           {/* Major split sections */}
           <div className="flex-1 flex overflow-hidden w-full relative">
-            {/* ... main game surface and side panels ... */}
+            <div className="flex-1 flex overflow-hidden w-full relative">
+              {/* LEFT SIDE — Tab Button Sidebar */}
+              <div className="w-48 overflow-y-auto bg-[#020502] p-1 flex flex-col gap-1 border-r border-[#1a3a1a]">
+                {[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,100,101,102,103].map(n => (
+                  <TabButton key={n} id={n} label={n <= 31 ? `${n}` : `N${n}`} isActive={playerState.activeTab === n} getTabKPI={getTabKPI} onClick={() => usePlayerStore.getState().setActiveTab(n)} />
+                ))}
+              </div>
+
+              {/* CENTER — Main Content Surface */}
+              <div className="flex-1 relative flex flex-col">
+                {!isMapFullyHidden && (
+                  <>
+                    <div className="absolute top-0 left-0 right-0 z-10 p-2">
+                       <AnalysisModeSwitcher />
+                    </div>
+                    {viewMode === 'MAP' && !analysisMode ? <WorldMap activeLayer={activeLayer} /> : null}
+                    {viewMode === 'GRAPH' && <AllianceGraph />}
+                    {analysisMode && <AnalysisInspector />}
+                    <MapControls setActiveLayer={setActiveLayer} setViewMode={setViewMode} activeLayer={activeLayer} viewMode={viewMode} />
+                    <TimelineStrip />
+                  </>
+                )}
+                {playerState.activeTab === 999 && <TimelineView />}
+                <div className="flex-1 overflow-y-auto">
+                   <ActivePanelWrapper activeTab={playerState.activeTab} getTabClassification={getTabClassification} />
+                </div>
+              </div>
+
+              {/* RIGHT SIDE — HUD Widget Column */}
+              <div className="w-64 overflow-y-auto bg-[#020502] p-2 border-l border-[#1a3a1a] flex flex-col gap-2">
+                 <SovereignMonitor />
+                 <DarkMirrorWidget />
+                 <CIAStatusWidget />
+                 <SanctionsWidget />
+                 <DiplomacyWidget />
+                 <CyberWidget />
+                 <EWStatusWidget />
+                 <DefenseIndustryWidget />
+                 <SigintHUD />
+                 <PoliticalCapitalBar />
+                 <CommandLogPanel />
+                 <StockMarketTicker />
+                 <NewspaperFeed />
+                 <UnSecurityCouncil />
+                 <ModesWidget />
+              </div>
+
+              {/* WORKSTATION OVERLAYS */}
+              {expandedWorkstation === 'THERMAL' && <ThermalRecon onExpand={() => setExpandedWorkstation('THERMAL')} onCollapse={() => setExpandedWorkstation(null)} />}
+              {expandedWorkstation === 'DRONE' && <DroneFeed onExpand={() => setExpandedWorkstation('DRONE')} onCollapse={() => setExpandedWorkstation(null)} />}
+              {expandedWorkstation === 'CYBER_FEED' && <CyberFeed onExpand={() => setExpandedWorkstation('CYBER_FEED')} onCollapse={() => setExpandedWorkstation(null)} />}
+              {expandedWorkstation === 'HAARP' && <HaarpRadar onExpand={() => setExpandedWorkstation('HAARP')} onCollapse={() => setExpandedWorkstation(null)} />}
+            </div>
           </div>
 
           {/* Bottom telemetry text logs shell console */}
@@ -1169,8 +1247,22 @@ export default function App() {
 
           {/* Full Screen Panel Content Wrapper */}
           <FullScreenPanel>
-            {/* ... panels ... */}
-          </FullScreenPanel>
+              {useUIStore.getState().activePanelId === 'U8200_COMMAND' && <U8200CommandPanel />}
+              {useUIStore.getState().activePanelId === 'CIA' && <CIAPanel />}
+              {useUIStore.getState().activePanelId === 'TARGETED_OPS' && <TargetedOperationsPanel />}
+              {useUIStore.getState().activePanelId === 'HUMINT_SUITE' && <HumintPenetrationSuite />}
+              {useUIStore.getState().activePanelId === 'DECEPTION_OPS' && <DeceptionOperationsSuite />}
+              {useUIStore.getState().activePanelId === 'COUNTER_PROLIF' && <CounterProliferationSuite />}
+              {useUIStore.getState().activePanelId === 'SIGINT' && <SigintPanel />}
+              {useUIStore.getState().activePanelId === 'COVERT_FINANCE' && <CovertFinancePanel />}
+              {useUIStore.getState().activePanelId === 'OVERSIGHT' && <OversightPanel />}
+              {useUIStore.getState().activePanelId === 'MIRROR_INTEL' && <MirrorIntelPanel />}
+              {useUIStore.getState().activePanelId === 'LEADER_DOSSIER' && <LeaderDossierPanel />}
+              {useUIStore.getState().activePanelId === 'NATION_SOVEREIGN' && <NationSovereignPanel />}
+              {useUIStore.getState().activePanelId === 'NUCLEAR_POSTURE' && <NuclearPosturePanel />}
+              {useUIStore.getState().activePanelId === 'NC3' && <NC3SystemPanel />}
+              {useUIStore.getState().activePanelId === 'FALSE_ALARM' && <FalseAlarmDecisionPanel />}
+            </FullScreenPanel>
 
           {/* Overlays */}
           {playerState.aftermathActive && aftermathCountdown !== null && aftermathCountdown > 0 && (

@@ -24,7 +24,6 @@ import { useLeaderMemoryStore } from '../store/leaderMemoryStore';
 import { pollScenarioStatus } from './scenarioEngine';
 import { processFactions } from './factionEngine';
 import { processFiscal } from './fiscalEngine';
-import { processMarkets } from './commodityEngine';
 import { advanceStrikes } from './militaryEngine';
 import { processRelations } from './diplomaticEngine';
 import { processSentiment } from './propagandaEngine';
@@ -39,6 +38,10 @@ import { dampenOpinionDelta } from '../utils/pacing';
 import { ConsequenceEngine } from './consequenceEngine';
 import { saveAutosaveScenario } from '../utils/persistence';
 import { processOperativeNetwork } from './operativeEngine';
+import { processFogOfWarTick } from './fogOfWarEngine';
+import { processRegimePressureTick } from './regimePressureEngine';
+import { processU8200Tick2 } from './u8200TickProcessor2';
+import { processArachneTick2 } from './arachneTickProcessor2';
 import { useDefconStore } from '../store/defconStore';
 import { useTargetedOperationsStore } from '../store/targetedOperationsStore';
 import { useHumintStore } from '../store/humintStore';
@@ -140,9 +143,6 @@ export function executeSimulationStep() {
     // 3. Process taxes, corporate spending, debt service, cash printed, GDP
     processFiscal(draft);
 
-    // 4. Process commodity markets spot price drift & resource shocks
-    processMarkets(draft);
-
     // 5. Advance ballistic strikes in flight & defensive shield interceptions
     advanceStrikes(draft);
 
@@ -225,6 +225,13 @@ export function executeSimulationStep() {
 
   // Phase 5: Tick Operative Network Engine
   processOperativeNetwork(useWorldStore.getState().currentTick);
+
+  // Tick Phase B Systems
+  const currentState = useWorldStore.getState();
+  processRegimePressureTick(currentState);
+  processFogOfWarTick(currentState);
+  processU8200Tick2(currentState, currentState.currentTick);
+  processArachneTick2(currentState, currentState.currentTick);
 
   // 10. Sync player's cash levels with their nation's real treasury reserves
   usePlayerStore.getState().syncCashFromCountry();
