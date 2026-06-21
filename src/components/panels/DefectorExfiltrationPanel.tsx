@@ -29,7 +29,7 @@ export default function DefectorExfiltrationPanel() {
         </h3>
 
         <div className="flex-1 overflow-y-auto space-y-2.5 scrollbar-thin">
-          {defectorList.map(def => {
+          {(defectorList || []).map(def => {
             const isSelected = activeSelectedId === def.defectorId;
             return (
               <button

@@ -54,7 +54,7 @@ export default function AmbiguityControlPanel() {
               <div className="space-y-2">
                 <span className="text-[10px] font-extrabold tracking-wider text-sky-400 block">// SELECT COGNITIVE FOCUS Posture</span>
                 <div className="grid grid-cols-2 gap-2 text-[10px]">
-                  {SELECTABLE_MODES.map(m => {
+                  {(SELECTABLE_MODES || []).map(m => {
                     const active = ambState.mode === m.value;
                     return (
                       <button

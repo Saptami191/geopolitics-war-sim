@@ -28,7 +28,7 @@ export const NationSovereignPanel: React.FC<{ isOpen: boolean; onClose: () => vo
   ];
   const angles = [-Math.PI/2, -Math.PI/2 + (2*Math.PI/5), -Math.PI/2 + (4*Math.PI/5), -Math.PI/2 + (6*Math.PI/5), -Math.PI/2 + (8*Math.PI/5)];
   
-  const points = vectors.map((v, i) => {
+  const points = (vectors || []).map((v, i) => {
     const vRatio = Math.max(0, Math.min(100, v)) / 100;
     const x = cx + vRatio * r * Math.cos(angles[i]);
     const y = cy + vRatio * r * Math.sin(angles[i]);
@@ -52,7 +52,7 @@ export const NationSovereignPanel: React.FC<{ isOpen: boolean; onClose: () => vo
       {/* NATION SELECTOR ROW */}
       <div className="flex-shrink-0 p-4 border-b border-zinc-800 flex flex-wrap gap-2 bg-[#050505]">
         <button onClick={onClose} className="absolute top-4 right-4 text-zinc-500 hover:text-white pb-2 font-black text-xl">✕</button>
-        {nations.map(n => {
+        {(nations || []).map(n => {
            const iden = identities[n.id];
            const postColor = iden ? getPostureColor(iden.currentPosture) : 'text-zinc-500';
            return (
@@ -88,7 +88,7 @@ export const NationSovereignPanel: React.FC<{ isOpen: boolean; onClose: () => vo
              <div className="text-xs font-bold border-b border-zinc-800 w-full text-center pb-2 mb-2">IDENTITY VECTORS</div>
              <svg width="200" height="200" className="opacity-90">
                {[0.2, 0.4, 0.6, 0.8, 1].map(scale => {
-                 const pts = angles.map(a => `${100 + scale*80*Math.cos(a)},${100 + scale*80*Math.sin(a)}`).join(' ');
+                 const pts = (angles || []).map(a => `${100 + scale*80*Math.cos(a)},${100 + scale*80*Math.sin(a)}`).join(' ');
                  return <polygon key={scale} points={pts} fill="none" stroke="#333" strokeWidth="1" />
                })}
                <motion.polygon 
@@ -143,7 +143,7 @@ export const NationSovereignPanel: React.FC<{ isOpen: boolean; onClose: () => vo
         <div className="flex flex-col gap-4">
           <div className="text-white font-bold tracking-widest text-sm border-b border-zinc-800 pb-2">ASSESSED STRATEGIC AGENDA</div>
           <div className="flex flex-col gap-3">
-             {identity.agenda.map(item => (
+             {(identity.agenda || []).map(item => (
                 <div key={item.id} className={`border border-zinc-800 bg-[#111] p-3 border-l-4 ${item.type === 'MILITARY' ? 'border-l-red-500' : item.type === 'NUCLEAR' ? 'border-l-red-900' : item.type === 'TERRITORIAL' ? 'border-l-amber-500' : item.type === 'ECONOMIC' ? 'border-l-green-500' : 'border-l-blue-500'}`}>
                   <div className="flex justify-between items-center mb-2">
                      <span className="text-[10px] font-bold text-zinc-500">{item.priority} — {item.type}</span>

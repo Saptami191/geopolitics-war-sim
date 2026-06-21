@@ -72,7 +72,7 @@ export default function LeaderProfilesPanel() {
     // Update target leader's red line discovery progress inside the store
     if (targetLeader && targetLeader.psychology) {
       const updatedPsych = { ...targetLeader.psychology };
-      const updatedLines = updatedPsych.redLines.map(rl => {
+      const updatedLines = (updatedPsych.redLines || []).map(rl => {
         if (rl.id === rlId) {
           const newProgress = Math.min(100, rl.discoveryProgress + 35); // Boost progress by +35%
           const updatedRl = { ...rl, discoveryProgress: newProgress };
@@ -322,7 +322,7 @@ export default function LeaderProfilesPanel() {
             </h4>
 
             <div className="space-y-3.5">
-              {psych.redLines.map((rl) => {
+              {(psych.redLines || []).map((rl) => {
                 const isRevealed = rl.discoveryProgress >= 100;
                 
                 return (
@@ -381,7 +381,7 @@ export default function LeaderProfilesPanel() {
               {psych.memories.length === 0 ? (
                 <p className="text-gray-500 italic text-[10px] leading-relaxed">No strategic personal grievances logged in memory database charts.</p>
               ) : (
-                psych.memories.map((mem) => (
+                (psych.memories || []).map((mem) => (
                   <div key={mem.id} className="border border-[#112411]/30 bg-black/40 p-2.5 rounded text-[9.5px] hover:bg-[#071307]/35 flex justify-between items-center gap-4">
                     <div className="space-y-0.5 normal-case font-sans leading-relaxed text-gray-450">
                       <div className="font-mono text-[9px] uppercase font-bold text-violet-400">

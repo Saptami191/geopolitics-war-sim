@@ -96,7 +96,7 @@ export default function SpacePanel() {
             <text x="100" y="7" fill="rgba(204,136,255,0.4)" fontSize="6" textAnchor="middle" fontFamily="monospace">GEO</text>
 
             {/* Satellites drawing orbiting dynamically */}
-            {satellites.map((sat, idx) => {
+            {(satellites || []).map((sat, idx) => {
               const ringR = sat.orbitType === 'GEO' ? 90 : sat.orbitType === 'POLAR' ? 70 : 50;
               const angle = (currentTick * 0.15 + idx * 1.5) % (Math.PI * 2);
               const x = 100 + ringR * Math.cos(angle);
@@ -188,7 +188,7 @@ export default function SpacePanel() {
                 </tr>
               </thead>
               <tbody>
-                {satellites.map((sat) => (
+                {(satellites || []).map((sat) => (
                   <tr key={sat.id} className="border-b border-[#0d2e0d]/50 hover:bg-[#071407]/40">
                     <td className="py-1.5 text-white font-bold">{sat.id}</td>
                     <td className="py-1.5">RECON RECEIVER</td>

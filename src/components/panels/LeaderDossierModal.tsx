@@ -131,7 +131,7 @@ export const LeaderDossierModal: React.FC<{ countryId: string; onClose: () => vo
                              Math.PI / 2 + (Math.PI / 3),  
                              Math.PI / 2 + (2 * Math.PI / 3)   
                            ];
-                           const points = traits.map((val, i) => {
+                           const points = (traits || []).map((val, i) => {
                              const r = Math.max(0, Math.min(100, val)) / 100 * 120;
                              const x = 150 + r * Math.cos(angles[i]);
                              const y = 150 + r * Math.sin(angles[i]);
@@ -203,7 +203,7 @@ export const LeaderDossierModal: React.FC<{ countryId: string; onClose: () => vo
 
                  <div className="flex flex-col gap-2">
                    {memories.length === 0 && <div className="text-center text-zinc-600 italic py-12">No significant interaction history recorded.</div>}
-                   {memories.map(m => (
+                   {(memories || []).map(m => (
                       <div key={m.id} className={`p-4 border border-zinc-800 ${m.resentmentDelta > 0 ? 'bg-red-950/10 border-l-4 border-l-red-500' : 'bg-green-950/10 border-l-4 border-l-green-500'}`}>
                          <div className="text-xs text-zinc-500 tracking-widest mb-1">TICK {m.tick} — {m.type}</div>
                          <div className="text-sm text-zinc-300">{m.description}</div>

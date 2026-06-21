@@ -131,7 +131,7 @@ export default function U8200CommandPanel({ onClose }: U8200CommandPanelProps) {
 
   // Tab 3: Baselines activity summary calculations
   const baselinesLog = useMemo(() => {
-    return store.u8200Baselines.map(baseline => {
+    return (store.u8200Baselines || []).map(baseline => {
       // Signals count in last 10 ticks
       const signalCount = store.u8200Signals.filter(
         s => s.sourceNationId === baseline.nationId && currentTick - s.detectedAtTick <= 10
@@ -165,7 +165,7 @@ export default function U8200CommandPanel({ onClose }: U8200CommandPanelProps) {
     
     // Promote signal confidence one tier
     try {
-      store.u8200Signals = store.u8200Signals.map(s => {
+      store.u8200Signals = (store.u8200Signals || []).map(s => {
         if (s.id === sig.id) {
           const confTierMap: Record<string, string> = {
             RUMINT: 'SIGINT',
@@ -305,7 +305,7 @@ export default function U8200CommandPanel({ onClose }: U8200CommandPanelProps) {
         </header>
 
         {/* TAB NAVIGATION CHASSIS */}
-        <div className="flex border-b border-cyan-900/45 bg-black shrink-0">
+        <div className="flex border-b border-cyan-900/45 bg-black shrink-0 overflow-x-auto">
           {([
             { id: 'ASSETS', label: '1. COLLECTION ASSETS' },
             { id: 'SIGNALS', label: '2. SIGINT FEED' },
@@ -315,8 +315,9 @@ export default function U8200CommandPanel({ onClose }: U8200CommandPanelProps) {
           ] as const).map(tab => (
             <button
               key={tab.id}
+              style={{ flexShrink: 0 }}
               onClick={() => { audio.sfxKeyClick(); setActiveTab(tab.id); }}
-              className={`flex-1 py-3 font-bold tracking-wider text-[10px] transition-all border-r border-cyan-950/30 text-center uppercase
+              className={`flex-1 py-3 px-4 min-w-[120px] font-bold tracking-wider text-[10px] transition-all border-r border-cyan-950/30 text-center uppercase
                 ${activeTab === tab.id 
                   ? 'bg-cyan-950/35 text-cyan-400 border-b-2 border-b-cyan-400 shadow-[inset_0_-2px_15px_rgba(34,211,238,0.12)]' 
                   : 'text-cyan-900 hover:text-cyan-500 hover:bg-cyan-950/5'}`}
@@ -327,7 +328,7 @@ export default function U8200CommandPanel({ onClose }: U8200CommandPanelProps) {
         </div>
 
         {/* TAB WORKSPACE */}
-        <div className="flex-1 overflow-y-auto p-5 bg-[#010606] text-gray-400 space-y-6">
+        <div className="flex-1 overflow-y-auto min-h-0 p-5 bg-[#010606] text-gray-400 space-y-6">
 
           {/* ======================================= */}
           {/* TAB 1: ASSETS */}
@@ -387,7 +388,7 @@ export default function U8200CommandPanel({ onClose }: U8200CommandPanelProps) {
                       </div>
                     )}
                     
-                    {store.u8200Assets.map(asset => {
+                    {(store.u8200Assets || []).map(asset => {
                       const tgtNation = countries[asset.targetNationId]?.name || asset.targetNationId;
                       const isRetractPending = assetConfirmRetractId === asset.id;
 
@@ -615,7 +616,7 @@ export default function U8200CommandPanel({ onClose }: U8200CommandPanelProps) {
                   </div>
                 )}
 
-                {filteredSignals.map(sig => {
+                {(filteredSignals || []).map(sig => {
                   const hasTrail = expandedTrailSignalId === sig.id;
                   const isExpiring = sig.expiresAtTick - currentTick < 5;
 
@@ -758,7 +759,7 @@ export default function U8200CommandPanel({ onClose }: U8200CommandPanelProps) {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-cyan-950/10">
-                      {baselinesLog.map(b => {
+                      {(baselinesLog || []).map(b => {
                         const tgtName = countries[b.nationId]?.name || b.nationId;
 
                         const badges = {
@@ -849,7 +850,7 @@ export default function U8200CommandPanel({ onClose }: U8200CommandPanelProps) {
                   </h4>
 
                   <div className="space-y-3">
-                    {baselinesLog.map(b => {
+                    {(baselinesLog || []).map(b => {
                       // If silence exceeds 15 ticks despite active assets scanning
                       const tgtAssetActive = store.u8200Assets.some(a => a.targetNationId === b.nationId && a.isActive);
                       const ticksSinceComms = currentTick - b.lastUpdatedTick;
@@ -1010,7 +1011,7 @@ export default function U8200CommandPanel({ onClose }: U8200CommandPanelProps) {
                     </div>
                   )}
 
-                  {confirmedSignals.map(sig => {
+                  {(confirmedSignals || []).map(sig => {
                     const natName = countries[sig.sourceNationId]?.name || sig.sourceNationId;
                     return (
                       <div key={sig.id} className="p-3 border border-cyan-900 bg-black/80">
@@ -1028,7 +1029,7 @@ export default function U8200CommandPanel({ onClose }: U8200CommandPanelProps) {
                             <span className="text-[9px] text-cyan-800 block uppercase tracking-wider mb-1">ALREADY FORWARDED TO:</span>
                             <div className="flex gap-1.5 flex-wrap">
                               {sig.taskedTo && sig.taskedTo.length > 0 ? (
-                                sig.taskedTo.map(div => (
+                                (sig.taskedTo || []).map(div => (
                                   <span key={div} className="px-1.5 py-0.5 bg-cyan-950/35 border border-cyan-800 text-[8px] text-cyan-400 font-bold uppercase">
                                     → {div} COMMAND
                                   </span>
@@ -1099,7 +1100,7 @@ export default function U8200CommandPanel({ onClose }: U8200CommandPanelProps) {
                 </h3>
 
                 <div className="space-y-2 max-h-52 overflow-y-auto">
-                  {taskingHistory.map(sig => (
+                  {(taskingHistory || []).map(sig => (
                     <div key={sig.id} className="p-2 border border-cyan-950/20 bg-black/45 text-[9px] flex justify-between items-center flex-wrap gap-2">
                       <div>
                         <span className="text-cyan-600 font-bold block sm:inline mr-2">TICK {sig.detectedAtTick}</span>

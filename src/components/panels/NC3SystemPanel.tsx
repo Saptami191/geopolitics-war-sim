@@ -183,7 +183,7 @@ export default function NC3SystemPanel() {
           {activeTab === 'channels' && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 gap-3">
-                {channelsList.map((ch) => {
+                {(channelsList || []).map((ch) => {
                   const details = channelDetails[ch.channel] || { name: ch.channel, desc: '' };
                   const isLow = ch.integrity < 40;
                   const isMedium = ch.integrity >= 40 && ch.integrity < 70;

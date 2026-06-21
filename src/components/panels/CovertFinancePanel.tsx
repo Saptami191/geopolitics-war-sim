@@ -185,7 +185,7 @@ export default function CovertFinancePanel({ onClose }: { onClose: () => void })
                  </div>
              )}
              <div className="space-y-2">
-               {store.fundingTraces.map((trace, i) => (
+               {(store.fundingTraces || []).map((trace, i) => (
                  <div key={trace.id || i} className="border border-red-900/20 bg-black p-3 relative text-[10px]">
                     <div className="flex justify-between mb-1">
                         <span className="font-bold text-red-400">TRACE DETECTED: {trace.traceVector.replace(/_/g, ' ')}</span>

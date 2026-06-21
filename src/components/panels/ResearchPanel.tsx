@@ -55,7 +55,7 @@ export default function ResearchPanel() {
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-1.5">
-          {RESEARCH_TREES.map((tech) => {
+          {(RESEARCH_TREES || []).map((tech) => {
             const isUnlocked = unlocked.includes(tech.id);
             const canAfford = usePlayerStore.getState().cashB >= tech.costB;
 

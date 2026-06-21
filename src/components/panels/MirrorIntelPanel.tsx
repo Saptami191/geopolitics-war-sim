@@ -45,7 +45,7 @@ export const MirrorIntelPanel: React.FC<{ isOpen: boolean; onClose: () => void }
       Math.PI / 2 + (2 * Math.PI / 3)   // Economic
     ];
 
-    const points = biases.map((bias, i) => {
+    const points = (biases || []).map((bias, i) => {
       const bRatio = Math.max(0, Math.min(100, bias)) / 100;
       const x = cx + bRatio * r * Math.cos(angles[i]);
       const y = cy + bRatio * r * Math.sin(angles[i]);

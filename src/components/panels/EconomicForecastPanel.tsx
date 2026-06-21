@@ -92,7 +92,7 @@ export default function EconomicForecastPanel() {
     const maxVal = Math.max(...path) * 1.05;
     const padding = 10;
     
-    const points = path.map((val, idx) => {
+    const points = (path || []).map((val, idx) => {
       const x = padding + (idx / (path.length - 1)) * (width - 2 * padding);
       const ratio = (val - minVal) / (maxVal - minVal || 1);
       const y = height - padding - ratio * (height - 2 * padding);
@@ -150,7 +150,7 @@ export default function EconomicForecastPanel() {
           </div>
 
           <div className="md:col-span-9 flex gap-1.5 overflow-x-auto py-1.5 scrollbar-none">
-            {worldStress.components.map((c) => {
+            {(worldStress.components || []).map((c) => {
               const isSelected = selection.heatmapGridMode === 'COMMODITY_X_DIMENSION' && selection.activeCountryId === c.dimension;
               return (
                 <div
@@ -479,7 +479,7 @@ export default function EconomicForecastPanel() {
           <div className="lg:col-span-4 border border-[#113d11] bg-[#020402] rounded p-2.5 flex flex-col gap-2">
             <h3 className="text-xs font-bold text-white px-1 mb-1 border-b border-[#1b5c1b] pb-1 uppercase tracking-wider">Candidate Directives</h3>
             <div className="flex flex-col gap-1.5 max-h-[380px] overflow-y-auto scrollbar-thin">
-              {customPreviews.map((p) => {
+              {(customPreviews || []).map((p) => {
                 const isActive = p.id === focusedActionId;
                 const isCommitted = !!p.realizedImpact;
                 return (
@@ -582,7 +582,7 @@ export default function EconomicForecastPanel() {
                     <div>
                       <span className="text-gray-500 uppercase block mb-1">Impact Winners</span>
                       <div className="flex flex-wrap gap-1">
-                        {selectedActionPreview.winners.map(w => (
+                        {(selectedActionPreview.winners || []).map(w => (
                           <span key={w} className="bg-emerald-950/30 text-emerald-400 border border-emerald-800/30 px-1 rounded font-mono">{w}</span>
                         ))}
                       </div>
@@ -590,7 +590,7 @@ export default function EconomicForecastPanel() {
                     <div>
                       <span className="text-gray-500 uppercase block mb-1">Contraction Losers</span>
                       <div className="flex flex-wrap gap-1">
-                        {selectedActionPreview.losers.map(l => (
+                        {(selectedActionPreview.losers || []).map(l => (
                           <span key={l} className="bg-red-950/30 text-red-500 border border-red-800/30 px-1 rounded font-mono">{l}</span>
                         ))}
                       </div>
@@ -608,7 +608,7 @@ export default function EconomicForecastPanel() {
               <div className="mb-3">
                 <span className="text-[9px] font-mono text-gray-500 uppercase block mb-1.5">Expected Second-Order Transmission Feedback</span>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {selectedActionPreview.secondOrderEffects.map((eff, i) => (
+                  {(selectedActionPreview.secondOrderEffects || []).map((eff, i) => (
                     <div key={i} className="bg-[#040804] border border-[#143214] p-2 rounded">
                       <div className="flex justify-between items-start text-[9.5px] font-mono mb-1">
                         <span className="text-white font-semibold flex items-center gap-1">
@@ -631,7 +631,7 @@ export default function EconomicForecastPanel() {
               <div className="bg-[#030603] p-2.5 rounded border border-[#1b5c1b]/30 text-[9.5px] text-gray-400">
                 <span className="text-[9px] font-mono text-white block uppercase mb-1">Underlying Assumptions / Verification Safeguards:</span>
                 <ul className="list-disc pl-4 space-y-0.5">
-                  {selectedActionPreview.underlyingAssumptions.map((asm, i) => (
+                  {(selectedActionPreview.underlyingAssumptions || []).map((asm, i) => (
                     <li key={i}>{asm}</li>
                   ))}
                 </ul>
@@ -727,7 +727,7 @@ export default function EconomicForecastPanel() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#112a11]">
-                  {commodityStress.map((c) => (
+                  {(commodityStress || []).map((c) => (
                     <tr key={c.commodity} className="hover:bg-[#030703]/60 transition-all">
                       <td className="py-2.5 font-bold text-white">{c.commodity}</td>
                       {selection.heatmapGridMode === 'COMMODITY_X_COUNTRY' ? (
@@ -881,7 +881,7 @@ export default function EconomicForecastPanel() {
             </h3>
 
             <div className="flex flex-col gap-1.5 overflow-y-auto max-h-[385px] scrollbar-thin">
-              {sectorDrilldowns.map((sec) => {
+              {(sectorDrilldowns || []).map((sec) => {
                 const isExpanded = sectorExpanded === sec.sectorKey;
                 return (
                   <div
@@ -1065,7 +1065,7 @@ export default function EconomicForecastPanel() {
                   <div className="mt-3.5 pt-2 border-t border-[#112111]">
                     <span className="text-[8.5px] font-mono text-gray-500 uppercase block mb-1">Top Stressed Sectors:</span>
                     <div className="space-y-1 text-[9.5px]">
-                      {s.topStressedSectors.map((sec, i) => (
+                      {(s.topStressedSectors || []).map((sec, i) => (
                         <div key={i} className="flex justify-between font-mono text-gray-400">
                           <span>{sec.sector}</span>
                           <strong className="text-amber-400">{sec.score}% Stress</strong>
@@ -1100,7 +1100,7 @@ export default function EconomicForecastPanel() {
         </div>
 
         <div className="flex flex-col gap-1.5 max-h-[110px] overflow-y-auto scrollbar-thin">
-          {riskFlags.map((flag) => (
+          {(riskFlags || []).map((flag) => (
             <div key={flag.id} className="flex items-start gap-2.5 text-[9.5px] bg-[#050905]/70 p-2 rounded border border-[#1b311b]/35">
               <span className="px-1 bg-red-950/50 text-red-400 border border-red-800/40 rounded font-mono text-[8px] tracking-tight shrink-0 mt-0.5">
                 {flag.severity}

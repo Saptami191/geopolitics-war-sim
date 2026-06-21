@@ -109,7 +109,7 @@ export default function HandlerPsychologyPanel() {
           </h3>
 
           <div className="overflow-y-auto space-y-2.5 scrollbar-thin flex-1 max-h-[170px] pr-0.5">
-            {handlers.map(h => {
+            {(handlers || []).map(h => {
               const isSelected = activeSelectedId === h.handlerId;
               return (
                 <button
@@ -210,7 +210,7 @@ export default function HandlerPsychologyPanel() {
               <span className="text-cyan-500 font-extrabold uppercase text-[9px] block border-b border-cyan-950 pb-1 mb-2 tracking-widest">// OPERATIONAL COVER LINKS HANDLED</span>
               {hCase.activeSources.length > 0 ? (
                 <div className="flex gap-2.5 overflow-x-auto select-none rounded">
-                  {hCase.activeSources.map(sId => {
+                  {(hCase.activeSources || []).map(sId => {
                     const activeSrcObj = humStore.sources[sId];
                     return activeSrcObj ? (
                       <span key={sId} className="px-2.5 py-1 bg-cyan-950/20 border border-cyan-900 rounded font-semibold text-cyan-300 text-[9px]">

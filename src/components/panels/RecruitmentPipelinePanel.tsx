@@ -93,7 +93,7 @@ export default function RecruitmentPipelinePanel() {
             <span className="bg-[#002b33] px-1.5 py-0.5 text-[8.5px] font-bold text-[#00ffe6] rounded tracking-wider">{spotted.length}</span>
           </div>
           <div className="flex-1 overflow-y-auto space-y-2.5 pr-0.5 scrollbar-thin">
-            {spotted.map(renderCard)}
+            {(spotted || []).map(renderCard)}
             {spotted.length === 0 && (
               <div className="text-center text-[9px] text-cyan-800 p-4 border border-cyan-950/30 rounded italic mt-4">
                 NO SPOTTED COURIER CANDIDATES RECORDED.
@@ -109,7 +109,7 @@ export default function RecruitmentPipelinePanel() {
             <span className="bg-orange-950/40 border border-orange-900/50 px-1.5 py-0.5 text-[8.5px] font-bold text-orange-400 rounded tracking-wider">{assessed.length}</span>
           </div>
           <div className="flex-1 overflow-y-auto space-y-2.5 pr-0.5 scrollbar-thin">
-            {assessed.map(renderCard)}
+            {(assessed || []).map(renderCard)}
             {assessed.length === 0 && (
               <div className="text-center text-[9px] text-cyan-800 p-4 border border-cyan-950/30 rounded italic mt-4">
                 NO ASSETS CURRENT DEBRIEFING ASSESSMENT STAGE.
@@ -125,7 +125,7 @@ export default function RecruitmentPipelinePanel() {
             <span className="bg-[#002b33] px-1.5 py-0.5 text-[8.5px] font-bold text-[#00ffe6] rounded tracking-wider">{developing.length}</span>
           </div>
           <div className="flex-1 overflow-y-auto space-y-2.5 pr-0.5 scrollbar-thin">
-            {developing.map(renderCard)}
+            {(developing || []).map(renderCard)}
             {developing.length === 0 && (
               <div className="text-center text-[9px] text-cyan-800 p-4 border border-cyan-950/30 rounded italic mt-4">
                 NO ASSETS IN CLANDESTINE RECRUITMENT TRANSITS.
@@ -141,7 +141,7 @@ export default function RecruitmentPipelinePanel() {
             <span className="bg-[#043321] px-1.5 py-0.5 text-[8.5px] font-bold text-emerald-400 rounded tracking-wider">{active.length}</span>
           </div>
           <div className="flex-1 overflow-y-auto space-y-2.5 pr-0.5 scrollbar-thin">
-            {active.map(s => {
+            {(active || []).map(s => {
               return (
                 <div 
                   key={s.identity.sourceId}

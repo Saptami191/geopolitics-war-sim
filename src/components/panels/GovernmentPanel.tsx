@@ -323,7 +323,7 @@ export default function GovernmentPanel() {
               INDUSTRIALS & OLIGARCH NETWORKS
             </h3>
             <div className="overflow-y-auto max-h-[180px] space-y-1.5 pr-1 scrollbar-thin">
-              {econ.oligarchs.map((o) => (
+              {(econ.oligarchs || []).map((o) => (
                 <div key={o.id} className="border border-[#0d1f0d] bg-[#020402] p-2.5 flex justify-between items-center rounded text-[11px] hover:bg-[#061206]">
                   <div>
                     <div className="font-bold text-[#00e5ff]">{o.name}</div>

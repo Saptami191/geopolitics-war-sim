@@ -361,7 +361,7 @@ export default function FalseAlarmDecisionPanel() {
             <div className="space-y-2">
               <span className="text-xs text-gray-500">Related global communications log:</span>
               <div className="space-y-1.5 text-[11px]">
-                {relatedEvents.map((ev, idx) => (
+                {(relatedEvents || []).map((ev, idx) => (
                   <div key={idx} className="bg-black/40 p-2 border border-gray-900 rounded text-gray-400 leading-relaxed font-sans flex gap-1.5 items-start">
                     <CornerDownRight className="w-3.5 h-3.5 mt-0.5 shrink-0 text-red-600" />
                     <span>{ev.text}</span>

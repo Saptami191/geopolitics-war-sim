@@ -512,7 +512,7 @@ export default function ModesPanel() {
            <div className="border border-slate-800 p-4">
               <h4 className="text-xs font-mono text-slate-500 mb-2">ALTERNATIVE PATHWAYS</h4>
               <ul className="text-xs text-slate-400 font-mono list-disc pl-4 space-y-1">
-                 {debrief.alternativePathways.map((path, idx) => (
+                 {(debrief.alternativePathways || []).map((path, idx) => (
                     <li key={idx}>{path}</li>
                  ))}
               </ul>

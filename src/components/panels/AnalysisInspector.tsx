@@ -50,7 +50,7 @@ export default function AnalysisInspector() {
 
   // Parse all events to filter recent logs for inspected items
   const allEvents = useMemo(() => {
-    return globalEventLog.map((raw, idx) => parseGlobalEvent(raw, idx));
+    return (globalEventLog || []).map((raw, idx) => parseGlobalEvent(raw, idx));
   }, [globalEventLog]);
 
   // Derive country inspector detail view
@@ -316,7 +316,7 @@ export default function AnalysisInspector() {
                 </div>
               ) : (
                 <div className="space-y-2 max-h-[360px] overflow-y-auto scrollbar-thin pr-0.5">
-                  {activeInsights.map((ins) => {
+                  {(activeInsights || []).map((ins) => {
                     const isFocused = activeInsightId === ins.id;
                     const sevColor = ins.severity === 'HIGH' ? 'text-red-500 font-extrabold' : 'text-amber-500 font-extrabold';
 
@@ -357,7 +357,7 @@ export default function AnalysisInspector() {
                             <div>
                               <span className="text-gray-550 block font-bold uppercase tracking-wide">operational vectors:</span>
                               <div className="flex flex-wrap gap-1 mt-0.5 leading-none">
-                                {ins.signalsUsed.map((sig, sidx) => (
+                                {(ins.signalsUsed || []).map((sig, sidx) => (
                                   <span key={sidx} className="bg-black text-[#00ff44] px-1 border border-[#113111]/40 rounded-[1px] text-[7px] uppercase font-bold text-sans">
                                     {sig}
                                   </span>
@@ -531,7 +531,7 @@ export default function AnalysisInspector() {
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-1 font-sans">
-                  {countryData.allies.map((ally) => (
+                  {(countryData.allies || []).map((ally) => (
                     <button
                       key={ally.id}
                       onClick={() => { audio.sfxKeyClick(); selectCountry(ally.id); }}
@@ -554,7 +554,7 @@ export default function AnalysisInspector() {
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-1">
-                  {countryData.raw.atWarWith.map((hostileId) => (
+                  {(countryData.raw.atWarWith || []).map((hostileId) => (
                     <button
                       key={hostileId}
                       onClick={() => { audio.sfxKeyClick(); selectCountry(hostileId); }}
@@ -577,7 +577,7 @@ export default function AnalysisInspector() {
                 </div>
               ) : (
                 <div className="space-y-1">
-                  {countryData.recent.map((evt) => (
+                  {(countryData.recent || []).map((evt) => (
                     <div
                       key={evt.id}
                       onClick={() => { audio.sfxKeyClick(); selectEvent(evt.id); }}
@@ -681,7 +681,7 @@ export default function AnalysisInspector() {
                 </div>
               ) : (
                 <div className="space-y-1.5">
-                  {edgeData.mutualEvents.map((evt) => (
+                  {(edgeData.mutualEvents || []).map((evt) => (
                     <div
                       key={evt.id}
                       onClick={() => { audio.sfxKeyClick(); selectEvent(evt.id); }}
@@ -778,7 +778,7 @@ export default function AnalysisInspector() {
                 <span className="font-extrabold uppercase text-cyan-400">{eventData.raw.type}</span>
               </div>
               <div className="flex flex-wrap gap-1 mt-1 font-sans justify-end">
-                {eventData.raw.tags.map((tag) => (
+                {(eventData.raw.tags || []).map((tag) => (
                   <span key={tag} className="text-[7.5px] text-gray-500 bg-[#020502] px-1 border border-[#113111]/40 uppercase rounded-sm">
                     #{tag}
                   </span>
@@ -828,7 +828,7 @@ export default function AnalysisInspector() {
               Operational directory empty. Record a trace to persist.
             </div>
           ) : (
-            savedInvestigations.map((inv) => {
+            (savedInvestigations || []).map((inv) => {
               const isEditing = editingInvId === inv.id;
               
               // Compute dynamic counts or visual elements representation depending on saved payload

@@ -557,7 +557,7 @@ export default function SoftPowerPanel() {
                     Current Portfolio Deployments
                   </span>
                   <div className="grid grid-cols-2 gap-2.5 h-[150px] overflow-y-auto scrollbar-thin">
-                    {listActiveAid.map((ap) => (
+                    {(listActiveAid || []).map((ap) => (
                       <div key={ap.id} className="p-2 bg-[#020603] border border-zinc-800 rounded flex justify-between items-start">
                         <div>
                           <span className="text-[#00ff44] font-bold block">{ap.type.replace(/_/g, ' ')}</span>
@@ -569,7 +569,7 @@ export default function SoftPowerPanel() {
                         </div>
                       </div>
                     ))}
-                    {listActiveInv.map((iv) => (
+                    {(listActiveInv || []).map((iv) => (
                       <div key={iv.id} className="p-2 bg-zinc-900/30 border border-zinc-800 rounded flex justify-between items-start">
                         <div>
                           <span className="text-yellow-500 font-bold block">{iv.type.replace(/_/g, ' ')}</span>
@@ -697,7 +697,7 @@ export default function SoftPowerPanel() {
                     Prestige Venue Timeline Calendar
                   </span>
                   <div className="space-y-2 h-[155px] overflow-y-auto scrollbar-thin">
-                    {listAllEvents.map((ev) => (
+                    {(listAllEvents || []).map((ev) => (
                       <div key={ev.id} className="p-2 bg-zinc-900/40 border border-zinc-800 rounded flex justify-between items-center">
                         <div>
                           <span className="font-bold text-white text-[11px] block">{ev.title}</span>
@@ -833,7 +833,7 @@ export default function SoftPowerPanel() {
                     Pipeline Accumulation Track (Matured Pipelines)
                   </span>
                   <div className="space-y-2 h-[150px] overflow-y-auto scrollbar-thin">
-                    {listExchPrograms.map((ep) => (
+                    {(listExchPrograms || []).map((ep) => (
                       <div key={ep.id} className="p-1.5 bg-[#030603] border border-zinc-900 rounded flex justify-between items-center text-[10px]">
                         <div>
                           <span className="font-bold text-white block">{ep.sourceCountryId} 🔁 {ep.targetCountryId} Fellowship</span>
@@ -921,7 +921,7 @@ export default function SoftPowerPanel() {
                     Current Active Local Diaspora Activations
                   </span>
                   <div className="space-y-1.5 h-[150px] overflow-y-auto scrollbar-thin">
-                    {listActivations.map((act) => (
+                    {(listActivations || []).map((act) => (
                       <div key={act.id} className="p-2 bg-[#020603] border border-zinc-800 rounded flex justify-between items-center text-[10px]">
                         <div>
                           <span className="font-bold text-[#00ff44] block">{act.activationMode.replace(/_/g, ' ')}</span>

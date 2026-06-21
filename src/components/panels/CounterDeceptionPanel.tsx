@@ -55,7 +55,7 @@ export default function CounterDeceptionPanel() {
                     <span className="text-[9px] font-medium mt-1 inline-block">THE ATTRIBUTION DECOY HAS DEPLOYED NOMINALLY</span>
                   </div>
                 ) : (
-                  findingsList.map(find => {
+                  (findingsList || []).map(find => {
                     return (
                       <div key={find.findingId} className={`border rounded p-3 text-[10px] space-y-1.5 ${getSeverityColor(find.severity)}`}>
                         <div className="flex justify-between items-center font-bold pb-1 border-b border-pink-900/10">

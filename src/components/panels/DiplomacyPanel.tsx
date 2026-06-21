@@ -184,8 +184,8 @@ export default function DiplomacyPanel() {
                          className="bg-red-950 hover:bg-red-900/80 border border-red-700/50 text-red-200 p-2 text-xs font-mono rounded font-bold uppercase transition-all flex items-center justify-center gap-1.5"
                          onClick={() => {
                             const customIssues = [
-                               { issueId: 'trade', title: 'Maritime Trade Corridor Access', importanceWeightCounterpart: 40, importanceWeightPlayer: 50, initialStanceDifference: 45, currentConcessionDistance: 45, isResolved: false, agreedStance: null },
-                               { issueId: 'security', title: 'Regional Airway De-confliction', importanceWeightCounterpart: 60, importanceWeightPlayer: 55, initialStanceDifference: 50, currentConcessionDistance: 50, isResolved: false, agreedStance: null }
+                               { id: 'trade', label: 'Maritime Trade Corridor Access', playerPosition: 100, counterpartPosition: 50, currentLandingZone: 75, isResolved: false, isSacrificeable: false, linkageTargetId: null },
+                               { id: 'security', label: 'Regional Airway De-confliction', playerPosition: 80, counterpartPosition: 20, currentLandingZone: 50, isResolved: false, isSacrificeable: true, linkageTargetId: null }
                             ];
                             diplo2_startNegotiation(selectedNationId, customIssues, negotiationTactic, isBackChannel, currentTick + 25, currentTick);
                             setActiveTab('NEGOTIATIONS');
@@ -239,7 +239,7 @@ export default function DiplomacyPanel() {
                        {treaty.terms && treaty.terms.length > 0 && (
                           <div className="mt-1 flex flex-col gap-1">
                              <span className="text-[8px] uppercase text-slate-500">Clauses & Compliance Checked (Tick):</span>
-                             {treaty.terms.map(t => (
+                             {(treaty.terms || []).map(t => (
                                 <div key={t.id} className="flex justify-between items-center text-[9px] border-b border-slate-900 pb-1">
                                    <span className="text-slate-400">● {t.description} ({t.verificationMethod})</span>
                                    <span className={t.complianceScore > 70 ? "text-emerald-400 font-bold" : "text-amber-500 font-bold"}>{t.complianceScore.toFixed(0)}%</span>
@@ -292,7 +292,7 @@ export default function DiplomacyPanel() {
                <h4 className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Chamber Composition & Powers</h4>
                <div className="flex flex-col gap-2">
                  <div className="text-[8px] text-amber-500 font-bold uppercase mb-1 font-mono tracking-wider">P5 PERMANENT MEMBERS</div>
-                 {diplo_unscMembership.permanentMembers.map(m => (
+                 {(diplo_unscMembership.permanentMembers || []).map(m => (
                     <div key={m} className="p-2 border border-slate-800 bg-slate-950 font-mono text-xs flex justify-between items-center rounded">
                       <span className="font-bold text-slate-300">{countries[m]?.name || m}</span>
                       <span className="text-[8px] font-bold shadow bg-amber-950/80 border border-amber-900/60 text-amber-500 px-2 py-0.5 rounded tracking-widest">P5_VETO</span>
@@ -303,7 +303,7 @@ export default function DiplomacyPanel() {
 
             <div className="lg:col-span-8 flex flex-col gap-4">
                <h4 className="text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-1">UN RESOLUTION VOTING & LOBBY RESULTS</h4>
-               {diplo_unscResolutions.map(res => (
+               {(diplo_unscResolutions || []).map(res => (
                  <div key={res.id} className="bg-[#0a0a0d] border border-slate-800 p-4 rounded shadow-sm flex flex-col gap-3">
                     <div className="flex justify-between items-start">
                        <div>
@@ -320,7 +320,7 @@ export default function DiplomacyPanel() {
                           <div className="mt-2 text-[10px]">
                              <span className="text-slate-500 uppercase text-[8px] block mb-1">Detailed Member Tallies:</span>
                              <div className="grid grid-cols-2 gap-1.5 bg-black p-2 rounded max-h-[140px] overflow-y-auto">
-                                {res.votes.map((v, i) => (
+                                {(res.votes || []).map((v, i) => (
                                    <div key={i} className="flex justify-between items-center border-b border-slate-900 pb-1 text-[9px]">
                                       <span className="text-slate-400">{v.nationId} ({v.role.slice(0, 5)})</span>
                                       <span className={`font-bold ${v.vote === 'YES' ? 'text-emerald-400' : v.vote === 'NO' ? 'text-red-400' : 'text-slate-500'}`}>{v.vote}</span>
@@ -366,7 +366,7 @@ export default function DiplomacyPanel() {
                    </button>
                 </div>
              ) : (
-                diplo2.activeNegotiations.map((neg) => {
+                (diplo2.activeNegotiations || []).map((neg) => {
                    const isLocked = neg.phase === 'CONCLUDED' || neg.phase === 'COLLAPSED';
                    return (
                       <div key={neg.id} className={`p-4 rounded border transition-all ${isLocked ? 'bg-slate-950 border-slate-900 opacity-70' : 'bg-[#0f0f12] border-red-900/30'}`}>
@@ -381,9 +381,9 @@ export default function DiplomacyPanel() {
                          {/* Issue Matrix */}
                          <div className="my-3 flex flex-col gap-1.5 p-2 bg-slate-950 rounded border border-slate-900/60 text-[10px] font-mono text-slate-400">
                             <strong>DRAFTED ARTICLES ({neg.wavesCount} waves):</strong>
-                            {neg.agreedIssues.map((iss, index) => (
+                            {(neg.agreedIssues || []).map((iss, index) => (
                                <div key={index} className="flex justify-between border-b border-slate-900 pb-1">
-                                  <span>{iss.title}</span>
+                                  <span>{iss.label}</span>
                                   <span className="text-emerald-400">CONCLUDED</span>
                                </div>
                             ))}
@@ -435,7 +435,7 @@ export default function DiplomacyPanel() {
              <div>
                 <h4 className="text-[10px] font-mono text-slate-500 uppercase tracking-wider mb-3">SECURE DECLASSIFIED TRANSCRIPT LOGS</h4>
                 <div className="bg-slate-950/40 border border-[#222] rounded p-4 h-[440px] overflow-y-auto font-mono text-xs text-slate-400 flex flex-col gap-2.5">
-                   {diplo2.negotiationEventLog.map((log, index) => (
+                   {(diplo2.negotiationEventLog || []).map((log, index) => (
                       <div key={index} className="border-b border-slate-900 pb-2 flex gap-2">
                          <span className="text-red-800">●</span>
                          <p>{log}</p>
@@ -468,7 +468,7 @@ export default function DiplomacyPanel() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-           {diplo2.leverageRecords.map((lev) => (
+           {(diplo2.leverageRecords || []).map((lev) => (
               <div key={lev.id} className={`p-4 rounded border flex flex-col justify-between min-h-[220px] transition-all bg-[#0d0d10] border-slate-800/80`}>
                  <div>
                     <div className="flex justify-between items-start mb-2">
@@ -476,8 +476,8 @@ export default function DiplomacyPanel() {
                        <span className="text-[9px] font-mono text-slate-500">HOLD: {lev.holderNationId}</span>
                     </div>
                     <strong className="block text-sm font-serif text-slate-100 mt-2">TARGET UNILATERAL INDEPENDENCE: {lev.targetNationId}</strong>
-                    <p className="text-[10px] text-slate-400 font-mono mt-2 uppercase">Decay Speed Coefficient: {lev.decaySpeedScale}</p>
-                    <p className="text-[10px] text-slate-400 font-mono mt-1 uppercase">Exercise Efficacy: X{lev.efficacyMultiplier}</p>
+                    <p className="text-[10px] text-slate-400 font-mono mt-2 uppercase">Decay Speed Coefficient: {lev.intensityScore > 50 ? 'FAST' : 'SLOW'}</p>
+                    <p className="text-[10px] text-slate-400 font-mono mt-1 uppercase">Exercise Efficacy: X{(lev.intensityScore / 100).toFixed(2)}</p>
                  </div>
 
                  <div className="mt-5 pt-3 border-t border-slate-900 flex justify-between items-center bg-transparent">
@@ -588,14 +588,14 @@ export default function DiplomacyPanel() {
            <div className="lg:col-span-7 flex flex-col gap-4">
               <h4 className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">ACTIVE BROADCAST CHANNELS & ONGOING CAMPAIGNS</h4>
               <div className="flex flex-col gap-3 max-h-[300px] overflow-y-auto">
-                 {diplo2.publicDiplomacyCampaigns.map((c) => (
+                 {(diplo2.publicDiplomacyCampaigns || []).map((c) => (
                     <div key={c.id} className="p-3 bg-slate-950 rounded border border-slate-900 text-xs font-mono text-slate-400">
                        <div className="flex justify-between font-bold text-slate-300">
                           <span>Target ID: {c.targetNationId}</span>
                           <span className={c.isActive ? 'text-emerald-400' : 'text-slate-600'}>{c.isActive ? 'RUNNING' : 'EXPIRED'}</span>
                        </div>
-                       <p className="mt-1">Theme: {c.theme.replace(/_/g, ' ')} | Channel: {c.channel.replace(/_/g, ' ')}</p>
-                       <p className="mt-1">Audience Reach Factor: {c.audienceReachScore}/100 | Yield: +{c.cumulativeEffect} score</p>
+                       <p className="mt-1">Theme: {c.narrativeTheme.replace(/_/g, ' ')} | Channel: {c.channel.replace(/_/g, ' ')}</p>
+                       <p className="mt-1">Audience Reach Factor: {c.effectivenessScore}/100 | Yield: +{c.effectivenessScore} score</p>
                     </div>
                  ))}
                  {diplo2.publicDiplomacyCampaigns.length === 0 && (
@@ -608,13 +608,13 @@ export default function DiplomacyPanel() {
               {/* Incidents response console */}
               <h4 className="text-[10px] font-mono text-slate-500 uppercase tracking-wider mt-3">Sovereign Crisis & Incidents Response alerts</h4>
               <div className="flex flex-col gap-3 overflow-y-auto">
-                 {diplo2.diplomaticIncidents.map((inc) => (
+                 {(diplo2.diplomaticIncidents || []).map((inc) => (
                     <div key={inc.id} className={`p-4 rounded border ${inc.consequenceApplied ? 'bg-slate-950 border-slate-900 opacity-60' : 'bg-red-950/20 border-red-900/40 text-red-200 animate-pulse'}`}>
                        <div className="flex justify-between items-start mb-2">
-                          <span className="text-[9px] font-mono bg-red-950 text-red-500 px-1.5 rounded uppercase">CRITICAL INCIDENT ALERT: {inc.incidentType.replace(/_/g, ' ')}</span>
+                          <span className="text-[9px] font-mono bg-red-950 text-red-500 px-1.5 rounded uppercase">CRITICAL INCIDENT ALERT: {inc.type.replace(/_/g, ' ')}</span>
                           <span className="text-[9px] font-mono text-slate-400">Origin: {inc.affectedNationId}</span>
                        </div>
-                       <p className="text-[10px] font-mono text-slate-300 italic mb-3">Geopolitical flashpoint: {inc.description}</p>
+                       <p className="text-[10px] font-mono text-slate-300 italic mb-3">Geopolitical flashpoint: {inc.severity} Severity</p>
                        
                        {!inc.consequenceApplied ? (
                           <div className="flex flex-col gap-2 bg-[#050505] p-2 rounded border border-red-900/10">
@@ -658,7 +658,7 @@ export default function DiplomacyPanel() {
                 NO ACTIVE CRISES
               </div>
             ) : (
-              diplo_crises.map(crisis => (
+              (diplo_crises || []).map(crisis => (
                  <div key={crisis.id} className="bg-slate-900 border-l-4 border-l-red-500 border-t border-b border-r border-slate-800 p-4 rounded-r">
                     <div className="flex justify-between items-center mb-4">
                        <h4 className="font-serif font-bold text-red-400 text-lg uppercase">{crisis.type.replace(/_/g, ' ')}</h4>
@@ -668,7 +668,7 @@ export default function DiplomacyPanel() {
                     
                     {crisis.status === 'ACTIVE' && (
                       <div className="flex flex-col gap-2">
-                        {crisis.availableResponses.map(resp => (
+                        {(crisis.availableResponses || []).map(resp => (
                            <div key={resp.id} className="p-3 bg-slate-950 border border-slate-800 hover:border-slate-600 transition-colors rounded flex justify-between items-center">
                               <div>
                                  <h5 className="font-xs font-bold font-mono text-slate-300">{resp.instrument}</h5>
@@ -700,7 +700,7 @@ export default function DiplomacyPanel() {
                         <div className="text-slate-500">Cohesion: <strong className="text-red-500 font-bold">{bloc.cohesionScore}%</strong></div>
                      </div>
                      <div className="flex flex-wrap gap-1.5 mt-2">
-                        {bloc.memberNationIds.map(mid => (
+                        {(bloc.memberNationIds || []).map(mid => (
                            <span key={mid} className="px-2 py-1 bg-slate-950 border border-slate-800 text-[9px] rounded font-mono text-slate-400">{countries[mid]?.name || mid}</span>
                         ))}
                      </div>
@@ -716,7 +716,7 @@ export default function DiplomacyPanel() {
         <div className="flex flex-col gap-4">
            <h3 className="text-xl font-serif text-slate-200 border-b border-slate-800 pb-2">SOFT POWER OPERATIONS</h3>
            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {diplo_softPowerProgrammes.map(prog => (
+              {(diplo_softPowerProgrammes || []).map(prog => (
                  <div key={prog.id} className="bg-slate-900 border border-slate-700 p-4 rounded">
                     <span className="text-[10px] font-mono bg-emerald-950 text-emerald-500 px-2 py-0.5 uppercase mb-2 inline-block rounded">{prog.category.replace(/_/g, ' ')}</span>
                     <h4 className="font-mono text-xs text-slate-300 mb-2">Target: {prog.targetNationId}</h4>
@@ -736,7 +736,7 @@ export default function DiplomacyPanel() {
         <div className="flex flex-col gap-4">
            <h3 className="text-xl font-serif text-slate-200 border-b border-slate-800 pb-2">AMBASSADOR NETWORK</h3>
            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {diplo_ambassadors.map(amb => (
+              {(diplo_ambassadors || []).map(amb => (
                  <div key={amb.id} className="bg-[#0a0a0d] border border-slate-800/80 p-3.5 rounded flex justify-between items-center">
                     <div>
                       <div className="font-serif font-bold text-slate-200">{amb.name}</div>
@@ -752,7 +752,7 @@ export default function DiplomacyPanel() {
            <div className="mt-8">
               <h4 className="text-xs font-mono font-bold uppercase text-slate-500 mb-2 tracking-wider">Director Briefing Log</h4>
               <div className="bg-[#050505] p-4 text-[10px] font-mono overflow-y-auto max-h-[300px] border border-[#222]">
-                 {diplo_directorLog.map((log, i) => (
+                 {(diplo_directorLog || []).map((log, i) => (
                     <div key={i} className="mb-2 text-slate-400 border-b border-slate-900/60 pb-2 flex gap-2">
                        <span className="text-slate-600">»</span>
                        <span>{log}</span>

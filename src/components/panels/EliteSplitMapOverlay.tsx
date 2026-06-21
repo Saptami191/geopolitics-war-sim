@@ -38,7 +38,7 @@ export const EliteSplitMapOverlay: React.FC<{ countryId: string, onClose: () => 
              <div className="text-sm text-green-400 font-bold">ESTIMATED REGIME GRIP: {Math.floor(powerGrip)}%</div>
              
              {/* Lines emerging from bottom */}
-             {factions.map((f, i) => {
+             {(factions || []).map((f, i) => {
                 const total = factions.length;
                 const offset = (i - (total - 1) / 2) * 150; // spread them out
                 
@@ -65,7 +65,7 @@ export const EliteSplitMapOverlay: React.FC<{ countryId: string, onClose: () => 
 
            {/* Faction Nodes Row */}
            <div className="flex justify-center gap-10 mt-64 z-10">
-             {factions.map(f => {
+             {(factions || []).map(f => {
                const isUnknown = !f.playerContactEstablished;
                
                let nodeColor = 'border-green-500 bg-green-900/20';

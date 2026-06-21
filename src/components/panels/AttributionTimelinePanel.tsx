@@ -56,7 +56,7 @@ export default function AttributionTimelinePanel() {
                 No forensic cases registered on the active grid yet. Execute an operation to open a tracking trace.
               </div>
             ) : (
-              cases.map((c) => {
+              (cases || []).map((c) => {
                 const isSelected = selectedCaseId === c.caseId || (!selectedCaseId && activeCase?.caseId === c.caseId);
                 return (
                   <button
@@ -124,7 +124,7 @@ export default function AttributionTimelinePanel() {
                     FORENSIC EVIDENCE SPECIMENS ({activeCase.evidencePieces.length})
                   </span>
                   <div className="flex-1 overflow-y-auto space-y-2 pr-1 select-none scrollbar-thin">
-                    {activeCase.evidencePieces.map((e, idx) => (
+                    {(activeCase.evidencePieces || []).map((e, idx) => (
                       <div key={idx} className="border border-cyan-900/30 p-2 bg-cyan-950/10 text-[9px]">
                         <div className="flex justify-between uppercase font-bold text-[8px] text-[#00d0ff]/75 mb-1">
                           <span>{e.sourceType} SPECIMEN</span>
@@ -149,7 +149,7 @@ export default function AttributionTimelinePanel() {
                     INJECTED FALSE DECORATIONS ({activeCase.contradictoryEvidence.length})
                   </span>
                   <div className="flex-1 overflow-y-auto space-y-2 pr-1 select-none scrollbar-thin">
-                    {activeCase.contradictoryEvidence.map((e, idx) => (
+                    {(activeCase.contradictoryEvidence || []).map((e, idx) => (
                       <div key={idx} className="border border-amber-900/30 p-2 bg-amber-950/10 text-[9px]">
                         <div className="flex justify-between uppercase font-bold text-[8px] text-amber-500/75 mb-1">
                           <span>DECEPTION INJECTION</span>
@@ -172,7 +172,7 @@ export default function AttributionTimelinePanel() {
               {/* Journal chronological timeline */}
               <div className="border border-[#003c4a]/20 p-2.5 bg-black/45 space-y-1.5 shrink-0 max-h-[100px] overflow-y-auto rounded scrollbar-thin">
                 <span className="text-[9px] text-gray-500 uppercase font-bold block mb-1">CHRONOLOGICAL INVESTIGATIONAL JOURNAL:</span>
-                {activeCase.chronologicalJournal.map((log, idx) => (
+                {(activeCase.chronologicalJournal || []).map((log, idx) => (
                   <div key={idx} className="text-[9px] text-[#00c3ff]/75 leading-snug border-l border-cyan-800/40 pl-1.5 font-mono">
                     {log}
                   </div>

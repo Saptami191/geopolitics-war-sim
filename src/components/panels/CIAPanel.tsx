@@ -61,6 +61,7 @@ export default function CIAPanel({ onClose }: { onClose: () => void }) {
         {tabs.map((tab) => (
           <button
             key={tab.id}
+            style={{ flexShrink: 0 }}
             onClick={() => setActiveTab(tab.id)}
             className={`px-5 py-2 uppercase tracking-wide text-[10px] font-bold transition-all border shrink-0 ${
               activeTab === tab.id
@@ -79,8 +80,10 @@ export default function CIAPanel({ onClose }: { onClose: () => void }) {
                  <div className="flex flex-col gap-4 border-r border-[#1a1a1a] pr-4">
                      <h2 className="text-[#ff3333] font-bold tracking-widest text-xs uppercase border-b border-red-900/50 pb-2">ACTIVE OPERATIONS</h2>
                      <div className="space-y-3 overflow-y-auto pr-2">
-                         {cia_operations.filter(o => o.status === 'ACTIVE').length === 0 && <div className="text-gray-600">NO ACTIVE OPERATIONS.</div>}
-                         {cia_operations.filter(o => o.status === 'ACTIVE').map(op => (
+                         {(cia_operations || []).filter(o => o.status === 'ACTIVE').length === 0 && (
+                            <div className="text-xs text-gray-500 opacity-60">NO ACTIVE OPS</div>
+                         )}
+                         {(cia_operations || []).filter(o => o.status === 'ACTIVE').map(op => (
                              <div key={op.id} className="border border-red-900/50 bg-[#0a0202] p-3 text-[10px] flex flex-col gap-2 relative overflow-hidden group">
                                 <div className="flex justify-between items-start">
                                     <div className="flex gap-2 items-center">
@@ -143,7 +146,7 @@ export default function CIAPanel({ onClose }: { onClose: () => void }) {
                      </thead>
                      <tbody>
                          {cia_operatives.length === 0 && <tr><td colSpan={6} className="py-4 text-center text-gray-600">NO OPERATIVES DEPLOYED</td></tr>}
-                         {cia_operatives.map(o => (
+                         {(cia_operatives || []).map(o => (
                              <tr key={o.id} className="border-b border-[#111] hover:bg-[#111]">
                                  <td className="py-3 pl-2 text-[#ffcc00] font-bold">{o.codename}</td>
                                  <td className="py-3 text-gray-400">{o.coverType}</td>
@@ -167,7 +170,7 @@ export default function CIAPanel({ onClose }: { onClose: () => void }) {
                      </thead>
                      <tbody>
                          {cia_assets.length === 0 && <tr><td colSpan={6} className="py-4 text-center text-gray-600">NO HUMAN SOURCES RECRUITED</td></tr>}
-                         {cia_assets.map(a => (
+                         {(cia_assets || []).map(a => (
                              <tr key={a.id} className={`border-b border-[#111] hover:bg-[#111] ${a.status === 'BURNED' ? 'opacity-50 grayscale' : ''} ${a.status === 'DOUBLED' ? 'border-red-900/80 bg-red-900/10' : ''}`}>
                                  <td className="py-3 pl-2 text-[#00aaff] font-bold">{a.codename}</td>
                                  <td className="py-3 text-gray-300 max-w-[200px] truncate">{a.position}</td>
@@ -184,7 +187,7 @@ export default function CIAPanel({ onClose }: { onClose: () => void }) {
          {activeTab === 'STATIONS' && (
              <div className="grid grid-cols-3 gap-4">
                  {cia_stations.length === 0 && <div className="text-gray-600 col-span-3 text-center mt-10">NO OVERSEAS STATIONS ESTABLISHED</div>}
-                 {cia_stations.map(s => (
+                 {(cia_stations || []).map(s => (
                      <div key={s.id} className="border border-[#333] bg-[#0a0a0a] p-3 text-[10px] relative">
                         {s.isCompromised && <div className="absolute top-0 right-0 bg-red-500 text-white px-2 uppercase font-bold animate-pulse">COMPROMISED</div>}
                         <h3 className="text-[#ffcc00] font-bold text-xs">{s.nationId}</h3>
@@ -235,7 +238,7 @@ export default function CIAPanel({ onClose }: { onClose: () => void }) {
                          <div>
                             <div className="text-gray-500 uppercase tracking-widest mb-2">Restricted Activities</div>
                             {cia_oversight.restrictedOperationTypes.length === 0 ? <div className="text-gray-600">NONE</div> : 
-                                <div className="flex flex-col gap-1">{cia_oversight.restrictedOperationTypes.map(r => <span key={r} className="text-red-400 opacity-80">{r}</span>)}</div>
+                                <div className="flex flex-col gap-1">{(cia_oversight.restrictedOperationTypes || []).map(r => <span key={r} className="text-red-400 opacity-80">{r}</span>)}</div>
                             }
                          </div>
                          <div>
@@ -248,7 +251,7 @@ export default function CIAPanel({ onClose }: { onClose: () => void }) {
                      <h2 className="text-[#aaddee] font-bold tracking-widest text-xs uppercase border-b border-[#224455] pb-2">DIRECTOR BRIEFING LOG</h2>
                      <div className="flex-1 overflow-y-auto space-y-2 pb-4">
                           {cia_directorBriefingLog.length === 0 && <div className="text-gray-600">NO LOGS AVAILABLE</div>}
-                          {cia_directorBriefingLog.map((log, i) => (
+                          {(cia_directorBriefingLog || []).map((log, i) => (
                               <div key={i} className="text-[10px] font-mono whitespace-pre-wrap px-2 py-1 bg-[#050505] text-[#7788aa] border-l-2 border-[#224455] mb-1">
                                  {log}
                               </div>

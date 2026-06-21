@@ -243,7 +243,7 @@ export default function UNPanel() {
                         onChange={(e) => setDraftTarget(e.target.value)}
                         className="bg-black text-[10px] border border-[#0d2e0d] text-green-400 p-1.5 hover:border-green-400 rounded outline-none"
                       >
-                        {globalNations.map(cid => (
+                        {(globalNations || []).map(cid => (
                           <option key={cid} value={cid}>{countries[cid]?.name} ({cid})</option>
                         ))}
                       </select>
@@ -630,7 +630,7 @@ export default function UNPanel() {
                       onChange={(e) => setTradeDebtor(e.target.value)}
                       className="w-full bg-black border border-[#0d2e0d] text-green-400 p-1.5 rounded outline-none"
                     >
-                      {globalNations.map(cid => (
+                      {(globalNations || []).map(cid => (
                         <option key={cid} value={cid}>{countries[cid]?.name} ({cid})</option>
                       ))}
                     </select>
@@ -757,7 +757,7 @@ export default function UNPanel() {
                       onChange={(e) => setLegalRespondent(e.target.value)}
                       className="w-full bg-black border border-[#0d2e0d] text-green-400 p-1.5 rounded outline-none"
                     >
-                      {globalNations.map(cid => (
+                      {(globalNations || []).map(cid => (
                         <option key={cid} value={cid}>{countries[cid]?.name} ({cid})</option>
                       ))}
                     </select>

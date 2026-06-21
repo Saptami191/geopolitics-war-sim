@@ -504,7 +504,7 @@ export default function EnergyPanel() {
                       return (
                         <>
                           {/* Arcs Renders */}
-                          {flowArcs.map((arc, idx) => {
+                          {(flowArcs || []).map((arc, idx) => {
                             const p1 = points[arc.from];
                             const p2 = points[arc.to];
                             if (!p1 || !p2) return null;
@@ -795,7 +795,7 @@ export default function EnergyPanel() {
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {activeEmbargoes.map((emb) => (
+                      {(activeEmbargoes || []).map((emb) => (
                         <div 
                           key={emb.id}
                           className="flex justify-between items-center p-3 bg-[#0a0a0a] border border-rose-950/40 rounded text-xs font-mono"
@@ -844,7 +844,7 @@ export default function EnergyPanel() {
                 </div>
 
                 <div className="divide-y divide-zinc-950 border border-zinc-900 rounded bg-[#030303] overflow-hidden">
-                  {incidents.map((inc) => (
+                  {(incidents || []).map((inc) => (
                     <div key={inc.id} className="p-4 flex items-start gap-4 transition-colors hover:bg-zinc-950/40">
                       <div className={`p-1.5 rounded border mt-0.5 ${
                         inc.economicSeverity === 'SEVERE'
@@ -1023,7 +1023,7 @@ export default function EnergyPanel() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {profile.dependencies.map((dep, idx) => (
+                  {(profile.dependencies || []).map((dep, idx) => (
                     <div 
                       key={idx} 
                       className={`p-2.5 bg-zinc-950/60 rounded border font-mono text-[10.5px] space-y-1.5 ${

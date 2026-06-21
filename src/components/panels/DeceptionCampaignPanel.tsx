@@ -119,7 +119,7 @@ export default function DeceptionCampaignPanel() {
           </div>
 
           <div className="flex-1 overflow-y-auto space-y-2 scrollbar-thin pr-1">
-            {campaignsList.map((c) => {
+            {(campaignsList || []).map((c) => {
               const active = decStore.selectedCampaignId === c.deceptionId;
               return (
                 <button
@@ -427,7 +427,7 @@ export default function DeceptionCampaignPanel() {
                         <span className="text-[9px]">PLANT METADATA RECURRINGLY TO FUEL THE TARGET NATION REDIRECTS</span>
                       </div>
                     ) : (
-                      selectedCampaign.packets.map((p) => {
+                      (selectedCampaign.packets || []).map((p) => {
                         return (
                           <div key={p.packetId} className="border border-sky-950/50 bg-[#070e17]/80 rounded p-2.5 text-[10px] space-y-1">
                             <div className="flex justify-between items-center text-sky-400 border-b border-sky-950/20 pb-1 mb-1 font-bold">
@@ -436,7 +436,7 @@ export default function DeceptionCampaignPanel() {
                             </div>
                             <p className="text-sky-200 font-bold">{p.payloadSummary}</p>
                             <div className="pl-3 border-l border-sky-900/40 text-[9px] text-sky-500 space-y-0.5">
-                              {p.payloadDetails.map((det, i) => <div key={i}>&gt; {det}</div>)}
+                              {(p.payloadDetails || []).map((det, i) => <div key={i}>&gt; {det}</div>)}
                             </div>
                             <div className="grid grid-cols-2 gap-2 text-[9px] text-sky-500/50 pt-1 border-t border-sky-950/10">
                               <div>INTENDED INTERPRETATION: <span className="text-sky-300">{p.intendedInterpretation}</span></div>

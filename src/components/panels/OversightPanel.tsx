@@ -140,7 +140,7 @@ export default function OversightPanel({ onClose }: { onClose: () => void }) {
               <div>
                  <h3 className="text-orange-400 border-b border-orange-900/30 pb-1 mb-3 font-bold">LEAK FEED</h3>
                  <div className="space-y-2">
-                     {store.pendingLeaks.map(leak => (
+                     {(store.pendingLeaks || []).map(leak => (
                          <div key={leak.id} className="border border-red-900/50 bg-red-950/10 p-2 text-[10px]">
                             <div className="text-red-400 font-bold">PENDING LEAK: {leak.scandalOrigin.replace(/_/g, ' ')}</div>
                             <div className="text-gray-400 mt-1">Investigating Outlet: {store.mediaOutlets[leak.outletPublishingId]?.name}</div>
@@ -151,7 +151,7 @@ export default function OversightPanel({ onClose }: { onClose: () => void }) {
                             </div>
                          </div>
                      ))}
-                     {store.publishedLeaks.map(leak => (
+                     {(store.publishedLeaks || []).map(leak => (
                          <div key={leak.id} className="border border-gray-800 p-2 text-[10px] text-gray-500">
                              PUBLISHED: {leak.scandalOrigin} via {store.mediaOutlets[leak.outletPublishingId]?.name}
                          </div>

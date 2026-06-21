@@ -376,7 +376,7 @@ export default function MirrorAdaptationPanel() {
                 <p className="text-gray-500 italic text-[9px]">Adversary systems are monitoring; no candidates currently queued.</p>
               ) : (
                 <div className="space-y-2">
-                  {candidates.map((c) => {
+                  {(candidates || []).map((c) => {
                     const temp = mirrorState.availableTemplates.find((t) => t.templateId === c.templateId);
                     return (
                       <div key={c.candidateId} className="bg-zinc-950/60 border border-zinc-900 p-2 rounded">
@@ -408,7 +408,7 @@ export default function MirrorAdaptationPanel() {
                 <p className="text-gray-500 italic text-[9px]">No previous defensive doctrines recorded on this simulation cycle.</p>
               ) : (
                 <div className="space-y-1.5 overflow-y-auto max-h-[160px] scrollbar-thin">
-                  {counterHistory.map((hist, idx) => (
+                  {(counterHistory || []).map((hist, idx) => (
                     <div key={idx} className="flex justify-between items-center text-[9px] bg-zinc-950/45 p-1 px-2 border border-zinc-950/20 rounded">
                       <span className="text-gray-400 line-clamp-1 select-all">{hist.strategyName}</span>
                       <span className="text-gray-500 text-[8px] shrink-0 font-bold ml-1.5">Tick {hist.tickDeployed}</span>
@@ -494,7 +494,7 @@ export default function MirrorAdaptationPanel() {
             {memories.length === 0 ? (
               <p className="text-gray-500 italic text-[9px]">Archive feed empty. Perform actions on Central Bank, Covert Ops, or Weapon Silos to record profiling updates.</p>
             ) : (
-              memories.map((m) => (
+              (memories || []).map((m) => (
                 <div key={m.id} className="flex flex-col gap-0.5 p-1.5 bg-black/50 border border-zinc-950/50 rounded pl-2.5 relative">
                   <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#1a5c1a]" />
                   <div className="flex justify-between items-center text-[9px] text-gray-500">

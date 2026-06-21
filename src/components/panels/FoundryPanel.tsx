@@ -357,7 +357,7 @@ export default function FoundryPanel() {
               </g>
 
               {/* RENDER ACTIVE ROUTE FLOWS */}
-              {filteredFlows.map((flow) => {
+              {(filteredFlows || []).map((flow) => {
                 const start = getProportionateCoords(flow.sourceCountryId);
                 const end = getProportionateCoords(flow.destinationCountryId);
                 const isFlowSelected = selectedFlowId === flow.id;
@@ -431,7 +431,7 @@ export default function FoundryPanel() {
               })}
 
               {/* RENDER CHOKEPOINTS ON THE OVERLAY */}
-              {chokepoints.map((choke) => {
+              {(chokepoints || []).map((choke) => {
                 const pos = choke.coordinates;
                 const isSelected = selectedChokepointId === choke.id;
                 
@@ -618,7 +618,7 @@ export default function FoundryPanel() {
                 {selectedFlowData.transitChokepointIds.length > 0 && (
                   <div className="text-[7px] text-gray-400 flex items-center gap-1 font-bold">
                     <span>CROSSES CHOKEPOINTS:</span>
-                    {selectedFlowData.transitChokepointIds.map(cId => (
+                    {(selectedFlowData.transitChokepointIds || []).map(cId => (
                       <span key={cId} className="px-1 text-[#00e5ff] border border-[#112d11] bg-black/40 rounded">
                         {cId.toUpperCase()}
                       </span>
@@ -873,7 +873,7 @@ export default function FoundryPanel() {
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-2 overflow-y-auto max-h-[60px] scrollbar-thin pr-1 text-[7px]">
           {changeLog.length > 0 ? (
-            changeLog.map((record, rIdx) => {
+            (changeLog || []).map((record, rIdx) => {
               const isCrit = record.summary.includes('COERCIVE');
               return (
                 <div 

@@ -154,7 +154,7 @@ export default function SigintPanel({ onClose }: { onClose: () => void }) {
          {activeTab === 'ALERTS' && (
             <div className="space-y-2">
                 {store.alerts.length === 0 && <div className="text-center text-cyan-900 p-8">NO ANOMALIES DETECTED</div>}
-                {store.alerts.map(a => (
+                {(store.alerts || []).map(a => (
                     <div key={a.id} className={`border p-3 flex justify-between items-center bg-black ${!a.isAcknowledged ? (a.severity === 'CRITICAL' ? 'border-red-500 bg-red-950/10' : a.severity === 'HIGH' ? 'border-amber-500 bg-amber-950/10' : 'border-cyan-500') : 'border-cyan-900/30 opacity-50'}`}>
                        <div>
                           <div className={`text-[9px] font-bold mb-1 ${a.severity === 'CRITICAL' || a.severity === 'HIGH' ? 'text-amber-500' : 'text-cyan-500'}`}>

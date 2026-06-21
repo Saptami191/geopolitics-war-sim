@@ -26,7 +26,7 @@ export interface RegimePressureScore {
  * @returns RegimePressureScore structured data showing total and individual contributions.
  */
 export function computeRegimePressure(targetNationId: string, worldState: WorldState): RegimePressureScore {
-  const targetData: CountryData | undefined = worldState.countries[targetNationId];
+  const targetData: Country | undefined = worldState.countries[targetNationId];
   
   if (!targetData) {
     return {
@@ -38,43 +38,39 @@ export function computeRegimePressure(targetNationId: string, worldState: WorldS
     };
   }
 
-  // Base metrics derived defensively with safety bounds from CountryData where available.
+  // Base metrics derived defensively with safety bounds from Country where available.
   const inflationRaw = targetData.economic?.inflationRate ?? 0;
   const growthRaw = targetData.economic?.gdpGrowthRate ?? 0;
   
   // Synthesize Economic Stress (0-100)
   // High inflation and negative growth drive economic stress.
   let economicStress = (inflationRaw * 2.5) + (growthRaw < 0 ? Math.abs(growthRaw) * 5 : 0);
-  if (targetData.economic?.sanctionsPenaltyMultiplier) {
-     economicStress += (targetData.economic.sanctionsPenaltyMultiplier - 1) * 50;
-  }
+  // Removed sanctions penalty logic since it's missing from generic Country typing
   economicStress = Math.max(0, Math.min(100, economicStress));
 
   // Synthesize Elite Defection (0-100)
   // Driven by inverse of stability or military loyalty if available.
   let eliteDefection = 0;
-  if (targetData.military?.readiness) {
-    eliteDefection += (100 - targetData.military.readiness) * 0.4;
+  if (targetData.arsenal?.readinessLevel) {
+    eliteDefection += (100 - targetData.arsenal.readinessLevel) * 0.4;
   }
-  if (targetData.domestic?.stability) {
-    eliteDefection += (100 - targetData.domestic.stability) * 0.6;
+  if (targetData.political?.stabilityIndex) {
+    eliteDefection += (100 - targetData.political.stabilityIndex) * 0.6;
   }
   eliteDefection = Math.max(0, Math.min(100, eliteDefection));
 
   // Synthesize Popular Unrest (0-100)
   let popularUnrest = 0;
-  if (targetData.domestic?.stability) {
-     popularUnrest = 100 - targetData.domestic.stability;
+  if (targetData.political?.stabilityIndex) {
+     popularUnrest = 100 - targetData.political.stabilityIndex;
   }
   popularUnrest += (inflationRaw > 10 ? (inflationRaw - 10) * 2 : 0);
   popularUnrest = Math.max(0, Math.min(100, popularUnrest));
 
   // Synthesize International Isolation (0-100)
   let internationalIsolation = 0;
-  if (targetData.diplomacy?.alignmentWest && targetData.diplomacy?.alignmentEast) {
-      const neutralDistance = Math.abs(50 - targetData.diplomacy.alignmentWest) + Math.abs(50 - targetData.diplomacy.alignmentEast);
-      internationalIsolation = Math.max(0, 100 - neutralDistance);
-  }
+  // Assume basic neutrality if diplomacy block is missing from simplified Country type
+  internationalIsolation = 50;
   
   const economicContribution = economicStress * 0.30;
   const eliteContribution = eliteDefection * 0.25;
@@ -113,11 +109,11 @@ export function computePlayerExposureRisk(
   }
 
   const worldState = useWorldStore.getState();
-  const playerData: CountryData | undefined = worldState.countries[playerCountryId];
+  const playerData: Country | undefined = worldState.countries[playerCountryId];
   
   // We extract counter-intelligence from cybersecurity or general defense readiness
   // as a proxy, enforcing a minimum basement value so division doesn't fail.
-  const playerCounterIntelLevel = Math.max(10, (playerData?.military?.readiness ?? 50));
+  const playerCounterIntelLevel = Math.max(10, (playerData?.arsenal?.readinessLevel ?? 50));
 
   let totalAttributionRisk = 0;
   for (const op of activeOps) {

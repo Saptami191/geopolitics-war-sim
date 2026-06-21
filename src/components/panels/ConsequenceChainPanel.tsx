@@ -41,7 +41,7 @@ export default function ConsequenceChainPanel() {
                 No active consequence chains recorded. Initiate operations to plot response fallout sequences.
               </div>
             ) : (
-              chains.map((ch) => {
+              (chains || []).map((ch) => {
                 const isSelected = selectedChainId === ch.chainId || (!selectedChainId && activeChain?.chainId === ch.chainId);
                 return (
                   <button
@@ -97,7 +97,7 @@ export default function ConsequenceChainPanel() {
                 </span>
                 
                 <div className="flex-1 overflow-y-auto space-y-3.5 pr-1 scrollbar-thin">
-                  {activeChain.steps.map((step, idx) => {
+                  {(activeChain.steps || []).map((step, idx) => {
                     const ticksRemaining = step.resolveTick - currentTick;
                     const isFuturistic = step.resolveTick > currentTick && !step.isResolved && !step.isHappening;
                     const isUpcomingActive = step.isHappening || (step.resolveTick <= currentTick && !step.isResolved);

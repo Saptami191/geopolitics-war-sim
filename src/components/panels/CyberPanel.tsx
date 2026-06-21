@@ -57,7 +57,7 @@ export default function CyberPanel() {
                  <button className="bg-[#00ff41]/20 px-3 py-1 text-xs font-bold hover:bg-[#00ff41]/40 border border-[#00ff41]/40">+ LAUNCH OPERATION</button>
                </div>
                <div className="grid gap-4">
-                 {cyber_aptOperations.map(op => (
+                 {(cyber_aptOperations || []).map(op => (
                    <div key={op.id} className={`border p-3 ${op.status==='ACTIVE'?'border-[#00ff41]/50':'border-gray-600'} bg-[#020502]`}>
                       <div className="flex justify-between items-center mb-2">
                         <div className="font-bold text-sm">{op.codename} <span className="text-gray-500 text-xs">// {op.targetNationId} : {op.targetType}</span></div>
@@ -83,8 +83,8 @@ export default function CyberPanel() {
                       </div>
                    </div>
                  ))}
-                 {cyber_aptOperations.length === 0 && (
-                   <div className="text-center p-8 text-[#00ff41]/40 text-xs">NO ACTIVE OPERATIONS</div>
+                 {(cyber_aptOperations || []).length === 0 && (
+                   <div className="text-xs text-gray-500 opacity-60">NO ACTIVE OPS</div>
                  )}
                </div>
             </div>
@@ -95,7 +95,7 @@ export default function CyberPanel() {
               <div>
                 <div className="font-bold border-b border-[#00ff41]/20 pb-2 mb-2">ZERO-DAYS: {cyber_zeroDays.filter(z=>z.status==='CLASSIFIED').length} CLASSIFIED / {cyber_zeroDays.filter(z=>z.status==='DEPLOYED').length} DEPLOYED</div>
                 <div className="grid grid-cols-2 gap-4">
-                  {cyber_zeroDays.map(zd => (
+                  {(cyber_zeroDays || []).map(zd => (
                     <div key={zd.id} className="border border-[#00ff41]/20 bg-[#020502] p-3 text-xs">
                        <div className="flex justify-between">
                          <div className="font-bold text-[#41c7ff]">{zd.codename}</div>
@@ -115,7 +115,7 @@ export default function CyberPanel() {
               <div>
                 <div className="font-bold border-b border-[#00ff41]/20 pb-2 mb-2">ZERO-DAY MARKETPLACE</div>
                 <div className="grid grid-cols-2 gap-4">
-                  {cyber_zeroDay_market.availableZeroDays.map(zd => (
+                  {(cyber_zeroDay_market.availableZeroDays || []).map(zd => (
                     <div key={zd.id} className="border border-purple-500/30 bg-[#0a0510] p-3 text-xs text-purple-400">
                        <div className="flex justify-between">
                          <div className="font-bold">{zd.codename}</div>
@@ -154,7 +154,7 @@ export default function CyberPanel() {
                 <div>
                   <div className="font-bold text-sm mb-2">CRITICAL INFRASTRUCTURE STATUS</div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                    {cyber_infrastructure.map(node => (
+                    {(cyber_infrastructure || []).map(node => (
                        <div key={node.id} className={`p-2 text-xs border ${node.status==='SECURE'?'border-[#00ff41]/30 bg-[#020502] text-[#00ff41]':node.status==='COMPROMISED'?'border-red-500/50 bg-red-950/20 text-red-500':'border-amber-500/50 bg-amber-950/20 text-amber-500'}`}>
                          <div className="font-bold truncate" title={node.targetType}>{node.targetType}</div>
                          <div className="mt-1 flex justify-between">
@@ -183,7 +183,7 @@ export default function CyberPanel() {
                               <div>ADVERSARY: {inc.attackingAPTGroupId || 'UNKNOWN'}</div>
                             </div>
                             <div className="mt-2 flex gap-2">
-                              {inc.responseOptions.map(ro => (
+                              {(inc.responseOptions || []).map(ro => (
                                  <button key={ro.id} className="px-2 py-1 bg-red-900/30 hover:bg-red-900/60 border border-red-500/50 text-red-300">
                                    [{ro.type}]
                                  </button>
@@ -235,7 +235,7 @@ export default function CyberPanel() {
 
           {activeTab === 'LOG' && (
             <div className="font-mono text-xs">
-               {cyber_directorLog.map((log, i) => {
+               {(cyber_directorLog || []).map((log, i) => {
                  let colorClass = "text-gray-300";
                  if (log.includes('EXFILTRATION') || log.includes('SUCCEEDED') || log.includes('LAUNCHED')) colorClass = "text-[#00ff41]";
                  if (log.includes('ATTRIBUTED') || log.includes('ATTRIBUTION')) colorClass = "text-purple-400";

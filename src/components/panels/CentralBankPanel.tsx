@@ -185,7 +185,7 @@ export default function CentralBankPanel() {
     const maxVal = Math.max(...history);
     const range = maxVal - minVal || 1;
 
-    const points = history.map((val, idx) => {
+    const points = (history || []).map((val, idx) => {
       const x = (idx / (history.length - 1)) * width;
       const y = height - ((val - minVal) / range) * (height * 0.85) - 2;
       return `${x.toFixed(1)},${y.toFixed(1)}`;
@@ -382,7 +382,7 @@ export default function CentralBankPanel() {
             <div className="bg-black/45 border border-sky-955 p-2 rounded text-[10px] mt-1 text-gray-300 leading-normal">
               <span className="font-bold text-sky-400 text-[8.5px] uppercase block mb-1">Active Macroeconomic System Drivers:</span>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                {activeDriversList.map((driver, idx) => (
+                {(activeDriversList || []).map((driver, idx) => (
                   <div key={idx} className="flex items-center gap-1.5 text-gray-300 font-mono">
                     <span className="text-sky-500 font-bold">▪</span>
                     <span>{driver}</span>
@@ -438,7 +438,7 @@ export default function CentralBankPanel() {
                     fragilityBullets.push(`Sovereign operates sound, well-balanced industrial margins`);
                   }
 
-                  return fragilityBullets.map((bullet, idx) => (
+                  return (fragilityBullets || []).map((bullet, idx) => (
                     <div key={idx} className="flex items-start gap-1.5 p-1.5 border border-red-950/20 bg-red-950/5 rounded text-red-300">
                       <span className="text-red-500">⚡</span>
                       <span className="leading-tight">{bullet}</span>
@@ -502,7 +502,7 @@ export default function CentralBankPanel() {
                     resilienceBullets.push(`Narrow industrial base; shock absorption capacity is heavily constrained`);
                   }
 
-                  return resilienceBullets.map((bullet, idx) => (
+                  return (resilienceBullets || []).map((bullet, idx) => (
                     <div key={idx} className="flex items-start gap-1.5 p-1.5 border border-emerald-950/20 bg-emerald-950/5 rounded text-emerald-300">
                       <span className="text-emerald-500">🛡️</span>
                       <span className="leading-tight">{bullet}</span>
@@ -905,7 +905,7 @@ export default function CentralBankPanel() {
                 RESOURCE DECK SPOT RATES
               </h3>
               <div className="space-y-1">
-                {commodityMarkets.map((m) => {
+                {(commodityMarkets || []).map((m) => {
                   const path = getSparklinePath(m.priceHistory);
                   return (
                     <div key={m.type} className="border border-[#0d1f0d] p-1.5 flex justify-between items-center bg-[#030503] rounded">

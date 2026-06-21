@@ -39,13 +39,14 @@ export default function TargetedOperationsPanel({ onClose }: { onClose: () => vo
       </header>
 
       {/* Tabs list bar */}
-      <div className="flex border-b border-cyan-900/40 bg-black shrink-0">
+      <div className="flex border-b border-cyan-900/40 bg-black shrink-0 overflow-x-auto">
         {tabs.map(t => (
           <button
             id={`tab-btn-${t.id.toLowerCase()}`}
             key={t.id}
             onClick={() => setActiveTab(t.id as any)}
-            className={`flex-1 py-3 font-extrabold tracking-widest text-[10px] transition-all border-r border-[#003c4a]/30 uppercase
+            style={{ flexShrink: 0 }}
+            className={`flex-1 py-3 px-4 min-w-[120px] font-extrabold tracking-widest text-[10px] transition-all border-r border-[#003c4a]/30 uppercase
               ${activeTab === t.id 
                 ? 'bg-cyan-950/40 text-cyan-400 border-b-2 border-b-cyan-400 shadow-[inset_0_-2px_12px_rgba(0,255,255,0.1)]' 
                 : 'text-cyan-950 hover:text-cyan-500 hover:bg-cyan-950/10'}`}

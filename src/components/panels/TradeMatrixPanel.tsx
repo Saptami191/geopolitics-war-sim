@@ -203,7 +203,7 @@ export default function TradeMatrixPanel() {
                     No active sanctions escalation chains registered.
                   </div>
                 ) : (
-                  campaigns.map((c) => {
+                  (campaigns || []).map((c) => {
                     const act = getCountryFlagAndName(c.actorCountryId);
                     const targ = getCountryFlagAndName(c.targetCountryId);
                     return (
@@ -299,7 +299,7 @@ export default function TradeMatrixPanel() {
                               ⬇️ Top Inbound Dependencies (Imports)
                             </span>
                             <div className="space-y-1 font-mono">
-                              {dependencySummaries[selectedCountryId]?.topImportPartners.map((item) => (
+                              {(dependencySummaries[selectedCountryId]?.topImportPartners || []).map((item) => (
                                 <div 
                                   key={item.partnerCountryId} 
                                   onClick={() => setCompareBilateralPair({ countryA: selectedCountryId, countryB: item.partnerCountryId })}
@@ -316,7 +316,7 @@ export default function TradeMatrixPanel() {
                               ⬆️ Primary Sovereign Outbound Buyers (Exports)
                             </span>
                             <div className="space-y-1 font-mono">
-                              {dependencySummaries[selectedCountryId]?.topExportPartners.map((item) => (
+                              {(dependencySummaries[selectedCountryId]?.topExportPartners || []).map((item) => (
                                 <div 
                                   key={item.partnerCountryId} 
                                   onClick={() => setCompareBilateralPair({ countryA: selectedCountryId, countryB: item.partnerCountryId })}
@@ -369,7 +369,7 @@ export default function TradeMatrixPanel() {
                   </span>
                   
                   <div className="flex-1 overflow-y-auto space-y-2 scrollbar-thin">
-                    {nodes.map((node) => (
+                    {(nodes || []).map((node) => (
                       <div 
                         key={node.id}
                         onClick={() => { setSelectedRouteId(node.id); setActiveSubTab('MAP'); }}
@@ -497,7 +497,7 @@ export default function TradeMatrixPanel() {
                           </span>
                           
                           <div className="space-y-2 flex-1">
-                            {activeProfile.categoryBreakdown.map((link) => {
+                            {(activeProfile.categoryBreakdown || []).map((link) => {
                               const meta = CATEGORY_METADATA[link.categoryId] || { label: link.categoryId, icon: '📦', color: 'text-gray-300', bg: 'bg-gray-900/45', border: 'border-gray-800' };
                               return (
                                 <div key={link.categoryId} className={`p-2 border rounded ${meta.bg} ${meta.border} font-mono`}>
@@ -528,7 +528,7 @@ export default function TradeMatrixPanel() {
                             <div className="p-2.5 bg-black/60 border border-emerald-950 rounded">
                               <span className="text-gray-400 block text-[9px] uppercase font-bold mb-1">Route IDs Traversed</span>
                               <div className="flex gap-1 flex-wrap">
-                                {activeProfile.routeIds.map(rid => (
+                                {(activeProfile.routeIds || []).map(rid => (
                                   <span 
                                     key={rid} 
                                     onClick={() => { setSelectedRouteId(rid); setActiveSubTab('MAP'); }}
@@ -596,7 +596,7 @@ export default function TradeMatrixPanel() {
                   {/* Interdependence topology map container */}
                   <svg viewBox="100 80 800 320" className="w-full h-full">
                     {/* Drawing static connection lanes */}
-                    {segments.map((seg) => {
+                    {(segments || []).map((seg) => {
                       const orig = nodes.find(n => n.id === seg.originNodeId)?.coordinates;
                       const dest = nodes.find(n => n.id === seg.destNodeId)?.coordinates;
                       if (!orig || !dest) return null;
@@ -629,7 +629,7 @@ export default function TradeMatrixPanel() {
                     })}
 
                     {/* Drwaing Node Anchors */}
-                    {nodes.map((node) => {
+                    {(nodes || []).map((node) => {
                       const isSelected = selectedRouteId === node.id;
                       let statusCol = '#00ff44';
                       if (node.operationalStatus === 'STRESSED') statusCol = '#ffeb3b';

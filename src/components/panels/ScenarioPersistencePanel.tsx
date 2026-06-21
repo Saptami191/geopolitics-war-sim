@@ -373,7 +373,7 @@ export default function ScenarioPersistencePanel() {
               />
             ) : (
               <div className="space-y-3">
-                {savedList.map((pkg) => {
+                {(savedList || []).map((pkg) => {
                   const isRenaming = renamingId === pkg.scenarioId;
                   
                   return (

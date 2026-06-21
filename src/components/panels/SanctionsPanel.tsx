@@ -320,7 +320,7 @@ export default function SanctionsPanel() {
             )}
 
             <div className="space-y-2">
-              {campaignsArray.map((c) => {
+              {(campaignsArray || []).map((c) => {
                 const isSelected = activeCampaign?.id === c.id;
                 const statusColor = 
                   c.status === 'ACTIVE' ? 'bg-emerald-500' :
@@ -629,7 +629,7 @@ export default function SanctionsPanel() {
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                        {activeCampaign.evasionChannels.map((ch) => {
+                        {(activeCampaign.evasionChannels || []).map((ch) => {
                           return (
                             <div 
                               key={ch.id} 

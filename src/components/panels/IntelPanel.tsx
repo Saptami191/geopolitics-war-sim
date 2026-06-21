@@ -239,7 +239,7 @@ export default function IntelPanel() {
                 {intel.activeCovertOps.length === 0 ? (
                   <p className="text-gray-600 italic py-2 leading-relaxed text-[10px]/1">No active clandestine Ops tracking inside foreign firewalls.</p>
                 ) : (
-                  intel.activeCovertOps.map((op) => {
+                  (intel.activeCovertOps || []).map((op) => {
                     const spec = opSpecs[op.type];
                     return (
                       <div
@@ -353,7 +353,7 @@ export default function IntelPanel() {
               {spyAssets.length === 0 ? (
                 <p className="text-gray-600 italic leading-normal">No human assets currently deployed abroad.</p>
               ) : (
-                spyAssets.map((spy) => (
+                (spyAssets || []).map((spy) => (
                   <div key={spy.id} className="border border-[#183618] bg-[#020502] p-2.5 rounded font-mono text-[10px] space-y-1.5 hover:bg-[#061206] transition-colors">
                     <div className="flex justify-between items-center border-b border-[#0d1f0d] pb-1">
                       <span className="font-bold text-[#00e5ff]">{spy.alias}</span>

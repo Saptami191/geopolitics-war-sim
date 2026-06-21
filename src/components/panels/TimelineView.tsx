@@ -37,7 +37,7 @@ export default function TimelineView() {
 
   // Group events parsed
   const allEvents = useMemo(() => {
-    return globalEventLog.map((raw, idx) => parseGlobalEvent(raw, idx));
+    return (globalEventLog || []).map((raw, idx) => parseGlobalEvent(raw, idx));
   }, [globalEventLog]);
 
   // Combined filters: time brush, search query, types checkboxes, and ego selected filters
@@ -292,7 +292,7 @@ export default function TimelineView() {
                 🔴 NO CHRONO SIGNALS FOUND IN WINDOW
               </div>
             ) : (
-              groupModeEntries.map((group) => {
+              (groupModeEntries || []).map((group) => {
                 if (group.list.length === 0) return null;
                 return (
                   <div key={group.id} className="space-y-1.5">
@@ -348,7 +348,7 @@ export default function TimelineView() {
                             {/* Right tags and details */}
                             <div className="flex flex-row sm:flex-col items-start sm:items-end justify-between sm:justify-center shrink-0 gap-1 select-none">
                               <div className="flex gap-1">
-                                {evt.tags.map((tag) => (
+                                {(evt.tags || []).map((tag) => (
                                   <span key={tag} className="text-[7px] text-gray-500 bg-[#020502] px-1 border border-[#122812]/50 tracking-widest uppercase">
                                     #{tag}
                                   </span>
@@ -421,7 +421,7 @@ export default function TimelineView() {
                     NO PENDING GEOPOLITICAL CASCADES DETECTED.
                   </div>
                 ) : (
-                  activePendingConsequences.map((c) => {
+                  (activePendingConsequences || []).map((c) => {
                     const style = getConsequenceEffectStyle(c.effectType);
                     const ticksLeft = c.scheduledTick - currentTick;
                     const totalWait = c.scheduledTick - c.createdAtTick;

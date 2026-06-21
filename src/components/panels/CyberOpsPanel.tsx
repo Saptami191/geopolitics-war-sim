@@ -74,7 +74,7 @@ const APTOpsTab: React.FC = () => {
             <div className="w-1/3 border-r border-white/10 pr-6">
                 <h3 className="text-emerald-500 font-bold mb-4 flex items-center gap-2"><Network size={16} /> CYBER GROUPS</h3>
                 <div className="space-y-4">
-                    {groups.map(g => (
+                    {(groups || []).map(g => (
                         <div key={g.id} className="p-3 bg-slate-900/50 border border-slate-800 rounded">
                             <div className="flex justify-between items-center mb-2">
                                 <span className="font-bold text-white">{g.name}</span>
@@ -89,7 +89,7 @@ const APTOpsTab: React.FC = () => {
             <div className="w-2/3">
                 <h3 className="text-emerald-500 font-bold mb-4 flex items-center gap-2"><Activity size={16} /> ACTIVE OPERATIONS</h3>
                 <div className="space-y-4">
-                    {ops.map(op => (
+                    {(ops || []).map(op => (
                         <div key={op.id} className="p-4 bg-slate-900/80 border border-slate-700 rounded relative overflow-hidden">
                            {op.isDetected && <div className="absolute top-0 right-0 bg-red-600/20 text-red-400 text-xs px-2 py-1 flex items-center gap-1 border-b border-l border-red-500/20"><AlertTriangle size={12}/> DETECTED</div>}
                            <div className="font-bold text-white mb-1">OP: {op.id} <span className="text-slate-400 font-normal">→ {op.targetCountryId} ({op.targetSector})</span></div>

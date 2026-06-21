@@ -274,7 +274,7 @@ export default function SourceRegistryPanel() {
                     className="w-full bg-black border border-cyan-900 text-cyan-400 p-1.5 focus:outline-none text-[9px]"
                   >
                     <option value="">UNASSIGNED / INACTIVE MONITOR</option>
-                    {handlerList.map(h => (
+                    {(handlerList || []).map(h => (
                       <option key={h.handlerId} value={h.handlerId}>
                         CASE OFFICER: {h.alias} ({h.role}, LOAD: {h.sourceLoad}/3)
                       </option>
@@ -364,12 +364,12 @@ export default function SourceRegistryPanel() {
                     // HANDLER CHRONOLOGICAL DIARY LOG
                   </span>
                   <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 text-[9px] text-cyan-600 font-medium">
-                    {source.notes.map((n, i) => (
+                    {(source.notes || []).map((n, i) => (
                       <div key={i} className="p-1 bg-[#020b0b]/30 border border-cyan-950/50 rounded leading-relaxed">
                         &gt; {n}
                       </div>
                     ))}
-                    {source.provenance.map((p, i) => (
+                    {(source.provenance || []).map((p, i) => (
                       <div key={`p-${i}`} className="p-1 bg-[#020b0b]/40 border border-cyan-950/70 rounded text-[#00ff99]/80 leading-relaxed italic">
                         PROVENANCE: {p}
                       </div>

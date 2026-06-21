@@ -132,7 +132,7 @@ export default function FalseFlagArchitectPanel() {
               <div className="space-y-2">
                 <span className="text-[10px] font-extrabold tracking-wider text-cyan-400 block">// STEP 1: CHOOSE TARGET ACTOR CORE FAMILY</span>
                 <div className="grid grid-cols-2 gap-2 text-[10px]">
-                  {SELECTABLE_FAMILIES.map(fam => {
+                  {(SELECTABLE_FAMILIES || []).map(fam => {
                     const active = selectedFamily === fam.value;
                     return (
                       <button
@@ -156,7 +156,7 @@ export default function FalseFlagArchitectPanel() {
               <div className="space-y-2">
                 <span className="text-[10px] font-extrabold tracking-wider text-cyan-400 block">// STEP 2: MITRE TTP MIMICRY MODEL</span>
                 <div className="grid grid-cols-2 gap-2 text-[9.5px]">
-                  {SELECTABLE_TTPS.map(t => {
+                  {(SELECTABLE_TTPS || []).map(t => {
                     const selected = selectedTtps.includes(t.code);
                     return (
                       <button
@@ -182,7 +182,7 @@ export default function FalseFlagArchitectPanel() {
                 <div className="space-y-2">
                   <span className="font-extrabold tracking-wider text-cyan-400 uppercase block">// LANGUAGE MARKERS</span>
                   <div className="space-y-1.5 max-h-[140px] overflow-y-auto scrollbar-thin">
-                    {LANGUAGE_MARKERS.map(m => {
+                    {(LANGUAGE_MARKERS || []).map(m => {
                       const sel = selectedLanguages.includes(m);
                       return (
                         <button
@@ -203,7 +203,7 @@ export default function FalseFlagArchitectPanel() {
                 <div className="space-y-2">
                   <span className="font-extrabold tracking-wider text-cyan-400 uppercase block">// INFRASTRUCTURE SPOOFS</span>
                   <div className="space-y-1.5 max-h-[140px] overflow-y-auto scrollbar-thin">
-                    {INFRASTRUCTURE_MARKERS.map(m => {
+                    {(INFRASTRUCTURE_MARKERS || []).map(m => {
                       const sel = selectedInfras.includes(m);
                       return (
                         <button
@@ -224,7 +224,7 @@ export default function FalseFlagArchitectPanel() {
                 <div className="space-y-2">
                   <span className="font-extrabold tracking-wider text-cyan-400 uppercase block">// TIMING MARKERS</span>
                   <div className="space-y-1.5 max-h-[140px] overflow-y-auto scrollbar-thin">
-                    {TIMING_MARKERS.map(m => {
+                    {(TIMING_MARKERS || []).map(m => {
                       const sel = selectedTimings.includes(m);
                       return (
                         <button

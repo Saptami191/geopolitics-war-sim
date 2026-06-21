@@ -83,7 +83,7 @@ export default function ProliferationNetworkPanel() {
               <ShieldAlert className="w-3.5 h-3.5 text-red-500" />
               PRIORITY PROLIFERATION ALERTS
             </div>
-            {net.activeAlerts.map((alert, i) => (
+            {(net.activeAlerts || []).map((alert, i) => (
               <div key={i} className="font-mono mt-0.5 leading-relaxed">• {alert}</div>
             ))}
           </div>
@@ -95,7 +95,7 @@ export default function ProliferationNetworkPanel() {
           MAPPED INTEL NODES ({nodes.length})
         </h3>
         <div className="grid grid-cols-2 gap-2.5 mb-4">
-          {nodes.map((node) => {
+          {(nodes || []).map((node) => {
             const isSelected = selectedNodeId === node.nodeId;
             return (
               <div
@@ -147,7 +147,7 @@ export default function ProliferationNetworkPanel() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/50 text-slate-300 select-none">
-              {edges.map((edge) => {
+              {(edges || []).map((edge) => {
                 const routeFrom = net.nodes[edge.fromNodeId]?.label || edge.fromNodeId;
                 const routeTo = net.nodes[edge.toNodeId]?.label || edge.toNodeId;
                 return (
@@ -220,7 +220,7 @@ export default function ProliferationNetworkPanel() {
               {/* Analyst Intelligence Notes */}
               <span className="text-[9.5px] text-slate-400 font-black uppercase tracking-wider block mb-1">RAW INTEL DATA LOGS</span>
               <div className="space-y-1.5 max-h-[160px] overflow-auto pr-1">
-                {selectedNode.notes.map((note, index) => (
+                {(selectedNode.notes || []).map((note, index) => (
                   <div key={index} className="bg-slate-900/60 p-1.5 border border-slate-800/40 rounded text-[9.5px] text-slate-300 leading-relaxed font-mono">
                     {note}
                   </div>

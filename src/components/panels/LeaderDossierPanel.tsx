@@ -22,7 +22,7 @@ export const LeaderDossierPanel: React.FC<{ isOpen: boolean; onClose: () => void
         </div>
 
         <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-2 scrollbar-thin">
-          {sorted.map(leader => {
+          {(sorted || []).map(leader => {
             const hColor = leader.hawkDoveScore > 70 ? 'border-red-500' : leader.hawkDoveScore < 40 ? 'border-blue-500' : 'border-zinc-500';
             const bgClass = leader.source === 'COUP' ? 'bg-red-950/20' : 'bg-[#111]';
             

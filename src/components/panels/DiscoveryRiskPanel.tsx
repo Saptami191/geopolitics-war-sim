@@ -69,7 +69,7 @@ export default function DiscoveryRiskPanel() {
         <div className="flex-1 bg-black/40 border border-cyan-950/60 rounded flex items-center justify-center relative overflow-hidden min-h-0">
           <svg className="w-full h-full min-h-[220px]" viewBox="0 0 400 270">
             {/* Draw Relationship edges */}
-            {edges.map((e, idx) => {
+            {(edges || []).map((e, idx) => {
               const start = nodePositions[e.fromNodeId];
               const end = nodePositions[e.toNodeId];
               if (!start || !end) return null;
@@ -106,7 +106,7 @@ export default function DiscoveryRiskPanel() {
             })}
 
             {/* Draw Nodes */}
-            {nodes.map((n) => {
+            {(nodes || []).map((n) => {
               const pos = nodePositions[n.nodeId];
               if (!pos) return null;
               const isSelected = selectedNodeId === n.nodeId;

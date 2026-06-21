@@ -125,7 +125,7 @@ export const NarrativeCampaignBuilder: React.FC<{ onClose: () => void }> = ({ on
             <div className="space-y-2">
               <label className="text-sm text-gray-400">Strategic Theme</label>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {THEMES.map(t => (
+                {(THEMES || []).map(t => (
                   <button key={t.id} onClick={() => setTheme(t.id)}
                           className={`p-4 border text-left transition-all ${theme === t.id ? 'border-green-500 bg-green-900/20 shadow-[0_0_15px_rgba(34,197,94,0.2)]' : 'border-gray-800 hover:border-gray-600 bg-black'}`}>
                     <div className="font-bold text-white text-sm mb-1">{t.label}</div>
@@ -165,7 +165,7 @@ export const NarrativeCampaignBuilder: React.FC<{ onClose: () => void }> = ({ on
              <div className="space-y-2">
                <label className="text-sm text-gray-400">Primary Emotional Register</label>
                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                 {EMOTIONS.map(e => {
+                 {(EMOTIONS || []).map(e => {
                    let color = 'border-gray-700 text-gray-400';
                    if (e === 'FEAR') color = 'border-blue-800 text-blue-500';
                    if (e === 'ANGER') color = 'border-red-800 text-red-500';
@@ -198,7 +198,7 @@ export const NarrativeCampaignBuilder: React.FC<{ onClose: () => void }> = ({ on
              <div className="text-sm text-gray-400 mb-4">Select the vectors used to seed and launder this narrative.</div>
              
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-               {CHANNELS.map(ch => {
+               {(CHANNELS || []).map(ch => {
                  const isSel = selectedChannels.includes(ch.id);
                  return (
                    <div key={ch.id} 
@@ -310,7 +310,7 @@ export const NarrativeCampaignBuilder: React.FC<{ onClose: () => void }> = ({ on
                <div className="col-span-2">
                  <div className="text-gray-500 mb-1">VECTORS</div>
                  <div className="flex gap-2 flex-wrap">
-                   {selectedChannels.map(ch => (
+                   {(selectedChannels || []).map(ch => (
                      <span key={ch} className="px-2 py-1 bg-gray-800 border border-gray-700 font-mono text-xs text-white">{CHANNELS.find(c=>c.id===ch)?.label}</span>
                    ))}
                  </div>

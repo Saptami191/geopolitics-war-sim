@@ -27,7 +27,7 @@ export default function DoubleAgentConsole() {
         </h3>
 
         <div className="flex-1 overflow-y-auto space-y-2.5 scrollbar-thin">
-          {doubleAgentIds.map(daId => {
+          {(doubleAgentIds || []).map(daId => {
             const src = humStore.sources[daId];
             const state = humStore.doubleAgents[daId];
             if (!src || !state) return null;

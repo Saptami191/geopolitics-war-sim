@@ -68,7 +68,7 @@ export default function DefenseIndustryPanel() {
               </div>
             ) : (
               <div className="space-y-2">
-                {queues.map(q => (
+                {(queues || []).map(q => (
                   <div key={q.id} className={`border p-3 rounded ${q.isBlocked ? 'bg-rose-900/20 border-rose-500/30' : 'bg-slate-800 border-slate-700'}`}>
                     <div className="flex justify-between items-center mb-2">
                       <div className="font-bold text-white tracking-wider flex items-center gap-2">
@@ -116,7 +116,7 @@ export default function DefenseIndustryPanel() {
             </div>
             
             <div className="grid grid-cols-1 gap-3">
-               {research.map(r => (
+               {(research || []).map(r => (
                   <div key={r.id} className="border border-slate-700 bg-slate-800 p-3 rounded relative overflow-hidden">
                      <div className="flex justify-between items-start mb-2">
                        <div>
@@ -163,7 +163,7 @@ export default function DefenseIndustryPanel() {
             </div>
             
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {capacity.map(c => (
+              {(capacity || []).map(c => (
                  <div key={c.sectorId} className="bg-slate-800 border border-slate-700 p-3 rounded">
                     <div className="text-[10px] font-bold text-indigo-400 mb-1">{c.sectorId.replace('_', ' ')}</div>
                     <div className="text-2xl text-white font-light tracking-tight">{c.currentCapacity.toFixed(0)} <span className="text-sm text-slate-500">U/MO</span></div>
@@ -214,7 +214,7 @@ export default function DefenseIndustryPanel() {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-               {components.map(comp => {
+               {(components || []).map(comp => {
                  const stockpile = comp.stockpileByCountry[selectedCountryId] || 0;
                  const consumption = comp.consumptionRateByCountry[selectedCountryId] || 0;
                  const monthsSupply = consumption > 0 ? (stockpile / consumption).toFixed(1) : '∞';
@@ -288,7 +288,7 @@ export default function DefenseIndustryPanel() {
                         <div>
                           <div className="text-[10px] text-slate-500 font-bold mb-1">INFERRED RAMPS</div>
                           <div className="flex flex-wrap gap-1">
-                            {i.inferredProductionRamp.map(ramp => (
+                            {(i.inferredProductionRamp || []).map(ramp => (
                                <span key={ramp} className="px-2 py-0.5 bg-slate-900 border border-slate-700 text-xs text-slate-300 rounded">
                                  {ramp.replace('_', ' ')}
                                </span>

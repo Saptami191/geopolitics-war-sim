@@ -527,7 +527,7 @@ export default function BlocsPanel() {
                   <p className="text-xs text-gray-500 font-mono">No active disputes registered inside {selectedBlocId}. Strategic consensus maintains.</p>
                 ) : (
                   <div className="space-y-4">
-                    {selectedBloc.burdenSharingDisputes.map(dispute => {
+                    {(selectedBloc.burdenSharingDisputes || []).map(dispute => {
                       const initiatorC = countries[dispute.initiatingCountryId];
                       const defendantC = countries[dispute.targetCountryId];
                       if (!initiatorC || !defendantC) return null;
@@ -641,7 +641,7 @@ export default function BlocsPanel() {
                   <p className="text-xs text-gray-500 font-mono mb-4">No military trigger events reported. Extended security deterrence active.</p>
                 ) : (
                   <div className="space-y-4 mb-4">
-                    {selectedBloc.activeCollectiveDefenseTriggers.map(trig => {
+                    {(selectedBloc.activeCollectiveDefenseTriggers || []).map(trig => {
                       return (
                         <div key={trig.id} className="border border-red-600 bg-[#250707] p-4 rounded font-mono text-xs">
                           <div className="flex justify-between items-center mb-2">
@@ -837,7 +837,7 @@ export default function BlocsPanel() {
                 </div>
 
                 <div className="space-y-3 mb-4">
-                  {selectedBloc.coalitionTasking?.activeTasks.map(t => {
+                  {(selectedBloc.coalitionTasking?.activeTasks || []).map(t => {
                     const country = countries[t.assigneeCountryId];
                     return (
                       <div key={t.id} className="border border-cyan-900/40 bg-[#020c0f] p-3 rounded font-mono text-xs">
@@ -1133,7 +1133,7 @@ export default function BlocsPanel() {
                           <div>Payments Demanded: <span className="text-green-400 font-bold">${u.sidePaymentsDemandedB.toFixed(1)}B</span></div>
                           <div className="text-gray-500 mt-1 uppercase text-[8px]">AVAILABLE ACCESS OPTIONS:</div>
                           <ul className="list-disc pl-3 text-[8.5px] text-yellow-105">
-                            {u.accessSellingOptions.map((opt, id) => <li key={id}>{opt}</li>)}
+                            {(u.accessSellingOptions || []).map((opt, id) => <li key={id}>{opt}</li>)}
                           </ul>
                         </div>
                       </div>
@@ -1249,7 +1249,7 @@ export default function BlocsPanel() {
             </h2>
 
             <div className="space-y-4 max-h-[350px] overflow-y-auto pr-1">
-              {selectedBloc.agenda.map(item => {
+              {(selectedBloc.agenda || []).map(item => {
                 const preview = getBlocActionPreview(selectedBlocId, item.type);
                 return (
                   <div key={item.id} className="border border-[#113011] bg-[#020702] p-3 rounded font-mono text-xs">
@@ -1470,7 +1470,7 @@ export default function BlocsPanel() {
                   <p className="text-[10px] text-gray-500">No active candidates are lobbying for admission.</p>
                 ) : (
                   <div className="space-y-2">
-                    {selectedBloc.accessions.map(acc => {
+                    {(selectedBloc.accessions || []).map(acc => {
                       return (
                         <div key={acc.id} className="bg-black/60 border border-[#113011] p-2 rounded tracking-tighter flex justify-between items-center text-[10px]">
                           <div>
@@ -1500,7 +1500,7 @@ export default function BlocsPanel() {
                     onChange={e => setNewApplicantId(e.target.value)}
                     className="bg-black border border-[#113011] text-[#4af626] rounded px-2 py-1 text-[11px] flex-grow"
                   >
-                    {supportedCountryIds.map(cid => (
+                    {(supportedCountryIds || []).map(cid => (
                       <option key={cid} value={cid}>{cid} - {countries[cid]?.name}</option>
                     ))}
                   </select>
@@ -1557,7 +1557,7 @@ export default function BlocsPanel() {
                     <div className="text-[9px] bg-black/40 p-2 border border-cyan-950 rounded mb-2.5">
                       <strong>RATIFIED CONFIDENCE MEASURES (CBM):</strong>
                       <ul className="list-disc pl-3 mt-1.5 text-gray-300">
-                        {ch.agreedConfidenceMeasures.map((cm, idx) => (
+                        {(ch.agreedConfidenceMeasures || []).map((cm, idx) => (
                           <li key={idx}>{cm}</li>
                         ))}
                       </ul>
@@ -1584,7 +1584,7 @@ export default function BlocsPanel() {
             </h2>
             
             <div className="flex-grow overflow-y-auto space-y-2 pr-1 text-[10px]">
-              {activeMemory.historyLog.map((log, idx) => (
+              {(activeMemory.historyLog || []).map((log, idx) => (
                 <div key={idx} className="border-b border-[#113011]/30 pb-2 flex gap-2">
                   <span className="text-[#18ed10] font-bold">[{log.tick}T]</span>
                   <div>

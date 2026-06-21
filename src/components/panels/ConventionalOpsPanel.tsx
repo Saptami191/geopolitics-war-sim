@@ -312,7 +312,7 @@ export default function ConventionalOpsPanel() {
                     onChange={(e) => setSelectedOrbatCountry(e.target.value)}
                     className="p-1.5 bg-[#151a21] border border-gray-700 text-gray-100 rounded text-xs uppercase"
                   >
-                    {countriesKeys.map((cid) => (
+                    {(countriesKeys || []).map((cid) => (
                       <option key={cid} value={cid}>{countries[cid]?.name || cid}</option>
                     ))}
                   </select>
@@ -347,7 +347,7 @@ export default function ConventionalOpsPanel() {
 
               {/* COMPREHENSIVE COMBAT ROSTER */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {filteredUnits.map((unit) => {
+                {(filteredUnits || []).map((unit) => {
                   const hasExposure = unit.sigintExposure > 0.4;
                   return (
                     <div 
@@ -400,7 +400,7 @@ export default function ConventionalOpsPanel() {
 
                       {/* INTEGRATED SPECIAL CAPABILITIES MAPPING */}
                       <div className="flex flex-wrap gap-1 text-[9px]">
-                        {unit.attributes.specialCapabilities.map((sc) => (
+                        {(unit.attributes.specialCapabilities || []).map((sc) => (
                           <span key={sc} className="bg-gray-800 text-gray-300 px-1.5 py-0.5 rounded border border-gray-700">
                             {sc}
                           </span>
@@ -474,7 +474,7 @@ export default function ConventionalOpsPanel() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {campaignPlans.map((plan) => (
+                    {(campaignPlans || []).map((plan) => (
                       <div key={plan.id} className="bg-[#12161b] border border-gray-800 rounded p-4 relative">
                         <div className="flex justify-between items-start">
                           <div>
@@ -715,7 +715,7 @@ export default function ConventionalOpsPanel() {
                   </div>
                 ) : (
                   <div className="bg-[#0a0d10] border border-gray-850 rounded p-2 max-h-[160px] overflow-y-auto space-y-1">
-                    {combatEngagements.map((eng, idx) => (
+                    {(combatEngagements || []).map((eng, idx) => (
                       <div key={eng.id || idx} className="text-xs p-2 bg-[#12161b]/80 border-b border-gray-850 flex justify-between items-center">
                         <div className="flex items-center space-x-2">
                           <span className="text-gray-500 font-bold">Tick {eng.tick}</span>
@@ -869,13 +869,13 @@ export default function ConventionalOpsPanel() {
                         <div className="space-y-1.5">
                           <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block border-b border-gray-850 pb-0.5">ADVANTAGES</span>
                           <ul className="list-disc pl-4 space-y-0.5 text-gray-300">
-                            {wargameResult.advantages.map((adv, idx) => <li key={idx}>{adv}</li>)}
+                            {(wargameResult.advantages || []).map((adv, idx) => <li key={idx}>{adv}</li>)}
                           </ul>
                         </div>
                         <div className="space-y-1.5">
                           <span className="text-[10px] font-bold text-red-400 uppercase tracking-wider block border-b border-gray-850 pb-0.5">VULNERABILITIES</span>
                           <ul className="list-disc pl-4 space-y-0.5 text-gray-300">
-                            {wargameResult.disadvantages.map((dis, idx) => <li key={idx}>{dis}</li>)}
+                            {(wargameResult.disadvantages || []).map((dis, idx) => <li key={idx}>{dis}</li>)}
                           </ul>
                         </div>
                       </div>
@@ -951,7 +951,7 @@ export default function ConventionalOpsPanel() {
                     <span>THEATER CONTESTED SUPPLY ROUTES</span>
                   </h4>
                   <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                    {supplyRoutes.map((route) => (
+                    {(supplyRoutes || []).map((route) => (
                       <div key={route.id} className="p-2.5 bg-[#0c0f12] rounded border border-gray-900 text-xs flex justify-between items-center">
                         <div>
                           <strong className="text-gray-100">{route.name}</strong>
@@ -973,7 +973,7 @@ export default function ConventionalOpsPanel() {
                     <span>TACTICAL FORWARD LOGISTICS NODES</span>
                   </h4>
                   <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                    {logisticsNodes.map((node) => (
+                    {(logisticsNodes || []).map((node) => (
                       <div key={node.id} className="p-2.5 bg-[#0c0f12] rounded border border-gray-900 text-xs flex justify-between items-center">
                         <div>
                           <strong className="text-gray-100 uppercase">{node.regionId} FORWARD {node.type}</strong>

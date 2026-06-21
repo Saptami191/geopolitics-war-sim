@@ -101,7 +101,7 @@ function AssetRosterView({ operatives }: { operatives: any[] }) {
 
   return (
     <div className="h-full flex flex-col space-y-2 overflow-y-auto pr-2 custom-scrollbar">
-      {operatives.map(op => (
+      {(operatives || []).map(op => (
         <div key={op.id} className="bg-black/40 border border-[#00e5ff]/20 p-3 hover:border-[#00e5ff]/50 transition-colors">
           <div className="flex justify-between items-start mb-2">
             <div>
@@ -169,7 +169,7 @@ function CellTopologyView({ cells, operatives, handlers }: { cells: any[], opera
 
   return (
     <div className="h-full flex flex-col space-y-4 overflow-y-auto pr-2 custom-scrollbar">
-      {cells.map(cell => {
+      {(cells || []).map(cell => {
         if (!cell) return null;
         const cellOps = operatives.filter(o => o && o.cellId === cell.id);
         const handler = handlers.find(h => h && h.id === cell.handlerId);
@@ -215,7 +215,7 @@ function CellTopologyView({ cells, operatives, handlers }: { cells: any[], opera
               <div>
                 <span className="text-[9px] uppercase opacity-50 block mb-1">Assigned Assets ({cellOps.length}/{cell.maxSize})</span>
                 <div className="flex -space-x-1">
-                  {cellOps.map(o => (
+                  {(cellOps || []).map(o => (
                     <div 
                       key={o.id} 
                       className={`w-5 h-5 rounded-sm border border-[#001015] flex items-center justify-center text-[8px] font-bold ${
@@ -263,7 +263,7 @@ function ExposureGraphView() {
       </div>
 
       <div className="w-full mt-4 pb-4 grid grid-cols-1 gap-2">
-        {nodes.map(nodeId => {
+        {(nodes || []).map(nodeId => {
           const op = store.operatives[nodeId];
           if (!op) return null;
           
@@ -282,7 +282,7 @@ function ExposureGraphView() {
                 <span className="text-[8px] opacity-40 mb-1 tracking-widest">NETWORK THREADS ({opLinks.length})</span>
                 <div className="flex space-x-1">
                   {opLinks.length === 0 ? <span className="text-white/20 text-[9px] italic">Isolated</span> : 
-                   opLinks.map((l, i) => {
+                   (opLinks || []).map((l, i) => {
                      const isSource = l.source === nodeId;
                      const adjacentId = isSource ? l.target : l.source;
                      const targetOp = store.operatives[adjacentId];

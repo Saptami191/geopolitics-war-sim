@@ -289,7 +289,7 @@ export default function ArsenalPanel() {
               {activeTabUnits.length === 0 ? (
                 <div className="text-gray-600 italic text-[9.5px] text-center py-4">No active assets classified.</div>
               ) : (
-                activeTabUnits.map((u) => {
+                (activeTabUnits || []).map((u) => {
                   const isSelected = u.id === selectedUnitId;
                   return (
                     <button
@@ -436,7 +436,7 @@ export default function ArsenalPanel() {
                           onChange={(e) => { audio.sfxKeyClick(); setCarrierDeployIdx(parseInt(e.target.value)); }}
                           className="bg-black border border-[#163a16] text-[#00ff44] outline-none text-[10px] p-1.5 font-mono uppercase rounded flex-1 cursor-pointer"
                         >
-                          {PREDEFINED_OCEAN_DESTINATIONS.map((dest, idx) => {
+                          {(PREDEFINED_OCEAN_DESTINATIONS || []).map((dest, idx) => {
                             const dKm = calculateHaversineDistanceKm(
                               selectedUnit.position.lat,
                               selectedUnit.position.lon,
@@ -580,7 +580,7 @@ export default function ArsenalPanel() {
                   </span>
                   <div className="max-h-[50px] overflow-y-auto space-y-1 font-mono pr-1 scrollbar-thin">
                     {selectedUnit.recentActivity && selectedUnit.recentActivity.length > 0 ? (
-                      selectedUnit.recentActivity.map((log, idx) => (
+                      (selectedUnit.recentActivity || []).map((log, idx) => (
                         <div key={idx} className="text-gray-400 text-[8px] leading-tight border-b border-[#0f1d0f]/30 pb-0.5">
                           - {log}
                         </div>

@@ -275,7 +275,7 @@ export default function SignalDossierModal({ signal, onClose }: SignalDossierMod
               — EVIDENCE CORROBORATION TRACK —
             </div>
             <div className="pl-4 border-l border-cyan-950/50 space-y-4 py-2 relative">
-              {nodes.map((node, i) => {
+              {(nodes || []).map((node, i) => {
                 const nodeColors = {
                   SIGINT: 'text-cyan-400 border-cyan-900/50',
                   SIGINT_LINK: 'text-purple-400 border-purple-900/50',

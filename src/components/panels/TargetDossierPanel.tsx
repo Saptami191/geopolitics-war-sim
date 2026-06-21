@@ -63,7 +63,7 @@ export default function TargetDossierPanel() {
         <div className="col-span-4 border-r border-[#003c4a]/30 pr-3 flex flex-col min-h-0">
           <div className="text-[10px] text-[#0086a3] font-bold mb-2 uppercase tracking-wide">CONFIRMED ACTIVE INTEL RECORDS</div>
           <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 scrollbar-thin">
-            {consolidatedTargets.map((t) => {
+            {(consolidatedTargets || []).map((t) => {
               const active = selectedTargetId === t.id;
               const hasCompiledDossier = !!opStore.dossiers[t.id];
               return (
@@ -143,7 +143,7 @@ export default function TargetDossierPanel() {
                 <p className="text-gray-300 leading-relaxed text-[10px]">{dossier.patternOfLifeSummary}</p>
                 <div className="text-[9px] text-cyan-700 font-bold">SURVEILLANCE GEOGRAPHIC LOGS:</div>
                 <ul className="space-y-1 pl-2 text-[10px] text-gray-400 list-disc list-inside">
-                  {dossier.locationHistory.map((loc, idx) => (
+                  {(dossier.locationHistory || []).map((loc, idx) => (
                     <li key={idx} className="font-mono text-[9px]">{loc}</li>
                   ))}
                 </ul>

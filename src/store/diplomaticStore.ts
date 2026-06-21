@@ -613,17 +613,17 @@ export const useDiplomaticStore = create<DiplomaticState & DiplomaticActions>()(
           );
           if (!existing) {
              const neg = initNegotiation('US', req.nationId, [
-                { issueId: 'intel_share', title: 'Bilateral Intelligence Link', importanceWeightCounterpart: 60, importanceWeightPlayer: 50, initialStanceDifference: 45, currentConcessionDistance: 45, isResolved: false, agreedStance: null, isSacrificeable: false, linkageTargetId: null },
-                { issueId: 'trade_tarrifs', title: 'Tariff Reciprocity Terms', importanceWeightCounterpart: 40, importanceWeightPlayer: 40, initialStanceDifference: 30, currentConcessionDistance: 30, isResolved: false, agreedStance: null, isSacrificeable: false, linkageTargetId: null }
-             ], 'COMPROMISE', false, currentTick + 15, currentTick);
+                { id: 'intel_share', label: 'Bilateral Intelligence Link', playerPosition: 100, counterpartPosition: 50, currentLandingZone: 75, isResolved: false, isSacrificeable: false, linkageTargetId: null },
+                { id: 'trade_tarrifs', label: 'Tariff Reciprocity Terms', playerPosition: 80, counterpartPosition: 40, currentLandingZone: 60, isResolved: false, isSacrificeable: false, linkageTargetId: null }
+             ], 'GOOD_FAITH_OVERTURE', false, currentTick + 15, currentTick);
              draft.diplo2.activeNegotiations.push(neg);
              draft.diplo2.negotiationEventLog.push(`[INBOUND BRIEFING] ${req.nationId} state delegates initiated treaty discussions on official channels.`);
           }
        });
 
        // Auto generate card opportunities periodically
-       const existingBigRelationshipsCount = Object.values(draft.diplo_relationships)
-         .filter(rel => rel.relationshipScore > 50)
+       const existingBigRelationshipsCount = Object.values(draft.diplo_relationships as Record<string, Diplo_Relationship>)
+         .filter((rel: Diplo_Relationship) => rel.relationshipScore > 50)
          .length;
 
        const newLeverage = identifyLeverageOpportunities(
@@ -787,45 +787,57 @@ export const useDiplomaticStore = create<DiplomaticState & DiplomaticActions>()(
        // Check for resolution
        if (nextNeg.phase === 'CONCLUDED') {
           const resolved = resolveNegotiation(nextNeg, currentTick);
-          draft.diplo2.activeNegotiations[index] = resolved;
 
           const msg = `[TALKS CONCLUDED] Session resolved with outcome: ${resolved.outcomeType.replace(/_/g, ' ')}. Agreement status locked.`;
           draft.diplo2.negotiationEventLog.push(msg);
-          useWorldStore.getState().addGlobalEvent(`TREATY_CONCLUDED: ${resolved.counterpartNationId}`, 'INFO');
+          useWorldStore.getState().addGlobalEvent(`TREATY_CONCLUDED: ${nextNeg.counterpartNationId}`, 'INFO');
 
           // Auto-generate standard treaty if signed
           if (resolved.outcomeType === 'TREATY_SIGNED' || resolved.outcomeType === 'SECRET_PROTOCOL_ONLY') {
-             const termList: Treaty_Term[] = resolved.agreedIssues.map(iss => ({
-                id: `term_${iss.issueId}`,
-                treatyId: `treaty_${resolved.id}`,
+             const termList: Treaty_Term[] = resolved.treatyTerms.map(iss => ({
+                id: `term_${iss.id}`,
+                treatyId: `treaty_${nextNeg.id}`,
                 termType: 'CUSTOM',
-                obligatingNationId: resolved.counterpartNationId,
-                description: `Assurance on geopolitical issue: ${iss.title}`,
+                obligatingNationId: nextNeg.counterpartNationId,
+                description: `Assurance on geopolitical issue: ${iss.label}`,
                 complianceScore: 100,
                 violationThreshold: 40,
-                verificationMethod: 'TRUST'
+                verificationMethod: 'TRUST',
+                isVerified: true,
+                lastVerifiedTick: currentTick
              }));
 
-             const codename = diplo_generateTreatyCodename('PEACE_TREATY', ['US', resolved.counterpartNationId], currentTick);
+             const codename = diplo_generateTreatyCodename('PEACE_TREATY', ['US', nextNeg.counterpartNationId], currentTick);
              const t: Treaty = {
-                id: `treaty_auto_${resolved.id}`,
-                name: codename,
+                id: `treaty_auto_${nextNeg.id}`,
+                codename: codename,
                 type: resolved.outcomeType === 'SECRET_PROTOCOL_ONLY' ? 'INTELLIGENCE_SHARING' : 'PEACE_TREATY',
                 status: 'RATIFIED',
-                signatoryNationIds: ['US', resolved.counterpartNationId],
+                partyNationIds: ['US', nextNeg.counterpartNationId],
+                initiatingNationId: 'US',
                 proposedAtTick: currentTick,
                 ratifiedAtTick: currentTick,
                 terminatedAtTick: null,
+                durationTicks: null,
+                verificationMechanism: 'IAEA_MONITORED',
+                domesticApprovalImpact: 5,
+                diplomaticCapitalCost: 20,
+                renewalOptionTick: null,
+                linkedSanctionRegimeId: null,
+                linkedOperationIds: [],
                 terms: termList,
                 violationLog: [],
                 automaticTriggers: [],
                 secretProtocols: resolved.outcomeType === 'SECRET_PROTOCOL_ONLY' ? [{
-                   id: `sec_${resolved.id}`,
-                   treatyId: `treaty_auto_${resolved.id}`,
+                   id: `sec_${nextNeg.id}`,
                    codename: `PROTOCOL ${codename}`,
+                   description: 'Secret bilateral agreement',
+                   knownToNationIds: ['US', nextNeg.counterpartNationId],
+                   isExposed: false,
+                   exposedAtTick: null,
+                   exposureConsequence: 'DIPLOMATIC_FALLOUT',
                    clausePayload: `Classified agreement regarding security areas.`,
-                   unmaskProbability: 0.15,
-                   isUnmasked: false
+                   unmaskProbability: 0.15
                 }] : []
              };
 
@@ -835,9 +847,9 @@ export const useDiplomaticStore = create<DiplomaticState & DiplomaticActions>()(
 
              // Trigger dramatic cue
              try {
-                useCinematicsStore.getState().triggerCinematic('DIPLOMATIC_SUCCESS', {
+                useCinematicsStore.getState().triggerCinematic('PEACE_TREATY_CEREMONY', {
                    title: 'Strategic Treaty Signed',
-                   lines: [`Official treaties signed with ${resolved.counterpartNationId}`, `Geopolitical stability reinforced.`]
+                   lines: [`Official treaties signed with ${nextNeg.counterpartNationId}`, `Geopolitical stability reinforced.`]
                 });
              } catch (e) {}
           }
@@ -877,7 +889,7 @@ export const useDiplomaticStore = create<DiplomaticState & DiplomaticActions>()(
        useWorldStore.getState().addGlobalEvent(`INCIDENT_RESOLVED: ${inc.id}`, 'INFO');
 
        if (cons.escalationTriggered) {
-          useDefconStore.getState().triggerSovereignConflictAlert?.(inc.affectedNationId);
+          (useDefconStore.getState() as any).triggerSovereignConflictAlert?.(inc.affectedNationId);
           useWorldStore.getState().addGlobalEvent(`BRINKMANSHIP_CRISIS: Rapid escalation triggered conflict alert on ${inc.affectedNationId} border zone!`, 'CRITICAL');
        }
     })),

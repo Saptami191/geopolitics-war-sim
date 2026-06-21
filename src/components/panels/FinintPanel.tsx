@@ -223,7 +223,7 @@ export default function FinintPanel() {
               </span>
 
               <div id="actors-list-viewport" className="flex-1 overflow-y-auto max-h-[310px] space-y-1 scrollbar-thin pr-1">
-                {actors.map((actor) => {
+                {(actors || []).map((actor) => {
                   const isSelected = selectedActorId === actor.id;
                   const associatedShellsCount = shells.filter(s => s.linkedActorId === actor.id).length;
                   return (
@@ -310,7 +310,7 @@ export default function FinintPanel() {
 
                     <div className="flex-1 overflow-y-auto max-h-[140px] space-y-1.5 pr-1 scrollbar-thin">
                       {associatedShellsForSelectedActor.length > 0 ? (
-                        associatedShellsForSelectedActor.map((shell) => {
+                        (associatedShellsForSelectedActor || []).map((shell) => {
                           const isFrozen = shell.status === 'FROZEN';
                           return (
                             <div key={shell.id} className="bg-black/80 border border-amber-950/20 p-2 rounded flex justify-between items-center text-[7.5px]">
@@ -367,7 +367,7 @@ export default function FinintPanel() {
               </span>
 
               <div id="jurisdiction-list-viewport" className="flex-1 overflow-y-auto max-h-[310px] space-y-1 scrollbar-thin pr-1">
-                {jurisdictions.map((jur) => {
+                {(jurisdictions || []).map((jur) => {
                   const isSelected = selectedJurisdictionId === jur.id;
                   const hostedShellsCount = shells.filter(s => s.jurisdictionId === jur.id).length;
                   return (
@@ -543,7 +543,7 @@ export default function FinintPanel() {
                   className="bg-black border border-amber-950 text-white rounded py-0.5 px-1.5 text-[8px] cursor-pointer font-mono"
                 >
                   <option value="NONE">NO SINGLE TARGET (SOVEREIGN OVERALL SYSTEM)</option>
-                  {actors.map(a => (
+                  {(actors || []).map(a => (
                     <option key={a.id} value={a.id}>{a.name}</option>
                   ))}
                 </select>
@@ -659,7 +659,7 @@ export default function FinintPanel() {
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-2 overflow-y-auto max-h-[55px] scrollbar-thin pr-1 text-[7px]">
           {incidentsLog.length > 0 ? (
-            incidentsLog.map((incident, idx) => {
+            (incidentsLog || []).map((incident, idx) => {
               const isCrit = incident.severity === 'CRITICAL';
               return (
                 <div 

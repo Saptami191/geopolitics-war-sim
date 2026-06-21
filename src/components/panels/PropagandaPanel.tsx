@@ -326,7 +326,7 @@ export default function PropagandaPanel() {
             {/* Scrolling register list */}
             <div className="flex-1 overflow-y-auto max-h-[220px] flex flex-col gap-2.5" id="active-operations-list">
               {activeOps.length > 0 ? (
-                activeOps.map((op) => {
+                (activeOps || []).map((op) => {
                   const sC = countries[op.sourceCountryId];
                   const tC = countries[op.targetCountryId];
                   const isPlayerOp = op.createdBy === 'PLAYER';

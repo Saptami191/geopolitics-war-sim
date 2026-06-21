@@ -226,7 +226,7 @@ export default function CommandEventBusPanel() {
                   onChange={(e) => setSelectedTarget(e.target.value)}
                   className="w-full bg-[#050f05] text-[#00ff44] border border-[#1a5c1a]/55 rounded px-2.5 py-1.5 text-[9.5px] font-mono outline-none cursor-pointer hover:border-[#00ff44] transition-all appearance-none uppercase"
                 >
-                  {countryIds.map(id => (
+                  {(countryIds || []).map(id => (
                     <option key={id} value={id}>
                       {id} — {countries[id]?.name?.toUpperCase() || 'EXTERNAL BLOCK'} ({countries[id]?.political?.leaderName?.toUpperCase() || 'AUTOCRATIC'})
                     </option>
@@ -345,7 +345,7 @@ export default function CommandEventBusPanel() {
                   <span className="animate-pulse text-[#00ff44]">●</span> PENDING SIGNAL BUFFER ({queuedEvents.length})
                 </div>
                 <div className="space-y-1 max-h-20 overflow-y-auto scrollbar-thin">
-                  {queuedEvents.map((evt) => (
+                  {(queuedEvents || []).map((evt) => (
                     <div key={evt.id} className="flex justify-between items-center bg-black/45 px-2 py-1 border border-amber-950/40 rounded-[1px]">
                       <span className="text-yellow-500 text-[8px] font-bold tracking-wide uppercase">{evt.type}</span>
                       <span className="text-gray-500 text-[6.5px] font-mono">TARGET_IDS: {evt.targetEntityIds?.join(',') || 'WORLD'}</span>

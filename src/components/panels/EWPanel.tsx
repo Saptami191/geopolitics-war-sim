@@ -75,7 +75,7 @@ export default function EWPanel() {
               <div className="text-xs text-white/30 italic px-2">No active spectrum contention detected.</div>
             ) : (
               <div className="grid gap-2">
-                {spectrumContention.map((entry, idx) => (
+                {(spectrumContention || []).map((entry, idx) => (
                   <div key={idx} className="bg-black/80 border border-white/10 p-3 flex justify-between items-center rounded">
                     <div>
                       <div className="text-xs text-amber-400 font-bold">{entry.regionId} — {entry.band} BAND</div>
@@ -221,7 +221,7 @@ export default function EWPanel() {
                   </div>
                   <div className="text-[10px] text-white/60 mb-1">SUSPECTED CAPABILITIES:</div>
                   <div className="flex flex-wrap gap-1 mb-2">
-                    {prof.suspectedCapabilities.map((cap, idx) => (
+                    {(prof.suspectedCapabilities || []).map((cap, idx) => (
                       <span key={idx} className="bg-white/5 border border-white/10 px-1 py-0.5 rounded text-[9px] text-white/70">
                         {cap.replace(/_/g, ' ')}
                       </span>

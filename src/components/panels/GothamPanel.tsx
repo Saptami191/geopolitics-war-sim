@@ -326,7 +326,7 @@ export default function GothamPanel() {
               </g>
 
               {/* RENDER NETWORK EDGES */}
-              {filteredEdges.map((edge) => {
+              {(filteredEdges || []).map((edge) => {
                 const c1Coords = GOTHAM_COORDS[edge.sourceCountryId];
                 const c2Coords = GOTHAM_COORDS[edge.targetCountryId];
                 if (!c1Coords || !c2Coords) return null;
@@ -420,7 +420,7 @@ export default function GothamPanel() {
               })}
 
               {/* RENDER COUNTRY NODES */}
-              {filteredNodes.map((node) => {
+              {(filteredNodes || []).map((node) => {
                 const coords = GOTHAM_COORDS[node.countryId];
                 if (!coords) return null;
 
@@ -628,7 +628,7 @@ export default function GothamPanel() {
                 {/* Flags tags */}
                 {selectedNodeData.riskFlags.length > 0 && (
                   <div className="mt-1.5 flex flex-wrap gap-1">
-                    {selectedNodeData.riskFlags.map(flag => (
+                    {(selectedNodeData.riskFlags || []).map(flag => (
                       <span key={flag} className="px-1.5 py-0.5 bg-red-950/40 border border-red-500/30 text-red-400 text-[6.5px] font-bold rounded">
                         ● {flag}
                       </span>
@@ -694,7 +694,7 @@ export default function GothamPanel() {
                   <span className="text-[7.5px] text-[#00ff44] tracking-widest uppercase font-bold block border-b border-[#112d11] pb-0.5 mb-1">REASONING FOOTPRINT</span>
                   <div className="flex flex-col gap-1 max-h-[80px] overflow-y-auto scrollbar-thin pr-1 text-[7.5px]">
                     {selectedEdgeData.changeReasons.length > 0 ? (
-                      selectedEdgeData.changeReasons.map((record, rIdx) => (
+                      (selectedEdgeData.changeReasons || []).map((record, rIdx) => (
                         <div key={rIdx} className="bg-[#050c05] p-1 rounded border border-[#112711] flex gap-1 items-start">
                           <span className="text-[#00e5ff] font-bold shrink-0 font-mono">T{record.tick}:</span>
                           <span className="text-gray-300">{record.description}</span>

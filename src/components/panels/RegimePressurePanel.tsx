@@ -104,7 +104,7 @@ export const RegimePressurePanel: React.FC<{ onClose: () => void }> = ({ onClose
                <button className="text-xs bg-gray-800 hover:bg-gray-700 text-white px-2 py-1" onClick={() => setInspectEliteCountry(countryId)}>VIEW TOPOLOGY MAP</button>
              </div>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-               {factions.map(f => {
+               {(factions || []).map(f => {
                   if (!f.playerContactEstablished) {
                      return (
                        <div key={f.id} className="bg-gray-900 p-3 border border-gray-800 blur-sm flex items-center justify-center relative">
@@ -188,7 +188,7 @@ export const RegimePressurePanel: React.FC<{ onClose: () => void }> = ({ onClose
   const renderBlowbackTab = () => {
     return (
       <div className="space-y-2">
-        {blowbackLog.map(log => {
+        {(blowbackLog || []).map(log => {
           let badgeColor = 'bg-gray-600';
           if (log.severity === 'RUMOR') badgeColor = 'bg-yellow-600';
           if (log.severity === 'ACCUSATION') badgeColor = 'bg-orange-600';

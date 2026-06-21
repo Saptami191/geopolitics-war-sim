@@ -425,7 +425,7 @@ export default function NuclearPosturePanel() {
                             className="w-full bg-black border border-red-900 text-slate-200 p-2 rounded text-xs"
                           >
                             <option value="">-- Choose Option --</option>
-                            {availableLaunchOptions.map((o) => (
+                            {(availableLaunchOptions || []).map((o) => (
                               <option key={o.option} value={o.option}>
                                 {o.label} ({o.weaponsRequired} warheads, Est: {o.estimatedCasualties.toLocaleString()} civilian casualties)
                               </option>
@@ -566,7 +566,7 @@ export default function NuclearPosturePanel() {
                 ) : (
                   <div className="space-y-3 font-mono text-xs">
                     <h4 className="text-[10px] uppercase font-bold text-slate-400">Recorded Impact Events</h4>
-                    {detonationConsequences.map((c, i) => (
+                    {(detonationConsequences || []).map((c, i) => (
                       <div key={i} className="border border-red-950/80 bg-red-950/5 rounded p-3 space-y-2">
                         <div className="flex justify-between items-center font-bold text-red-500">
                           <span>DETONATION EVENT #{i+1}</span>

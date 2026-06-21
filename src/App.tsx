@@ -212,6 +212,7 @@ function TabButton({ id, label, isActive, getTabKPI, onClick }: TabButtonProps) 
   return (
     <button
       onClick={onClick}
+      style={{ flexShrink: 0 }}
       className={`btn-sovereign text-[0.65rem] tracking-wider py-1.5 px-1.5 flex flex-col justify-center items-center flex-shrink min-w-0 border rounded transition-all select-none cursor-pointer ${alertClass} ${
         isActive 
           ? 'border-[#00ff44] text-[#00ff44] bg-[#0c1f0d] shadow-[0_0_8px_rgba(0,255,68,0.15)] active' 
@@ -1162,16 +1163,23 @@ export default function App() {
               ))}
               <button 
                 onClick={() => {
-                   const running = !useWorldStore.getState().isPaused;
-                   if (running) stopTickTimer(); else restartTickTimer();
+                   const s = useModesStore.getState();
+                   const running = !s.modes_activeSession?.isPaused;
+                   if (running) {
+                      s.modes_pauseSession();
+                      stopTickTimer();
+                   } else {
+                      s.modes_resumeSession();
+                      restartTickTimer();
+                   }
                 }} 
                 className="text-[0.6rem] border p-1 text-[#00ff44] hover:bg-[#1a3a1a]"
               >
                 PAUSE/RESUME
               </button>
-              {getAvailablePersonas().map(id => (
-                <button key={id} onClick={() => setPersona(id)} className={activePersona === id ? 'text-[#00ff44] font-bold' : 'text-gray-500'}>
-                  {PERSONAS[id].name}
+              {getAvailablePersonas(currentDefconLevel).map(persona => (
+                <button key={persona.id} onClick={() => setPersona(persona.id as any)} className={activePersona === persona.id ? 'text-[#00ff44] font-bold' : 'text-gray-500'}>
+                  {persona.name}
                 </button>
               ))}
               <button onClick={() => setShowBazaar(true)} className="text-[0.6rem] border p-1 text-[#00ff44]">BLACK MARKET</button>
@@ -1205,12 +1213,12 @@ export default function App() {
                     {viewMode === 'MAP' && !analysisMode ? <WorldMap activeLayer={activeLayer} /> : null}
                     {viewMode === 'GRAPH' && <AllianceGraph />}
                     {analysisMode && <AnalysisInspector />}
-                    <MapControls setActiveLayer={setActiveLayer} setViewMode={setViewMode} activeLayer={activeLayer} viewMode={viewMode} />
+                    <MapControls setActiveLayer={setActiveLayer} activeLayer={activeLayer} />
                     <TimelineStrip />
                   </>
                 )}
                 {playerState.activeTab === 999 && <TimelineView />}
-                <div className="flex-1 overflow-y-auto">
+                <div className="flex-1 overflow-y-auto min-h-0">
                    <ActivePanelWrapper activeTab={playerState.activeTab} getTabClassification={getTabClassification} />
                 </div>
               </div>
@@ -1219,25 +1227,31 @@ export default function App() {
               <div className="w-64 overflow-y-auto bg-[#020502] p-2 border-l border-[#1a3a1a] flex flex-col gap-2">
                  <SovereignMonitor />
                  <DarkMirrorWidget />
-                 <CIAStatusWidget />
-                 <SanctionsWidget />
+                 <div style={{ minHeight: '80px', position: 'relative' }}>
+                   <CIAStatusWidget />
+                 </div>
+                 <div style={{ minHeight: '80px', position: 'relative' }}>
+                   <SanctionsWidget />
+                 </div>
                  <DiplomacyWidget />
-                 <CyberWidget />
+                 <div style={{ minHeight: '80px', position: 'relative' }}>
+                   <CyberWidget />
+                 </div>
                  <EWStatusWidget />
                  <DefenseIndustryWidget />
-                 <SigintHUD />
-                 <PoliticalCapitalBar />
+                 <SigintHUD onClick={() => useUIStore.getState().setActivePanelId('SIGINT')} />
+                 <PoliticalCapitalBar onClick={() => useUIStore.getState().setActivePanelId('OVERSIGHT')} />
                  <CommandLogPanel />
                  <StockMarketTicker />
                  <NewspaperFeed />
                  <UnSecurityCouncil />
-                 <ModesWidget />
+                 <ModesWidget onClick={() => usePlayerStore.getState().setActiveTab(103)} />
               </div>
 
               {/* WORKSTATION OVERLAYS */}
-              {expandedWorkstation === 'THERMAL' && <ThermalRecon onExpand={() => setExpandedWorkstation('THERMAL')} onCollapse={() => setExpandedWorkstation(null)} />}
+              {expandedWorkstation === 'SATELLITE' && <ThermalRecon onExpand={() => setExpandedWorkstation('SATELLITE')} onCollapse={() => setExpandedWorkstation(null)} />}
               {expandedWorkstation === 'DRONE' && <DroneFeed onExpand={() => setExpandedWorkstation('DRONE')} onCollapse={() => setExpandedWorkstation(null)} />}
-              {expandedWorkstation === 'CYBER_FEED' && <CyberFeed onExpand={() => setExpandedWorkstation('CYBER_FEED')} onCollapse={() => setExpandedWorkstation(null)} />}
+              {expandedWorkstation === 'CYBER' && <CyberFeed onExpand={() => setExpandedWorkstation('CYBER')} onCollapse={() => setExpandedWorkstation(null)} />}
               {expandedWorkstation === 'HAARP' && <HaarpRadar onExpand={() => setExpandedWorkstation('HAARP')} onCollapse={() => setExpandedWorkstation(null)} />}
             </div>
           </div>
@@ -1247,21 +1261,21 @@ export default function App() {
 
           {/* Full Screen Panel Content Wrapper */}
           <FullScreenPanel>
-              {useUIStore.getState().activePanelId === 'U8200_COMMAND' && <U8200CommandPanel />}
-              {useUIStore.getState().activePanelId === 'CIA' && <CIAPanel />}
-              {useUIStore.getState().activePanelId === 'TARGETED_OPS' && <TargetedOperationsPanel />}
-              {useUIStore.getState().activePanelId === 'HUMINT_SUITE' && <HumintPenetrationSuite />}
-              {useUIStore.getState().activePanelId === 'DECEPTION_OPS' && <DeceptionOperationsSuite />}
-              {useUIStore.getState().activePanelId === 'COUNTER_PROLIF' && <CounterProliferationSuite />}
-              {useUIStore.getState().activePanelId === 'SIGINT' && <SigintPanel />}
-              {useUIStore.getState().activePanelId === 'COVERT_FINANCE' && <CovertFinancePanel />}
-              {useUIStore.getState().activePanelId === 'OVERSIGHT' && <OversightPanel />}
-              {useUIStore.getState().activePanelId === 'MIRROR_INTEL' && <MirrorIntelPanel />}
-              {useUIStore.getState().activePanelId === 'LEADER_DOSSIER' && <LeaderDossierPanel />}
-              {useUIStore.getState().activePanelId === 'NATION_SOVEREIGN' && <NationSovereignPanel />}
-              {useUIStore.getState().activePanelId === 'NUCLEAR_POSTURE' && <NuclearPosturePanel />}
-              {useUIStore.getState().activePanelId === 'NC3' && <NC3SystemPanel />}
-              {useUIStore.getState().activePanelId === 'FALSE_ALARM' && <FalseAlarmDecisionPanel />}
+              {useUIStore.getState().activePanelId === 'U8200_COMMAND' && <U8200CommandPanel onClose={() => useUIStore.getState().setActivePanelId(null)} />}
+              {useUIStore.getState().activePanelId === 'CIA' && <CIAPanel onClose={() => useUIStore.getState().setActivePanelId(null)} />}
+              {useUIStore.getState().activePanelId === 'TARGETED_OPS' && <TargetedOperationsPanel onClose={() => useUIStore.getState().setActivePanelId(null)} />}
+              {useUIStore.getState().activePanelId === 'HUMINT_SUITE' && <HumintPenetrationSuite onClose={() => useUIStore.getState().setActivePanelId(null)} />}
+              {useUIStore.getState().activePanelId === 'DECEPTION_OPS' && <DeceptionOperationsSuite onClose={() => useUIStore.getState().setActivePanelId(null)} />}
+              {useUIStore.getState().activePanelId === 'COUNTER_PROLIF' && <CounterProliferationSuite onClose={() => useUIStore.getState().setActivePanelId(null)} />}
+              {useUIStore.getState().activePanelId === 'SIGINT' && <SigintPanel onClose={() => useUIStore.getState().setActivePanelId(null)} />}
+              {useUIStore.getState().activePanelId === 'COVERT_FINANCE' && <CovertFinancePanel onClose={() => useUIStore.getState().setActivePanelId(null)} />}
+              {useUIStore.getState().activePanelId === 'OVERSIGHT' && <OversightPanel onClose={() => useUIStore.getState().setActivePanelId(null)} />}
+              {useUIStore.getState().activePanelId === 'MIRROR_INTEL' && <MirrorIntelPanel /> /* NOTE: MirrorIntelPanel does not have onClose prop */}
+              {useUIStore.getState().activePanelId === 'LEADER_DOSSIER' && <LeaderDossierPanel />  /* NOTE: LeaderDossierPanel doesn't either */}
+              {useUIStore.getState().activePanelId === 'NATION_SOVEREIGN' && <NationSovereignPanel /> }
+              {useUIStore.getState().activePanelId === 'NUCLEAR_POSTURE' && <NuclearPosturePanel /> }
+              {useUIStore.getState().activePanelId === 'NC3' && <NC3SystemPanel /> }
+              {useUIStore.getState().activePanelId === 'FALSE_ALARM' && <FalseAlarmDecisionPanel /> }
             </FullScreenPanel>
 
           {/* Overlays */}

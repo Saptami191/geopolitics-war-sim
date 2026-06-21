@@ -124,7 +124,7 @@ export default function ArachnePanel() {
                 
                 <div className="flex-1 bg-black/50 border border-[#222] rounded relative overflow-hidden flex items-center justify-center p-4">
                   <svg className="absolute inset-0 w-full h-full pointer-events-none">
-                    {arachne_links.map((link, idx) => {
+                    {(arachne_links || []).map((link, idx) => {
                       // Simplified mock SVG graph for now, randomized positions purely visual
                       const sn = arachne_nodes.findIndex(n => n.id === link.sourceNodeId);
                       const tn = arachne_nodes.findIndex(n => n.id === link.targetNodeId);
@@ -199,7 +199,7 @@ export default function ArachnePanel() {
                   <div className="mb-4 flex-1">
                     <div className="text-gray-500 uppercase border-b border-[#333] pb-1 mb-2">Network Links ({selectedNodeLinks.length})</div>
                     <div className="space-y-2 overflow-y-auto max-h-[250px] pr-2">
-                      {selectedNodeLinks.map(l => (
+                      {(selectedNodeLinks || []).map(l => (
                         <div key={l.id} className="text-[10px] bg-[#111] border border-[#222] p-2 leading-tight">
                           <span className="text-amber-500">{l.linkType}</span>
                           <span className="text-gray-400 ml-2">CONF: {l.confidence}%</span>
@@ -272,7 +272,7 @@ export default function ArachnePanel() {
                     </tr>
                   </thead>
                   <tbody>
-                    {arachne_feeds.map(f => (
+                    {(arachne_feeds || []).map(f => (
                       <tr key={f.id} className="border-b border-[#222] hover:bg-[#111]">
                         <td className="py-3 px-2 text-white">{f.sourceType.replace('_', ' ')}</td>
                         <td className="py-3 px-2 text-gray-300">{countries[f.targetNationId]?.name || f.targetNationId}</td>
@@ -319,7 +319,7 @@ export default function ArachnePanel() {
                     </div>
 
                     <div className="text-xs text-gray-300 uppercase tracking-widest border-b border-[#222] pb-1 mb-2">
-                       TARGET: {prod.involvedNationIds.map(nid => countries[nid]?.name || nid).join(', ')}
+                       TARGET: {(prod.involvedNationIds || []).map(nid => countries[nid]?.name || nid).join(', ')}
                     </div>
 
                     <div className="text-sm font-serif text-gray-200 mt-2 flex-1 leading-relaxed">
@@ -385,7 +385,7 @@ export default function ArachnePanel() {
                     {flag.sanctionEvasionRoute.length > 0 && (
                       <div className="flex items-center gap-2 text-xs text-gray-400 mb-3 bg-[#111] p-2 border border-[#222]">
                         <span className="text-gray-500 uppercase text-[10px]">Route:</span>
-                        {flag.sanctionEvasionRoute.map((stop, i) => (
+                        {(flag.sanctionEvasionRoute || []).map((stop, i) => (
                           <React.Fragment key={i}>
                             <span className="text-cyan-400 font-bold">{stop}</span>
                             {i < flag.sanctionEvasionRoute.length - 1 && <span className="text-[#444]">→</span>}
@@ -438,7 +438,7 @@ export default function ArachnePanel() {
                       </tr>
                     </thead>
                     <tbody>
-                      {finint_shellProfiles.map(shell => (
+                      {(finint_shellProfiles || []).map(shell => (
                         <tr key={shell.id} className="border-b border-[#222] hover:bg-[#111]">
                           <td className="py-2 px-3 text-white font-mono">{shell.registeredName}</td>
                           <td className="py-2 px-3 text-cyan-400">{shell.registeredJurisdiction}</td>
@@ -470,7 +470,7 @@ export default function ArachnePanel() {
               <div className="h-[250px] shrink-0 flex flex-col">
                 <div className="text-md text-amber-500 tracking-widest uppercase mb-4 border-b border-[#333] pb-2">High Net-Worth / Oligarch Risk Profiles</div>
                 <div className="flex-1 overflow-x-auto flex gap-4 pr-4">
-                  {finint_oligarchProfiles.map(op => (
+                  {(finint_oligarchProfiles || []).map(op => (
                     <div key={op.id} className="w-72 bg-black border border-[#444] p-4 shrink-0 flex flex-col">
                       <div className="flex justify-between items-start mb-2">
                         <div className="font-bold text-gray-200 uppercase truncate" title={arachne_nodes.find(n => n.id === op.linkedArachneNodeId)?.label}>{arachne_nodes.find(n => n.id === op.linkedArachneNodeId)?.label || 'Unknown Figure'}</div>

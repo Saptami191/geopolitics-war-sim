@@ -264,7 +264,7 @@ export default function AdversarialInfluencePanel() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {propagandaCampaigns.map((camp) => (
+                  {(propagandaCampaigns || []).map((camp) => (
                     <div key={camp.id} className="p-3 border border-red-950/40 bg-black/60 rounded flex flex-col gap-2 relative overflow-hidden">
                       <div className="absolute right-2 top-2">
                         <span className="text-[7px] uppercase px-1 border border-red-500/40 text-red-400 rounded bg-red-950/20">
@@ -321,7 +321,7 @@ export default function AdversarialInfluencePanel() {
                 </div>
               ) : (
                 <div className="flex flex-col gap-2">
-                  {plantedPackets.map((pkt) => (
+                  {(plantedPackets || []).map((pkt) => (
                     <div key={pkt.id} className={`p-3 border rounded text-[10px] flex flex-col gap-2 relative ${
                       pkt.isExposed 
                         ? 'border-green-600 bg-[#061706]/40' 
@@ -387,7 +387,7 @@ export default function AdversarialInfluencePanel() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {counterintelligenceResponses.map((ci) => {
+                {(counterintelligenceResponses || []).map((ci) => {
                   const cooldownLeft = ci.cooldownRemaining;
                   const isReady = cooldownLeft === 0;
                   const hasCash = playerCash >= ci.costCashB;
@@ -457,7 +457,7 @@ export default function AdversarialInfluencePanel() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {trustChannels.map((ch) => {
+                {(trustChannels || []).map((ch) => {
                   const hasCash = playerCash >= 0.5;
                   return (
                     <div key={ch.id} className="p-3 border border-purple-950/20 bg-black/60 rounded flex flex-col gap-2">
@@ -537,7 +537,7 @@ export default function AdversarialInfluencePanel() {
                   <div>
                     <h4 className="font-bold text-red-400 uppercase text-[9px] mb-1">Active Misperceptions List</h4>
                     <ul className="list-disc pl-4 text-gray-400 flex flex-col gap-1.5">
-                      {playerBelief.activeMisperceptions.map((mis, idx) => (
+                      {(playerBelief.activeMisperceptions || []).map((mis, idx) => (
                         <li key={idx}>"{mis}"</li>
                       ))}
                     </ul>
@@ -545,7 +545,7 @@ export default function AdversarialInfluencePanel() {
                   <div>
                     <h4 className="font-bold text-[#00ff44] uppercase text-[9px] mb-1">Anchored Strategic Asserts</h4>
                     <ul className="list-disc pl-4 text-gray-400 flex flex-col gap-1.5">
-                      {playerBelief.anchoredAssumptions.map((anch, idx) => (
+                      {(playerBelief.anchoredAssumptions || []).map((anch, idx) => (
                         <li key={idx}>"{anch}"</li>
                       ))}
                     </ul>
@@ -570,7 +570,7 @@ export default function AdversarialInfluencePanel() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {falseCertaintyVectors.map((vector) => (
+                {(falseCertaintyVectors || []).map((vector) => (
                   <div key={vector.id} className="p-3 border border-orange-950/30 bg-black/60 rounded flex flex-col gap-2 relative">
                     <div className="text-gray-200 leading-relaxed text-[10.5px]">
                       "{vector.beliefStatement}"
@@ -598,7 +598,7 @@ export default function AdversarialInfluencePanel() {
                     No strategic manipulation outcomes logged in historical records.
                   </div>
                 ) : (
-                  outcomeTraces.map((trace, idx) => (
+                  (outcomeTraces || []).map((trace, idx) => (
                     <div key={idx} className="p-2.5 border border-red-950/30 bg-black/65 rounded flex items-start justify-between gap-3 text-[10px]">
                       <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-1.5">
@@ -636,7 +636,7 @@ export default function AdversarialInfluencePanel() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {baitOpportunities.map((bait) => {
+                {(baitOpportunities || []).map((bait) => {
                   return (
                     <div key={bait.id} className={`p-3 border rounded flex flex-col justify-between gap-2.5 ${
                       bait.revealedAsTrap 
@@ -685,7 +685,7 @@ export default function AdversarialInfluencePanel() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {counterAssets.map((asset) => {
+                {(counterAssets || []).map((asset) => {
                   return (
                     <div key={asset.id} className={`p-2.5 border rounded flex flex-col justify-between gap-2.5 transition ${
                       asset.active 
