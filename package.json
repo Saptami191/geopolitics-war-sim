@@ -30,6 +30,7 @@
     "maplibre-gl": "^4.5.0",
     "motion": "^12.23.24",
     "node-domexception": "file:./packages/node-domexception",
+    "prop-types": "^15.8.1",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
     "react-simple-maps": "^3.0.0",
