@@ -1,0 +1,40 @@
+name: MCP Server CI
+
+on:
+  push:
+    branches:
+      - main
+      - saptami-architecture
+
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend/mcp-server
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/mcp-server/package-lock.json
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build MCP Server
+        run: npm run build
+
+      - name: Run Test Client
+        run: npm run test-client
+        
