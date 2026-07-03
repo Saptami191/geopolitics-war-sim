@@ -1,0 +1,24 @@
+{
+  "name": "mcp-server",
+  "version": "1.0.0",
+  "description": "SCS MCP Server",
+  "type": "module",
+  "scripts": {
+  "dev": "tsx src/index.ts",
+  "build": "tsc",
+  "start": "node dist/src/index.js",
+  "test-client": "tsx test/testClient.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.0",
+    "tsx": "^4.22.5",
+    "typescript": "^6.0.3"
+  }
+}

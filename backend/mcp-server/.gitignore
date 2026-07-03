@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+*.log
+
+# Ignore compiled TypeScript output
+src/**/*.js
+src/**/*.js.map
+src/**/*.d.ts
+src/**/*.d.ts.map
