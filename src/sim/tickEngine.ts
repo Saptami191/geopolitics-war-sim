@@ -73,10 +73,7 @@ export function executeSimulationStep() {
   const world = useWorldStore.getState();
   const player = usePlayerStore.getState();
 
-  if (player.gameOver || player.victoryAchieved || player.aftermathActive) {
-    stopTickTimer();
-    return;
-  }
+  // Game‑over check migrated to SimulationRuntime
 
   // Execute all calculation engines in precise order within a single atomic update.
   world.applyTickDelta((draft) => {
