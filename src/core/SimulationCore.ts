@@ -13,6 +13,8 @@ import { ZustandPlayerAdapter } from './adapters/ZustandPlayerAdapter';
 import { ZustandClockAdapter } from './adapters/ZustandClockAdapter';
 import { CommodityEngine } from './engines/CommodityEngine';
 import { ICommodityEngine } from './engines/ICommodityEngine';
+import { FiscalEngine } from './engines/FiscalEngine';
+import { IFiscalEngine } from './engines/IFiscalEngine';
 import {
   executeSimulationStep as runSimulationStep,
   restartTickTimer as restartTickEngineTimer,
@@ -25,6 +27,7 @@ export class SimulationCore implements ISimulationCore {
     private readonly playerAdapter: IPlayerAdapter = new ZustandPlayerAdapter(),
     private readonly clockAdapter: IClockAdapter = new ZustandClockAdapter(),
     private readonly commodityEngine: ICommodityEngine = new CommodityEngine(),
+    private readonly fiscalEngine: IFiscalEngine = new FiscalEngine(),
   ) {}
 
   getWorld(): IWorldState {
@@ -45,6 +48,10 @@ export class SimulationCore implements ISimulationCore {
 
   processCommodityEngine(worldDraft: WorldState): void {
     this.commodityEngine.step(worldDraft);
+  }
+
+  processFiscalEngine(worldDraft: WorldState): void {
+    this.fiscalEngine.step(worldDraft);
   }
 
   pause(): void {

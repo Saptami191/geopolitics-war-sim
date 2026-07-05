@@ -17,7 +17,6 @@ import { useMirrorStore } from '../store/mirrorStore';
 import { useInfluenceStore } from '../store/influenceStore';
 import { pollScenarioStatus } from './scenarioEngine';
 import { processFactions } from './factionEngine';
-import { processFiscal } from './fiscalEngine';
 import { simulationCore } from '../core/SimulationCore';
 import { advanceStrikes } from './militaryEngine';
 import { processRelations } from './diplomaticEngine';
@@ -90,7 +89,7 @@ export function executeSimulationStep() {
     processFactions(draft);
 
     // 3. Process taxes, corporate spending, debt service, cash printed, GDP
-    processFiscal(draft);
+    simulationCore.processFiscalEngine(draft);
 
     // 4. Process commodity markets spot price drift & resource shocks
     simulationCore.processCommodityEngine(draft);
