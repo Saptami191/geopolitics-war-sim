@@ -15,13 +15,10 @@ import { CommodityEngine } from './engines/CommodityEngine';
 import { ICommodityEngine } from './engines/ICommodityEngine';
 import { FiscalEngine } from './engines/FiscalEngine';
 import { IFiscalEngine } from './engines/IFiscalEngine';
-import {
-  executeSimulationStep as runSimulationStep,
-  restartTickTimer as restartTickEngineTimer,
-  stopTickTimer as stopTickEngineTimer,
-} from '../sim/tickEngine';
+import { SimulationRuntime } from './runtime/SimulationRuntime';
 
 export class SimulationCore implements ISimulationCore {
+  private readonly runtime = new SimulationRuntime(this);
   constructor(
     private readonly worldAdapter: IWorldAdapter = new ZustandWorldAdapter(),
     private readonly playerAdapter: IPlayerAdapter = new ZustandPlayerAdapter(),
@@ -39,7 +36,7 @@ export class SimulationCore implements ISimulationCore {
   }
 
   tick(): void {
-    runSimulationStep();
+    this.runtime.tick();
   }
 
   getCommodityEngine(): ICommodityEngine {
@@ -55,12 +52,12 @@ export class SimulationCore implements ISimulationCore {
   }
 
   pause(): void {
-    stopTickEngineTimer();
+    this.runtime.pause();
     this.clockAdapter.pause();
   }
 
   resume(): void {
-    restartTickEngineTimer();
+    this.runtime.resume();
     this.clockAdapter.resume();
   }
 
