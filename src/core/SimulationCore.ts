@@ -4,31 +4,48 @@ import {
   ICommand,
   ISimulationCore,
 } from './types';
+import {
+  executeSimulationStep as runSimulationStep,
+  restartTickTimer as restartTickEngineTimer,
+  stopTickTimer as stopTickEngineTimer,
+} from '../sim/tickEngine';
 
 export class SimulationCore implements ISimulationCore {
-  constructor(private readonly world: IWorldState, private readonly player: IPlayerState) {}
+  constructor(
+    private readonly world?: IWorldState,
+    private readonly player?: IPlayerState,
+  ) {}
 
   getWorld(): IWorldState {
-    return this.world;
+    return this.world as IWorldState;
   }
 
   getPlayer(): IPlayerState {
-    return this.player;
+    return this.player as IPlayerState;
   }
 
   tick(): void {
-    // Placeholder: tick execution will be wired in later phases.
+    runSimulationStep();
   }
 
   pause(): void {
-    // Placeholder: pause behavior will be added in future refactor stages.
+    stopTickEngineTimer();
   }
 
   resume(): void {
-    // Placeholder: resume behavior will be added in future refactor stages.
+    restartTickEngineTimer();
   }
 
   dispatch(command: ICommand): void {
     // Placeholder: command dispatching will be implemented in a later phase.
+    void command;
   }
 }
+
+export const simulationCore = new SimulationCore();
+
+export const tick = (): void => simulationCore.tick();
+export const pause = (): void => simulationCore.pause();
+export const resume = (): void => simulationCore.resume();
+export const restartTickTimer = (): void => simulationCore.resume();
+export const stopTickTimer = (): void => simulationCore.pause();

@@ -4,7 +4,7 @@ import { usePlayerStore } from '../../store/playerStore';
 import { useWorldStore } from '../../store/worldStore';
 import { useEconomyStore } from '../../store/economyStore';
 import { useMilitaryStore } from '../../store/militaryStore';
-import { restartTickTimer, executeSimulationStep } from '../../sim/tickEngine';
+import { pause, resume, tick } from '../../core/SimulationCore';
 import { getTickIncrement } from '../../sim/militaryEngine';
 import { ResearchNode, WeaponType, CovertOpType, HUDMode } from '../../types';
 import { GEO_COORDS } from '../../data/geoCoords';
@@ -82,25 +82,25 @@ export default function TerminalShell() {
 
       case '/pause':
         setTickSpeed('PAUSED');
-        restartTickTimer();
+        pause();
         pushTerminalLine('Tick orchestrator PAUSED.', 'SYSTEM');
         break;
 
       case '/play':
         setTickSpeed('NORMAL');
-        restartTickTimer();
+        resume();
         pushTerminalLine('Tick speed declared: NORMAL (2.0s refresh).', 'SYSTEM');
         break;
 
       case '/fast':
         setTickSpeed('FAST');
-        restartTickTimer();
+        resume();
         pushTerminalLine('Tick speed declared: FAST (0.8s refresh).', 'SYSTEM');
         break;
 
       case '/ultra':
         setTickSpeed('ULTRA');
-        restartTickTimer();
+        resume();
         pushTerminalLine('Tick speed declared: ULTRA (0.3s refresh).', 'SYSTEM');
         break;
 

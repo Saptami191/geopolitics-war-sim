@@ -4,7 +4,7 @@ import { usePlayerStore } from './store/playerStore';
 import { usePropagandaStore } from './store/propagandaStore';
 import { SCENARIOS } from './data/scenarios';
 import { initScenario } from './sim/scenarioEngine';
-import { restartTickTimer, stopTickTimer, executeSimulationStep } from './sim/tickEngine';
+import { pause, resume, tick } from './core/SimulationCore';
 import { ScenarioId } from './types';
 import { playGlobeTransition } from './utils/transition';
 import { audio } from './utils/audio';
@@ -330,7 +330,7 @@ export default function App() {
 
     // Stop tick timer only on true app unmount
     return () => {
-      stopTickTimer();
+      pause();
     };
   }, []);
 
@@ -528,7 +528,7 @@ export default function App() {
     setTickSpeed('NORMAL');
 
     playGlobeTransition(() => {
-      restartTickTimer();
+      resume();
     });
   };
 
@@ -566,7 +566,7 @@ export default function App() {
     setTickSpeed('NORMAL');
 
     playGlobeTransition(() => {
-      restartTickTimer();
+      resume();
     });
   };
 
@@ -1134,7 +1134,7 @@ export default function App() {
               type: 'INFO'
             });
             playGlobeTransition(() => {
-              restartTickTimer();
+              resume();
             });
           } else {
             audio.sfxCrisisWarning();
@@ -1240,25 +1240,25 @@ export default function App() {
           <div className="h-4 w-[1px] bg-[#1a3a1a]" />
 
           <button
-            onClick={() => { setTickSpeed('PAUSED'); restartTickTimer(); }}
+            onClick={() => { setTickSpeed('PAUSED'); pause(); }}
             className={`px-2 py-1 border border-[#1a3a1a] text-[9px] uppercase cursor-pointer ${playerState.tickSpeed === 'PAUSED' ? 'bg-red-950 text-red-500 font-bold' : 'text-gray-500 hover:text-white'}`}
           >
             ⏸️ PAUSE
           </button>
           <button
-            onClick={() => { setTickSpeed('NORMAL'); restartTickTimer(); }}
+            onClick={() => { setTickSpeed('NORMAL'); resume(); }}
             className={`px-2 py-1 border border-[#1a3a1a] text-[9px] uppercase cursor-pointer ${playerState.tickSpeed === 'NORMAL' ? 'bg-[#1a4a1a] text-[#00ff44] font-bold' : 'text-gray-500 hover:text-white'}`}
           >
             ▶️ 1X
           </button>
           <button
-            onClick={() => { setTickSpeed('FAST'); restartTickTimer(); }}
+            onClick={() => { setTickSpeed('FAST'); resume(); }}
             className={`px-2 py-1 border border-[#1a3a1a] text-[9px] uppercase cursor-pointer ${playerState.tickSpeed === 'FAST' ? 'bg-[#1a4a1a] text-[#00ff44] font-bold' : 'text-gray-500 hover:text-white'}`}
           >
             ▶️▶️ 2X
           </button>
           <button
-            onClick={() => { setTickSpeed('ULTRA'); restartTickTimer(); }}
+            onClick={() => { setTickSpeed('ULTRA'); resume(); }}
             className={`px-2 py-1 border border-[#1a3a1a] text-[9px] uppercase cursor-pointer ${playerState.tickSpeed === 'ULTRA' ? 'bg-[#1a4a1a] text-[#00ff44] font-bold' : 'text-gray-500 hover:text-white'}`}
           >
             🔥 HYPER
@@ -1283,9 +1283,9 @@ export default function App() {
                 audio.sfxKeyClick();
                 if (playerState.tickSpeed !== 'PAUSED') {
                   setTickSpeed('PAUSED');
-                  stopTickTimer();
+                  pause();
                 }
-                executeSimulationStep();
+                tick();
                 useFxStore.getState().clearExpiredFx(useWorldStore.getState().currentTick);
               }}
               className="px-2 py-0.5 border border-[#1a5c1a]/45 bg-[#0c180c] hover:bg-[#1a5c1a]/30 text-white hover:text-[#00ff44] text-[8.5px] uppercase font-bold cursor-pointer transition-all rounded-sm hover:border-[#00ff44]"
@@ -1298,10 +1298,10 @@ export default function App() {
                 audio.playPhaseReveal();
                 if (playerState.tickSpeed !== 'PAUSED') {
                   setTickSpeed('PAUSED');
-                  stopTickTimer();
+                  pause();
                 }
                 for (let i = 0; i < 5; i++) {
-                  executeSimulationStep();
+                  tick();
                 }
                 useFxStore.getState().clearExpiredFx(useWorldStore.getState().currentTick);
               }}
@@ -1496,7 +1496,7 @@ export default function App() {
           }}
           onSpectate={() => setSpectatingAftermath(true)}
           onRestart={() => {
-            stopTickTimer();
+            pause();
             window.location.reload();
           }}
         />
