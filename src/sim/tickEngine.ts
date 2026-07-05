@@ -18,7 +18,7 @@ import { useInfluenceStore } from '../store/influenceStore';
 import { pollScenarioStatus } from './scenarioEngine';
 import { processFactions } from './factionEngine';
 import { processFiscal } from './fiscalEngine';
-import { processMarkets } from './commodityEngine';
+import { simulationCore } from '../core/SimulationCore';
 import { advanceStrikes } from './militaryEngine';
 import { processRelations } from './diplomaticEngine';
 import { processSentiment } from './propagandaEngine';
@@ -93,7 +93,7 @@ export function executeSimulationStep() {
     processFiscal(draft);
 
     // 4. Process commodity markets spot price drift & resource shocks
-    processMarkets(draft);
+    simulationCore.processCommodityEngine(draft);
 
     // 5. Advance ballistic strikes in flight & defensive shield interceptions
     advanceStrikes(draft);
