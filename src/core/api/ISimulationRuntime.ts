@@ -1,4 +1,5 @@
 import { IWorldState, IPlayerState, ICommand } from '../core/types';
+import { IRuntimeEvent } from '../events/IRuntimeEvent';
 
 /**
  * Public Runtime API – the single entry point for UI, server, renderers, etc.
@@ -31,8 +32,8 @@ export interface ISimulationRuntime {
   dispatch(command: ICommand): void;
 
   /** Subscribe to runtime events (e.g., tick, pause) */
-  subscribe(listener: () => void): void; // TODO: event system not implemented yet
+  subscribe(listener: (event: IRuntimeEvent) => void): void;
 
   /** Unsubscribe from runtime events */
-  unsubscribe(listener: () => void): void; // TODO: event system not implemented yet
+  unsubscribe(listener: (event: IRuntimeEvent) => void): void;
 }
