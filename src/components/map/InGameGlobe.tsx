@@ -1135,6 +1135,7 @@ export function InGameGlobe({ theme = 'dark', layers }: InGameGlobeProps) {
         }
       });
 
+      unitRendererRef.current?.update(mapState);
       renderer.render(scene, camera);
     };
 
@@ -1775,125 +1776,19 @@ export function InGameGlobe({ theme = 'dark', layers }: InGameGlobeProps) {
         arcs.add(jetMesh);
       });
     }
+  }, [activeStrikes, countries, playerCountryId, targetCountryId, theme, layers, selectedHotspotId]);
 
-    // 7. DEPLOY CINEMATIC, HIGH-FIDELITY 3D MILITARY ASSETS (Carriers, Submarines, Fighter Wings)
-    const military = militaryGroupRef.current;
-    if (military && activeScene) {
-      clearGroup(military);
+  const unitRendererRef = useRef<UnitRenderer | null>(null);
 
-      // Create InstancedMesh for Destroyers (Fleet Escorts accompanying Carriers)
-      const carrierUnits = units.filter((u) => u.type === 'CarrierGroup');
-      const maxDestroyers = carrierUnits.length * 2;
-
-      if (escortsMeshRef.current) {
-        military.remove(escortsMeshRef.current);
-        escortsMeshRef.current.geometry.dispose();
-        if (Array.isArray(escortsMeshRef.current.material)) {
-          escortsMeshRef.current.material.forEach((m) => m.dispose());
-        } else {
-          escortsMeshRef.current.material.dispose();
-        }
-        escortsMeshRef.current = null;
-      }
-
-      if (maxDestroyers > 0) {
-        const destGeo = new THREE.CylinderGeometry(0, 0.0035, 0.024, 5);
-        const destMat = new THREE.MeshPhongMaterial({
-          color: 0x4d555c,
-          emissive: 0x050607,
-          shininess: 35,
-          flatShading: true,
-        });
-        const escMesh = new THREE.InstancedMesh(destGeo, destMat, maxDestroyers);
-        escMesh.name = "destroyerEscorts";
-        military.add(escMesh);
-        escortsMeshRef.current = escMesh;
-      }
-
-      // Render actual 3D Military Assets
-      (units || []).forEach((unit) => {
-        if (!unit || !unit.id || !unit.position) return;
-        // Position targets based on altitude layers
-        const isAir = unit.type === 'AirWing';
-        const baseRadius = isAir ? 1.055 : 1.018;
-        const targetVec = latLonToVec3(unit.position.lat, unit.position.lon, baseRadius);
-
-        // Pivot group representing the unit
-        const pivot = new THREE.Group();
-        pivot.name = `unit_${unit.id}`;
-
-        // Retain smooth interpolation history
-        const prevPos = prevPositionsRef.current[unit.id];
-        if (prevPos) {
-          pivot.position.copy(prevPos);
-        } else {
-          pivot.position.copy(targetVec);
-          prevPositionsRef.current[unit.id] = targetVec.clone();
-        }
-
-        pivot.userData = {
-          unitId: unit.id,
-          type: unit.type,
-          status: unit.status,
-          owner: unit.owner,
-          targetPos: targetVec,
-        };
-
-        military.add(pivot);
-
-        // Map class models or fallbacks
-        let modelKey: 'carrier' | 'sub' | 'fighter' | 'missile' = 'carrier';
-        let modelUrl = '/models/carrier.glb';
-
-        if (unit.type === 'CarrierGroup') {
-          modelKey = 'carrier';
-          modelUrl = '/models/carrier.glb';
-
-          // Emit trail Wake in world coordinates
-          if (!wakesRef.current[unit.id]) {
-            wakesRef.current[unit.id] = new WakeSystemManager();
-            activeScene.add(wakesRef.current[unit.id].getMesh());
-          }
-        } else if (unit.type === 'Submarine') {
-          modelKey = 'sub';
-          modelUrl = '/models/submarine.glb';
-
-          // Emit dive bubbles in world coordinates
-          if (!bubblesRef.current[unit.id]) {
-            bubblesRef.current[unit.id] = new BubbleSystemManager();
-            activeScene.add(bubblesRef.current[unit.id].getMesh());
-          }
-        } else if (unit.type === 'AirWing') {
-          modelKey = 'fighter';
-          modelUrl = '/models/fighter.glb';
-        } else {
-          return; // Skip non-moving profiles (such as static silos)
-        }
-
-        if (loaderRef.current) {
-          loaderRef.current.loadModel(modelKey, modelUrl, (loadedMesh) => {
-            const isPlayer = unit.owner === playerCountryId;
-            loadedMesh.traverse((childElement) => {
-              if (childElement instanceof THREE.Mesh && childElement.material) {
-                const mats = Array.isArray(childElement.material) ? childElement.material : [childElement.material];
-                mats.forEach((m) => {
-                  if (m instanceof THREE.MeshPhongMaterial || m instanceof THREE.MeshStandardMaterial) {
-                    if (isPlayer) {
-                      m.emissive.setHex(0x00260c);
-                    } else if (unit.owner === targetCountryId) {
-                      m.emissive.setHex(0x2d0003);
-                    }
-                  }
-                });
-              }
-            });
-            pivot.add(loadedMesh);
-          });
-        }
-      });
+  useEffect(() => {
+    if (militaryGroupRef.current) {
+      unitRendererRef.current = new UnitRenderer(militaryGroupRef.current);
     }
-
-  }, [activeStrikes, countries, playerCountryId, targetCountryId, theme, layers, units, selectedHotspotId]);
+    return () => {
+      unitRendererRef.current?.dispose();
+      unitRendererRef.current = null;
+    };
+  }, []);
 
   return (
     <div className="relative w-full h-full" id="tactical-3d-sphere-monitor">
