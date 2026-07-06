@@ -1,10 +1,5 @@
-// src/core/types.ts
+import { IRuntimeEvent } from './events/IRuntimeEvent';
 
-/**
- * Core types for the Simulation Core. These are deliberately simple and do not import any
- * frontend‑specific modules (React, Zustand, etc.). They are intended to evolve as the
- * migration proceeds.
- */
 
 export interface IWorldState {
   // Minimal placeholder – real fields will be added in later stages.
@@ -35,4 +30,8 @@ export interface ISimulationCore {
   resume(): void;
   /** Dispatch a command/event – stub implementation */
   dispatch(command: ICommand): void;
+  /** Subscribe to runtime events */
+  subscribe(listener: (event: IRuntimeEvent) => void): void;
+  /** Unsubscribe from runtime events */
+  unsubscribe(listener: (event: IRuntimeEvent) => void): void;
 }

@@ -12,6 +12,7 @@ import { FiscalEngine } from './engines/FiscalEngine';
 import { IFiscalEngine } from './engines/IFiscalEngine';
 import { SimulationRuntime } from './runtime/SimulationRuntime';
 import { ISimulationRuntime } from './api/ISimulationRuntime';
+import { IRuntimeEvent } from './events/IRuntimeEvent';
 
 /**
  * Core simulation class. Implements both internal ISimulationCore and the public
@@ -69,12 +70,12 @@ export class SimulationCore implements ISimulationCore, ISimulationRuntime {
     void command;
   }
 
-  subscribe(listener: () => void): void {
-    // TODO: event system not yet implemented.
+  subscribe(listener: (event: IRuntimeEvent) => void): void {
+    this.runtime.subscribe(listener);
   }
 
-  unsubscribe(listener: () => void): void {
-    // TODO: event system not yet implemented.
+  unsubscribe(listener: (event: IRuntimeEvent) => void): void {
+    this.runtime.unsubscribe(listener);
   }
 
   // ---------------------------------------------------------------------
