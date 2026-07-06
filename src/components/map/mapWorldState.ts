@@ -1,4 +1,5 @@
-import { Country, BallisticStrike, ThreatLevel, HUDMode } from '../../types';
+import { Country, BallisticStrike, ThreatLevel, HUDMode, Unit } from '../../types';
+import { useUnitStore } from '../../store/unitStore';
 import { getCentroid } from './countryCentroids';
 
 export interface MapNormalizedCountry {
@@ -60,6 +61,8 @@ export interface CanonicalMapState {
   
   theme: 'dark' | 'light';
   activeLayer: 'political' | 'conflicts' | 'economic' | 'cyber' | 'population' | 'nuclear' | 'military';
+  /** Map of unit IDs to unit objects */
+  units: Record<string, Unit>;
 }
 
 /**
@@ -81,6 +84,12 @@ export function deriveCanonicalMapState(
 ): CanonicalMapState {
   
   // 1. Identify which layer is active (only one primary active fill color mapping)
+  // 2. Gather units from unitStore
+  const unitArray = useUnitStore.getState().units;
+  const unitMap: Record<string, Unit> = {};
+  unitArray.forEach(u => {
+    unitMap[u.id] = u;
+  });
   const activeLayer = (Object.keys(layers).find((k) => layers[k] === true) || 'political') as CanonicalMapState['activeLayer'];
 
   // 2. Map-Normalize Countries
@@ -205,5 +214,6 @@ export function deriveCanonicalMapState(
     currentTick,
     theme,
     activeLayer,
+    units: unitMap,
   };
 }
