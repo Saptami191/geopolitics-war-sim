@@ -16,6 +16,7 @@ export class RuntimeStreamServer {
   private wss: WebSocketServer | null = null;
   private connectionManager: RuntimeConnectionManager;
   private port: number;
+  private firstFrameBuilt = false;
 
   constructor(port = 8080) {
     this.port = port;
@@ -25,21 +26,27 @@ export class RuntimeStreamServer {
   /** Bootstraps the server transport and registers runtime listeners */
   start() {
     this.wss = new WebSocketServer({ port: this.port });
-    console.log(`[Runtime Stream Server] Running on ws://localhost:${this.port}`);
+    console.log("Server listening");
 
     this.wss.on('connection', (ws: WebSocket) => {
       this.connectionManager.addClient(ws);
+      console.log("Client connected");
 
-      // Immediately send the first frame on connect to establish current context
-      const initialFrame = this.buildCurrentFrame();
-      ws.send(initialFrame);
+      try {
+        // Immediately send the first frame on connect to establish current context
+        const initialFrame = this.buildCurrentFrame();
+        ws.send(initialFrame);
+      } catch (err: any) {
+        console.error("ERROR building/sending initial frame:", err.stack || err);
+      }
 
       ws.on('close', () => {
         this.connectionManager.removeClient(ws);
+        console.log("Client disconnected");
       });
 
       ws.on('error', (err) => {
-        console.error('[Runtime Stream Server] WebSocket Error:', err);
+        console.error('[Runtime Stream Server] WebSocket Error:', err.stack || err);
         this.connectionManager.removeClient(ws);
       });
     });
@@ -47,11 +54,16 @@ export class RuntimeStreamServer {
     // Subscribe to simulation tick events to broadcast frames
     simulationCore.subscribe((event) => {
       if (event.type === RuntimeEventType.SimulationTickCompleted) {
-        const frame = this.buildCurrentFrame();
-        this.connectionManager.broadcast(frame);
+        try {
+          const frame = this.buildCurrentFrame();
+          this.connectionManager.broadcast(frame);
+        } catch (err: any) {
+          console.error("ERROR building frame on tick:", err.stack || err);
+        }
       }
     });
   }
+
 
   /** Derives CanonicalMapState and returns the serialized JSON payload */
   private buildCurrentFrame(): string {
@@ -93,7 +105,12 @@ export class RuntimeStreamServer {
     // Overwrite mapped units with true unit map (similar to deriveCanonicalMapState inside hooks)
     canonicalState.units = unitMap;
 
-    return RuntimePublisher.publish(canonicalState);
+    const frame = RuntimePublisher.publish(canonicalState);
+    if (!this.firstFrameBuilt) {
+      this.firstFrameBuilt = true;
+      console.log("First frame built");
+    }
+    return frame;
   }
 
   /** Tears down WebSocket server connections */

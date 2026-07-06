@@ -28,6 +28,8 @@ export class RuntimeConnectionManager {
         client.send(serializedFrame, (err) => {
           if (err) {
             console.error('[Stream Connection] Error sending payload to client:', err);
+          } else {
+            console.log("Broadcast successful");
           }
         });
       }
