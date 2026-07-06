@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { Unit, CanonicalMapState } from '../../types';
-import { latLonToVec3 } from '../intro/GlobeMarkers';
+import { latLonToVec3 } from '../../intro/GlobeMarkers';
+import { RendererFrame, RendererFrameUnit } from '../../../renderer/frame/RendererFrame';
 import {
   createProceduralCarrier,
   createProceduralSubmarine,
@@ -8,11 +8,12 @@ import {
   createProceduralMissile,
   WakeSystemManager,
   BubbleSystemManager,
-} from '../map/MilitaryAsset3D';
+} from '../MilitaryAsset3D';
 
 /**
  * Enhanced class that manages 3D representation, movement interpolation,
  * orientation, particle effects, and status highlights of military units.
+ * Consumes the serializable RendererFrame.
  */
 export class UnitRenderer {
   private group: THREE.Group;
@@ -30,9 +31,9 @@ export class UnitRenderer {
     this.group = group;
   }
 
-  /** Update meshes based on the latest CanonicalMapState */
-  update(state: CanonicalMapState) {
-    const units = state.units;
+  /** Update meshes based on the latest RendererFrame */
+  update(frame: RendererFrame) {
+    const units = frame.units;
     const currentIds = new Set(Object.keys(units));
 
     // Remove meshes & particle systems for units that no longer exist
@@ -58,7 +59,7 @@ export class UnitRenderer {
     // Add or update existing units
     for (const [id, unit] of Object.entries(units)) {
       const existing = this.unitMeshes.get(id);
-      const targetPos = this.getUnitPosition(unit, state);
+      const targetPos = this.getUnitPosition(unit, frame);
 
       if (!existing) {
         // Create new mesh
@@ -173,14 +174,14 @@ export class UnitRenderer {
   }
 
   /** Resolve world position for a unit */
-  private getUnitPosition(unit: Unit, state: CanonicalMapState): THREE.Vector3 {
+  private getUnitPosition(unit: RendererFrameUnit, frame: RendererFrame): THREE.Vector3 {
     if (unit.position?.lat !== undefined && unit.position?.lon !== undefined) {
       const isAir = unit.type === 'AirWing';
       const baseRadius = isAir ? 1.055 : 1.018;
       return latLonToVec3(unit.position.lat, unit.position.lon, baseRadius);
     }
     // Fallback to owner country's centroid
-    const ownerCentroid = state.countries[unit.owner]?.centroid;
+    const ownerCentroid = frame.countries[unit.owner]?.centroid;
     if (ownerCentroid) {
       return latLonToVec3(ownerCentroid[1], ownerCentroid[0], 1.018);
     }
@@ -188,7 +189,7 @@ export class UnitRenderer {
   }
 
   /** Create mesh based on unit type */
-  private createMeshForUnit(unit: Unit): THREE.Object3D {
+  private createMeshForUnit(unit: RendererFrameUnit): THREE.Object3D {
     switch (unit.type) {
       case 'CarrierGroup':
         return createProceduralCarrier();

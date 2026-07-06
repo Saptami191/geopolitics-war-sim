@@ -11,9 +11,11 @@ import { getCentroid } from './countryCentroids';
 import { MAP_THEME } from './mapStyles';
 import { LayerToggleState } from './MapLayerPanel';
 import { useMapSync } from './mapSync';
-import { useLinkedAnalysisStore } from '../../store/linkedAnalysisStore';
 import { useUnitStore } from '../../store/unitStore';
 import { latLonToVec3 } from '../intro/GlobeMarkers';
+import { UnitRenderer } from './renderers/UnitRenderer';
+import { RendererFrameMapper } from '../../renderer/frame/RendererFrameMapper';
+import { RendererSerializer } from '../../renderer/frame/RendererSerializer';
 import {
   MilitaryLoader,
   WakeSystemManager,
@@ -1135,7 +1137,10 @@ export function InGameGlobe({ theme = 'dark', layers }: InGameGlobeProps) {
         }
       });
 
-      unitRendererRef.current?.update(mapState);
+      // Map CanonicalMapState to plain DTO
+      const frame = RendererFrameMapper.map(mapState);
+
+      unitRendererRef.current?.update(frame);
       renderer.render(scene, camera);
     };
 
